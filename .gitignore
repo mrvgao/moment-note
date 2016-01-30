@@ -1,0 +1,48 @@
+# Basics
+*.py[cod]
+*.pyc
+migrations/
+__pycache__
+
+# Logs
+*.log
+pip-log.txt
+
+# Unit test / coverage reports
+.coverage
+.tox
+nosetests.xml
+
+# Translations
+*.mo
+*.pot
+
+# Pycharm
+.idea
+
+# Vim
+
+*~
+*.swp
+*.swo
+
+# npm
+node_modules/
+
+# Campass
+.sass-cache
+
+# local settings
+#local.py
+
+# runserver
+runserver.sh
+
+#media
+media
+
+#DB
+*.rdb
+
+.ropeproject/
+

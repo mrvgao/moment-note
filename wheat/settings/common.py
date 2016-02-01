@@ -84,6 +84,7 @@ class Common(Configuration):
     LOCAL_APPS = (
         # Your stuff: custom apps go here
         'apps.user',
+        'apps.group',
     )
     # END LOCAL APPS
 

@@ -27,7 +27,7 @@ class User(AbstractBaseUser, EnhancedModel, CommonUpdateAble):
     first_name = models.CharField(max_length=20, blank=True)  # 名字选填
     last_name = models.CharField(max_length=20)  # 姓氏必填
     full_name = models.CharField(max_length=40, blank=True, db_index=True)  # 可起到搜索作用
-    avatar = ProcessedImageField(max_length=250,
+    avatar = ProcessedImageField(max_length=100,
                                  upload_to='avatars',
                                  processors=[Transpose(), ResizeToFit(150)],
                                  format='JPEG',
@@ -66,9 +66,16 @@ class User(AbstractBaseUser, EnhancedModel, CommonUpdateAble):
 
 class Relationship(CommonUpdateAble, models.Model, EnhancedModel):
     ''' 关系表 '''
+    RELATIONS = (
+        ('husband-wife', u'夫妻'),
+        ('father-child', u'父子/女'),
+        ('mother-child', u'母子/女'),
+        ('friend-friend', u'朋友')
+    )
     from_user_id = UUIDField(db_index=True)
     to_user_id = UUIDField(db_index=True)
-    relation = models.CharField(max_length=15, db_index=True)  # 关系的名称
+    relation = models.CharField(max_length=15, db_index=True,
+                                choices=RELATIONS, default="friend-friend")  # 关系的名称
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

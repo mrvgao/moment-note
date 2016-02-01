@@ -136,3 +136,8 @@ class UserViewSet(ListModelMixin,
         '''
         user = UserService.get_user(id=id)
         return SimpleResponse(success=UserService.lazy_delete_user(user))
+
+
+class InvitationViewSet(ListModelMixin,
+                        viewsets.GenericViewSet):
+    pass

@@ -21,4 +21,6 @@ urlpatterns += [
     url(r'^api/%s/auth/' % settings.API_VERSION,
         include('rest_framework.urls', namespace='rest_framework')),
     url(r'^docs/', include('rest_framework_swagger.urls', namespace='rest_framework_swagger')),
+
+    url(r'^', include('apps.user.urls')),  # Don't set namespace
 ]

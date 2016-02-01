@@ -4,11 +4,14 @@ import uuid
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser
 from uuidfield import UUIDField
+from imagekit.models import ProcessedImageField
+from imagekit.processors import ResizeToFit, Transpose
 
+from customs.models import EnhancedModel, CommonUpdateAble
 from .managers import UserManager
 
 
-class User(AbstractBaseUser):
+class User(AbstractBaseUser, EnhancedModel, CommonUpdateAble):
     GENDERS = (
         ('M', u'男'),
         ('F', u'女'),
@@ -24,8 +27,12 @@ class User(AbstractBaseUser):
     first_name = models.CharField(max_length=20, blank=True)  # 名字选填
     last_name = models.CharField(max_length=20)  # 姓氏必填
     full_name = models.CharField(max_length=40, blank=True, db_index=True)  # 可起到搜索作用
-    avatar = models.CharField(max_length=50)  # 没有则会有默认头像
-    tagline = models.CharField(max_length=140, blank=True)  # 个人的签名档
+    avatar = ProcessedImageField(max_length=250,
+                                 upload_to='avatars',
+                                 processors=[Transpose(), ResizeToFit(150)],
+                                 format='JPEG',
+                                 options={'quality': 85})
+    tagline = models.CharField(max_length=100, blank=True)  # 个人的签名档
     gender = models.CharField(max_length=1, default='N', choices=GENDERS)
     marital_status = models.BooleanField(default=False)  # 婚否
     birthday = models.DateField(null=True, blank=True, default=None)
@@ -34,10 +41,11 @@ class User(AbstractBaseUser):
     city = models.CharField(max_length=30, blank=True)
     role = models.CharField(max_length=10, choices=ROLES, default="normal")
     is_admin = models.BooleanField(default=False)
-    activated = models.BooleanField(default=False)
+    activated = models.BooleanField(default=True)  # 默认激活
     activated_at = models.DateTimeField(auto_now_add=True)  # 激活的时间
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    deleted = models.BooleanField(default=False)
 
     USERNAME_FIELD = 'phone'
     # REQUIRED_FIELDS = ['phone']
@@ -56,7 +64,7 @@ class User(AbstractBaseUser):
         return self.is_admin
 
 
-class Relationship(models.Model):
+class Relationship(CommonUpdateAble, models.Model, EnhancedModel):
     ''' 关系表 '''
     from_user_id = UUIDField(db_index=True)
     to_user_id = UUIDField(db_index=True)
@@ -67,7 +75,7 @@ class Relationship(models.Model):
         db_table = "relationship"
 
 
-class FriendShip(models.Model):
+class FriendShip(CommonUpdateAble, models.Model, EnhancedModel):
     ''' 朋友，也即通讯录 '''
     user_id = UUIDField(db_index=True)  # 谁的通讯录
     friend_id = UUIDField()  # 朋友id
@@ -85,7 +93,7 @@ class FriendShip(models.Model):
         db_table = "friendship"
 
 
-class UserCounter(models.Model):
+class UserCounter(CommonUpdateAble, models.Model, EnhancedModel):
     ''' 计数器: 用在一些需要计数的地方，比如多少条未读消息，多少条新状态 '''
     user_id = UUIDField(primary_key=True)
     unread_msgs = models.IntegerField(default=0)
@@ -102,7 +110,7 @@ class UserCounter(models.Model):
         db_table = 'user_counter'
 
 
-class Captcha(models.Model):
+class Captcha(CommonUpdateAble, models.Model, EnhancedModel):
     ''' 验证码：分不同purposes，可能是发到手机，也可能是发到邮箱 '''
     PURPOSES = (
         ('register', u'注册用户'),
@@ -123,7 +131,7 @@ class Captcha(models.Model):
         db_table = 'captcha'
 
 
-class Invitation(models.Model):
+class Invitation(CommonUpdateAble, models.Model, EnhancedModel):
     ''' 如果invitee为空（未注册或者找不到Ta），可以通过phone或者email邀请 '''
     inviter_id = UUIDField(db_index=True)  # 邀请者
     invitee_id = UUIDField(db_index=True)  # 被邀请者
@@ -140,7 +148,7 @@ class Invitation(models.Model):
         db_table = 'invitation'
 
 
-class AppSetting(models.Model):
+class AppSetting(CommonUpdateAble, models.Model, EnhancedModel):
     ''' App的一些设置 '''
     user_id = UUIDField(primary_key=True)
     language = models.CharField(max_length=10)

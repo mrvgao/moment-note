@@ -46,7 +46,7 @@ class Common(Configuration):
 
     # Custom user app defaults
     # Select the correct user model
-    AUTH_USER_MODEL = "account.User"
+    AUTH_USER_MODEL = "user.User"
     # LOGIN_REDIRECT_URL = "test_users:redirect"
     # LOGIN_URL = "account_login"
     # END Custom user app defaults
@@ -66,11 +66,11 @@ class Common(Configuration):
 
         # Admin
         # 'grappelli',
-        # 'django.contrib.admin',
+        'django.contrib.admin',
     )
     THIRD_PARTY_APPS = (
         # 'crispy_forms',  # Form layouts
-        # 'cacheops',
+        'cacheops',
         # 'django_extensions',
         'rest_framework',
         'rest_framework_swagger',
@@ -83,7 +83,7 @@ class Common(Configuration):
     # Apps specific for this project go here.
     LOCAL_APPS = (
         # Your stuff: custom apps go here
-        'apps.account',
+        'apps.user',
     )
     # END LOCAL APPS
 

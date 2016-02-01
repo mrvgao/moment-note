@@ -1,39 +1,24 @@
-# Bleeding edge Django
-django==1.7.9
-
-# Configuration
-django-configurations==0.8
-django-secure==1.0.1
-django-cache-url==0.8.0
-dj-database-url==0.3.0
-
-# Forms
-# django-braces==1.4.0
-# django-crispy-forms==1.4.0
-# django-floppyforms==1.2.0
-
-# Models
-# django-model-utils==2.2
-
-# images
-# Pillow==2.6.0
-
-# For user registration, either via email or social
-# Well-built with regular release cycles!
-# django-allauth==0.18.0
-
-# For the persistance stores
-# psycopg2==2.5.4
+Django==1.7.9
+Markdown==2.6.5
 MySQL-python==1.2.5
-
-# Unicode slugification
-# unicode-slugify==0.1.1
-# django-autoslug==1.7.2
-
-# Useful things
-# django-avatar==2.0
-
-# Time zones support
-# pytz==2014.7
-
-# Your custom requirements go here
+Pillow==3.1.0
+PyYAML==3.11
+click==6.2
+django-appconf==1.0.1
+django-cacheops==2.4.3
+django-configurations==1.0
+django-cors-headers==1.1.0
+django-imagekit==3.3
+django-redis-sessions==0.5.0
+django-rest-swagger==0.3.2
+django-rq==0.9.0
+django-secure==1.0.1
+django-uuidfield==0.5.0
+djangorestframework==3.3.2
+funcy==1.6
+pilkit==1.1.13
+redis==2.10.5
+rest-condition==1.0.2
+rq==0.5.6
+six==1.10.0
+wsgiref==0.1.2

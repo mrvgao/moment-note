@@ -36,3 +36,5 @@ class Local(Common):
     #     'SHOW_TEMPLATE_CONTEXT': True,
     # }
     # end django-debug-toolbar
+
+    CACHE_QUERY = False  # CACHE DB QUERY

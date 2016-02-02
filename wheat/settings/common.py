@@ -85,6 +85,7 @@ class Common(Configuration):
         # Your stuff: custom apps go here
         'apps.user',
         'apps.group',
+        'apps.message',
     )
     # END LOCAL APPS
 

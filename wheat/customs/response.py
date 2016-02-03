@@ -35,13 +35,13 @@ class SimpleResponse(Response):
 
 class Result:
 
-    def __init__(self, data=None, success=True, code=0):
-        if code != 0:
+    def __init__(self, data=None, code=codes.OK):
+        if code != codes.OK:
             self.success = False
             self.message = codes.messages.get(code, codes.DEFAULT_ERROR_MSG)
         else:
-            self.success = success
-            self.message = ''
+            self.success = True
+            self.message = codes.OK_MSG
         self.code = code
         self.data = data
 

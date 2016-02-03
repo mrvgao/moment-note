@@ -4,6 +4,9 @@
 # 通用
 ########################################################
 
+OK = 0
+OK_MSG = "OK"
+
 DEFAULT_ERROR_MSG = 'A server error occurred.'
 
 OPERATION_NOT_ALLOWED = 40000

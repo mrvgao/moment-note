@@ -1,10 +1,13 @@
 # -*- coding:utf-8 -*-
 
 from django.db import transaction
+from django.contrib.auth import authenticate, login
 
 from customs.services import BaseService
-from .models import User
-from .serializers import UserSerializer
+from customs.response import Result
+from errors import codes
+from .models import User, AuthToken
+from .serializers import UserSerializer, AuthTokenSerializer
 
 
 UserUpdateFields = ('phone', 'nickname', 'first_name', 'last_name', 'avatar',
@@ -17,16 +20,22 @@ class UserService(BaseService):
     def _get_model(cls, name='User'):
         if name == 'User':
             return User
+        elif name == 'AuthToken':
+            return AuthToken
 
     @classmethod
     def get_serializer(cls, model='User'):
         if model == 'User':
             return UserSerializer
+        elif model == 'AuthToken':
+            return AuthTokenSerializer
 
     @classmethod
     def serialize(cls, obj, context={}):
         if isinstance(obj, User):
             return UserSerializer(obj, context=context).data
+        elif isinstance(obj, AuthToken):
+            return AuthTokenSerializer(obj, context=context).data
 
     @classmethod
     def is_logged_in(cls, user):
@@ -67,3 +76,25 @@ class UserService(BaseService):
             user.update(deleted=True)
             return True
         return False
+
+    @classmethod
+    def login_user(cls, request, phone, password):
+        user = authenticate(username=phone, password=password)
+        if user:
+            if user.activated:
+                login(request, user)
+                return Result(data=user)
+            else:
+                return Result(code=codes.INACTIVE_ACCOUNT)
+        else:
+            return Result(code=codes.INCORRECT_CREDENTIAL)
+
+    @classmethod
+    def get_auth_token(cls, **kwargs):
+        return AuthToken.objects.get_or_none(**kwargs)
+
+    @classmethod
+    @transaction.atomic
+    def refresh_auth_token(cls, token):
+        token = AuthToken.objects.refresh_token(token)
+        return token

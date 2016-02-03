@@ -2,7 +2,7 @@
 
 from customs.serializers import XModelSerializer
 from customs.fields import XImageField
-from .models import User
+from .models import User, AuthToken
 
 
 class UserSerializer(XModelSerializer):
@@ -15,10 +15,16 @@ class UserSerializer(XModelSerializer):
 
     class Meta:
         model = User
-        fields = ('id', 'phone', 'nickname',
+        fields = ('id', 'phone', 'nickname', 'token',
                   'first_name', 'last_name', 'full_name',
                   'avatar', 'tagline', 'marital_status',
                   'gender', 'birthday', 'city',
                   'province', 'country', 'role',
                   'is_admin', 'activated', 'activated_at',
                   'created_at', 'updated_at', 'last_login')
+
+
+class AuthTokenSerializer(XModelSerializer):
+
+    class Meta:
+        model = AuthToken

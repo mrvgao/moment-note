@@ -1,14 +1,77 @@
 # -*- coding:utf-8 -*-
 
 import uuid
+import binascii
+import os
+import time
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser
+from django.conf import settings
+from django.dispatch import receiver
+from datetime import datetime, timedelta
 from uuidfield import UUIDField
 from imagekit.models import ProcessedImageField
 from imagekit.processors import ResizeToFit, Transpose
+from django.db.models.signals import post_save
 
 from customs.models import EnhancedModel, CommonUpdateAble
-from .managers import UserManager
+from .managers import UserManager, AuthTokenManager
+
+
+@receiver(post_save, sender=settings.AUTH_USER_MODEL)
+def create_auth_token(sender, instance=None, created=False, **kwargs):
+    if created and instance is not None:
+        AuthToken.objects.create(user_id=instance.id)
+
+
+class AuthToken(EnhancedModel, CommonUpdateAble, models.Model):
+
+    """
+    The default authorization token model.
+    """
+    key = models.CharField(max_length=32)
+    user_id = models.CharField(max_length=32, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expired_at = models.DateTimeField()
+
+    objects = AuthTokenManager()
+
+    class Meta:
+        db_table = 'auth_token'
+
+    def save(self, *args, **kwargs):
+        if not self.key:
+            self.key = self.generate_key()
+        self.expired_at = datetime.now() + timedelta(hours=24 * settings.AUTHTOKEN_EXPIRED_DAYS)
+        return super(AuthToken, self).save(*args, **kwargs)
+
+    def generate_key(self):
+        return binascii.hexlify(os.urandom(16)).decode()
+
+    @property
+    def expired_timestamp(self):
+        return int(time.mktime(self.expired_at.timetuple()))
+
+    def expired(self):
+        return self.expired_at < datetime.now()
+
+    @property
+    def user(self):
+        if hasattr(self, '_user'):
+            return self._user
+        else:
+            self._user = User.objects.get_or_none(id=self.user_id)
+            return self._user
+
+    @property
+    def token(self):
+        return {
+            'token': self.key,
+            'expired_at': self.expired_timestamp,
+        }
+
+    def __str__(self):
+        return self.key
 
 
 class User(AbstractBaseUser, EnhancedModel, CommonUpdateAble):
@@ -62,6 +125,13 @@ class User(AbstractBaseUser, EnhancedModel, CommonUpdateAble):
     @property
     def is_staff(self):
         return self.is_admin
+
+    @property
+    def token(self):
+        tk, created = AuthToken.objects.get_or_create(user_id=self.id)
+        if tk.expired():
+            tk = AuthToken.objects.refresh_token(tk)
+        return tk.token
 
 
 class Relationship(CommonUpdateAble, models.Model, EnhancedModel):

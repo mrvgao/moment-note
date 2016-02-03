@@ -100,8 +100,8 @@ class Common(Configuration):
         'PAGE_SIZE': 10,
         'PAGINATE_BY': 10,
         'DEFAULT_AUTHENTICATION_CLASSES': (
-            'rest_framework.authentication.TokenAuthentication',
-            # 'customs.authentications.XTokenAuthentication',
+            # 'rest_framework.authentication.TokenAuthentication',
+            'customs.authentications.XTokenAuthentication',
             # 'rest_framework.authentication.SessionAuthentication',
         ),
         'DEFAULT_PERMISSION_CLASSES': (
@@ -132,7 +132,7 @@ class Common(Configuration):
             'patch',
             'delete'
         ],
-        "api_key": '854ea3143b1cf554dd791ef5930ffccf5cab9b0c',
+        "api_key": '80a93e3c435775c0dec28f6a2ebafa49',
         "is_authenticated": True,
         "is_superuser": True,
         # "permission_denied_handler": 'TODO',

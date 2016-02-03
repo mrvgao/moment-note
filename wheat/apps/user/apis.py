@@ -3,6 +3,7 @@
 from django.contrib.auth.models import AnonymousUser
 from rest_framework import permissions, viewsets, status
 from rest_condition import Or
+from rest_framework.decorators import list_route
 
 from customs.permissions import AllowPostPermission
 from customs.response import SimpleResponse
@@ -136,6 +137,68 @@ class UserViewSet(ListModelMixin,
         '''
         user = UserService.get_user(id=id)
         return SimpleResponse(success=UserService.lazy_delete_user(user))
+
+    @list_route(methods=['post'])
+    def login(self, request):
+        '''
+        User login, return user info if success
+        ### Example Request
+
+            {
+                "phone": "18582227569",
+                "password": "q1w2e3"
+            }
+        ---
+        omit_serializer: true
+        omit_parameters:
+            - form
+        parameters:
+            - name: body
+              paramType: body
+        '''
+        phone = request.data.get('phone', '')
+        password = request.data.get('password', '')
+        result = UserService.login_user(request, phone, password)
+        if result.success:
+            data = UserService.serialize(result.data, context={'request': request})
+            return SimpleResponse(data)
+        return SimpleResponse(errors=result.errors)
+
+    @list_route(methods=['post'])
+    def token(self, request):
+        '''
+        Get token(old or new) by phone and password or refresh old token.
+        ### Example Request
+
+            {
+                "phone": "18582227569",
+                "password": "q1w2e3",
+                "token": "old token"
+            }
+        ---
+        omit_serializer: true
+        omit_parameters:
+            - form
+        parameters:
+            - name: body
+              paramType: body
+        '''
+        key = request.data.get('token', '')
+        if key:
+            token = UserService.get_auth_token(key=key)
+            if token:
+                token = UserService.refresh_auth_token(token)
+                return SimpleResponse(token.token)
+            else:
+                return SimpleResponse(code=codes.INVALID_TOKEN)
+        phone = request.data.get('phone', '')
+        password = request.data.get('password', '')
+        result = UserService.login_user(request, phone, password)
+        if result.success:
+            return SimpleResponse(result.data.token)
+        else:
+            return SimpleResponse(errors=result.errors)
+        return SimpleResponse(success=False)
 
 
 class InvitationViewSet(ListModelMixin,

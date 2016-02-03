@@ -30,3 +30,12 @@ class UserManager(BaseUserManager, CacheableManager):
         user.activated = True
         user.activated_at = datetime.now()
         user.save()
+
+
+class AuthTokenManager(CacheableManager):
+
+    def refresh_token(self, token):
+        if token:
+            token.key = token.generate_key()
+            token.save()
+        return token

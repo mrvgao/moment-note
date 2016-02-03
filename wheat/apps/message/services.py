@@ -38,17 +38,17 @@ class MessageService(BaseService):
     def create_message(cls, message_dict):
         sender_id = message_dict.get('sender_id')
         receiver_id = message_dict.get('receiver_id')
-        chat_type = message_dict.get('chat_type')
+        event = message_dict.get('event')
         content_type = message_dict.get('content_type')
         content = message_dict.get('content')
         if sender_id and receiver_id \
-                and Message.valid_chat_type(chat_type) \
+                and Message.valid_event(event) \
                 and Message.valid_content_type(content_type) \
                 and Message.valid_content(content):
             message = Message.objects.create(
                 sender_id=sender_id,
                 receiver_id=receiver_id,
-                chat_type=chat_type,
+                event=event,
                 content_type=content_type,
                 content=content)
             return message

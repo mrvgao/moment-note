@@ -17,11 +17,9 @@ def listen_on_redis_pubsub():
         print 'receive message:', m
         message_dict = JSONDecoder().decode(m['data'])
         if message_dict['event'] == 'p2p':
-            message_dict['chat_type'] = 'private'
             message = MessageService.create_message(message_dict)
-            message_dict['id'] = message.id
             print 'push message:', message.id
-            r.publish('p2p<', JSONEncoder().encode(message_dict))
+            r.publish('p2p<', JSONEncoder().encode(MessageService.serialize(message)))
         elif message_dict['event'] == 'receive_messages':
             message_ids = message_dict['message_ids']
             MessageService.update_messages_as_received(message_ids)

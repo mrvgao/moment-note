@@ -9,9 +9,9 @@ from customs.models import EnhancedModel, CommonUpdateAble, CacheableManager
 
 
 class Message(CommonUpdateAble, models.Model, EnhancedModel):
-    CHAT_TYPES = (
-        ('private', u'私聊'),
-        ('group', u'群聊'),
+    EVENT_TYPES = (
+        ('p2p', u'私聊'),
+        ('p2g', u'群聊'),
     )
     CONTENT_TYPES = (
         ('text', u'文字'),
@@ -26,7 +26,7 @@ class Message(CommonUpdateAble, models.Model, EnhancedModel):
     id = UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     sender_id = UUIDField(db_index=True)
     receiver_id = UUIDField(db_index=True)
-    chat_type = models.CharField(max_length=15, choices=CHAT_TYPES, db_index=True)
+    event = models.CharField(max_length=15, choices=EVENT_TYPES, db_index=True)
     content_type = models.CharField(max_length=15, choices=CONTENT_TYPES)
     content = JSONField(default={})
     post_date = models.DateTimeField(auto_now_add=True, db_index=True)
@@ -38,9 +38,9 @@ class Message(CommonUpdateAble, models.Model, EnhancedModel):
         db_table = 'message'
 
     @classmethod
-    def valid_chat_type(cls, chat_type):
-        for t, d in Message.CHAT_TYPES:
-            if t == chat_type:
+    def valid_event(cls, event):
+        for t, d in Message.EVENT_TYPES:
+            if t == event:
                 return True
         return False
 

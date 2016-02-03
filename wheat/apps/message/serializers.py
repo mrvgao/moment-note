@@ -9,5 +9,5 @@ class MessageSerializer(XModelSerializer):
     class Meta:
         model = Message
         fields = ('id', 'sender_id', 'receiver_id',
-                  'chat_type', 'content_type', 'content',
+                  'event', 'content_type', 'content',
                   'post_date', 'received',)

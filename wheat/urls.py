@@ -23,4 +23,5 @@ urlpatterns += [
     url(r'^docs/', include('rest_framework_swagger.urls', namespace='rest_framework_swagger')),
 
     url(r'^', include('apps.user.urls')),  # Don't set namespace
+    url(r'^', include('apps.group.urls')),  # Don't set namespace
 ]

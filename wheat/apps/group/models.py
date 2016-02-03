@@ -7,8 +7,10 @@ from jsonfield import JSONCharField, JSONField
 from imagekit.models import ProcessedImageField
 from imagekit.processors import ResizeToFit, Transpose
 
+from customs.models import EnhancedModel, CommonUpdateAble, CacheableManager
 
-class Group(models.Model):
+
+class Group(CommonUpdateAble, models.Model, EnhancedModel):
     GROUP_TYPES = (
         ('common', u'普通群'),
         ('family', u'家庭'),
@@ -22,14 +24,23 @@ class Group(models.Model):
                                  format='JPEG',
                                  options={'quality': 85})
     creator_id = UUIDField(db_index=True)  # 创建者
-    administrators = JSONCharField(max_length=512, default={})  # 管理员
+    admins = JSONCharField(max_length=512, default={})  # 管理员
     members = JSONField(default={})  # 成员列表
     settings = JSONCharField(max_length=512, default={})  # 更多的一些设置
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    objects = CacheableManager()
+
     class Meta:
         db_table = "group"
+
+    @classmethod
+    def valid_group_type(cls, group_type):
+        for t, d in Group.GROUP_TYPES:
+            if t == group_type:
+                return True
+        return False
 
 
 # class GroupProfile(models.Model):
@@ -45,7 +56,7 @@ class Group(models.Model):
 #         db_table = "group_profile"
 
 
-class GroupMember(models.Model):
+class GroupMember(CommonUpdateAble, models.Model, EnhancedModel):
     AUTHORITIES = (
         ("common", u"普通成员"),
         ("admin", u"管理员"),
@@ -61,6 +72,8 @@ class GroupMember(models.Model):
     unread_msgs = models.IntegerField(default=0)  # 有几条未读的消息
     joined_at = models.DateTimeField(auto_now_add=True)
     deleted = models.BooleanField(default=False)
+
+    objects = CacheableManager()
 
     class Meta:
         db_table = "group_member"

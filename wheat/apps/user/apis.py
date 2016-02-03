@@ -93,7 +93,7 @@ class UserViewSet(ListModelMixin,
         return _retrieve(self, request, id)
 
     @is_userself
-    def update(self, request, id, *args, **kwargs):
+    def update(self, request, id):
         '''
         Update user info
         ### Example Request
@@ -129,7 +129,7 @@ class UserViewSet(ListModelMixin,
         return SimpleResponse(success=False)
 
     @admin_required
-    def destroy(self, request, id, *args, **kwargs):
+    def destroy(self, request, id):
         '''
         Delete user, requiring admin permission
         ---

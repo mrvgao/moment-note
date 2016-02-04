@@ -18,14 +18,16 @@ class Group(CommonUpdateAble, models.Model, EnhancedModel):
     id = UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     group_type = models.CharField(max_length=15, choices=GROUP_TYPES, db_index=True)
     name = models.CharField(max_length=50)
-    avatar = ProcessedImageField(max_length=100,
-                                 upload_to='avatars',
-                                 processors=[Transpose(), ResizeToFit(150)],
-                                 format='JPEG',
-                                 options={'quality': 85})
+    avatar = ProcessedImageField(
+        max_length=100,
+        upload_to='avatars',
+        processors=[Transpose(), ResizeToFit(150)],
+        format='JPEG',
+        options={'quality': 85})
     creator_id = UUIDField(db_index=True)  # 创建者
     admins = JSONCharField(max_length=512, default={})  # 管理员
     members = JSONField(default={})  # 成员列表
+    max_members = models.SmallIntegerField(default=15)
     settings = JSONCharField(max_length=512, default={})  # 更多的一些设置
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -61,15 +63,22 @@ class GroupMember(CommonUpdateAble, models.Model, EnhancedModel):
         ("common", u"普通成员"),
         ("admin", u"管理员"),
     )
+    ROLES = (
+        ("p-grandfather", u"爷爷"),
+        ("p-grandmother", u"奶奶"),
+        ("m-grandfather", u"外公"),
+        ("m-grandmother", u"外婆"),
+        ("father", u"父亲"),
+        ("mother", u"母亲"),
+        ("child", u"孩子"),
+    )
     member_id = UUIDField(db_index=True)
     group_id = UUIDField(db_index=True)
     authority = models.CharField(max_length=10, choices=AUTHORITIES, default="common")
     group_remark_name = models.CharField(max_length=50)  # 个人对群的备注名称
-    nickname = models.CharField(max_length=40)  # 个人在群里的名称
+    role = models.CharField(max_length=15, choices=ROLES)
+    nickname = models.CharField(max_length=30)  # 个人在群里的名称
     avatar = models.CharField(max_length=100)  # 个人在群里的头像
-    send_msg_count = models.IntegerField(default=0)  # 个人的消息计数
-    receive_msg_count = models.IntegerField(default=0)  # 其他人的消息计数
-    unread_msgs = models.IntegerField(default=0)  # 有几条未读的消息
     joined_at = models.DateTimeField(auto_now_add=True)
     deleted = models.BooleanField(default=False)
 
@@ -77,3 +86,28 @@ class GroupMember(CommonUpdateAble, models.Model, EnhancedModel):
 
     class Meta:
         db_table = "group_member"
+
+    @classmethod
+    def valid_role(cls, role):
+        for t, d in GroupMember.ROLES:
+            if t == role:
+                return True
+        return False
+
+
+class Invitation(CommonUpdateAble, models.Model, EnhancedModel):
+    id = UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    inviter = UUIDField(db_index=True)  # 邀请者
+    invitee = models.CharField(max_length=100, db_index=True)  # 被邀请者，可能是id,phone,email
+    group_id = UUIDField()  # 被邀请到哪个group
+    role = models.CharField(max_length=15, choices=GroupMember.ROLES)  # 被邀请的角色
+    message = JSONCharField(max_length=512, default={})  # 邀请的信息
+    invite_time = models.DateTimeField(auto_now_add=True)
+    accepted = models.BooleanField(default=False)
+    accept_time = models.DateTimeField(null=True, blank=True, default=None)
+    deleted = models.BooleanField(default=False)
+
+    objects = CacheableManager()
+
+    class Meta:
+        db_table = 'invitation'

@@ -33,6 +33,9 @@ EXPIRED_TOKEN_MSG = "过期的token"
 UNKNOWN_ACTION = 40007
 UNKNOWN_ACTION_MSG = "未知操作"
 
+NOT_EXIST = 40008
+NOT_EXIST_MSG = "不存在请求的资源"
+
 
 ########################################################
 # 账户相关
@@ -95,6 +98,11 @@ INVALID_INVITATION_MSG = "无效的邀请"
 INVITATION_ALREADY_USED = 41019
 INVITATION_ALREADY_USED_MSG = "邀请已失效"
 
+########################################################
+# 群组相关
+########################################################
+UNKNOWN_GROUP = 42001
+UNKNOWN_GROUP_MSG = "群不存在"
 
 messages = {}
 for name in dir():

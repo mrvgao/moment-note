@@ -90,11 +90,12 @@ class User(AbstractBaseUser, EnhancedModel, CommonUpdateAble):
     first_name = models.CharField(max_length=20, blank=True)  # 名字选填
     last_name = models.CharField(max_length=20)  # 姓氏必填
     full_name = models.CharField(max_length=40, blank=True, db_index=True)  # 可起到搜索作用
-    avatar = ProcessedImageField(max_length=100,
-                                 upload_to='avatars',
-                                 processors=[Transpose(), ResizeToFit(150)],
-                                 format='JPEG',
-                                 options={'quality': 85})
+    avatar = ProcessedImageField(
+        max_length=100,
+        upload_to='avatars',
+        processors=[Transpose(), ResizeToFit(150)],
+        format='JPEG',
+        options={'quality': 85})
     tagline = models.CharField(max_length=100, blank=True)  # 个人的签名档
     gender = models.CharField(max_length=1, default='N', choices=GENDERS)
     marital_status = models.BooleanField(default=False)  # 婚否
@@ -135,35 +136,31 @@ class User(AbstractBaseUser, EnhancedModel, CommonUpdateAble):
 
 
 class Relationship(CommonUpdateAble, models.Model, EnhancedModel):
-    ''' 关系表 '''
+    ''' 血缘关系表 '''
     RELATIONS = (
         ('husband-wife', u'夫妻'),
         ('father-child', u'父子/女'),
         ('mother-child', u'母子/女'),
-        ('friend-friend', u'朋友')
     )
     from_user_id = UUIDField(db_index=True)
     to_user_id = UUIDField(db_index=True)
     relation = models.CharField(max_length=15, db_index=True,
-                                choices=RELATIONS, default="friend-friend")  # 关系的名称
+                                choices=RELATIONS)  # 关系的名称
     created_at = models.DateTimeField(auto_now_add=True)
+    deleted = models.BooleanField(default=False)
 
     class Meta:
         db_table = "relationship"
 
 
 class FriendShip(CommonUpdateAble, models.Model, EnhancedModel):
-    ''' 朋友，也即通讯录 '''
-    user_id = UUIDField(db_index=True)  # 谁的通讯录
-    friend_id = UUIDField()  # 朋友id
-    friend_name = models.CharField(max_length=40)  # 朋友的名称
-    friend_phone = models.CharField(max_length=18)  # 朋友的手机
-    remark_name = models.CharField(max_length=40)  # 备注名，默认是contact_name
-    first_char = models.CharField(max_length=1)  # 首字母，便于搜索
-    remark_tags = models.CharField(max_length=50)  # 标签
-    send_msg_count = models.IntegerField(default=0)  # 发送了几条消息
-    receive_msg_count = models.IntegerField(default=0)  # 收到几条消息
-    unread_msgs = models.IntegerField(default=0)  # 几条未读消息
+    ''' 好友关系表，包含了血缘关系 '''
+    user_a = UUIDField(db_index=True)
+    user_b = UUIDField(db_index=True)
+    user_a_name = models.CharField(max_length=40)  # 备注名
+    user_b_name = models.CharField(max_length=40)  # 备注名
+    inviter = UUIDField()  # 关系的发起者
+    created_at = models.DateTimeField(auto_now_add=True)
     deleted = models.BooleanField(default=False)
 
     class Meta:
@@ -206,23 +203,6 @@ class Captcha(CommonUpdateAble, models.Model, EnhancedModel):
 
     class Meta:
         db_table = 'captcha'
-
-
-class Invitation(CommonUpdateAble, models.Model, EnhancedModel):
-    ''' 如果invitee为空（未注册或者找不到Ta），可以通过phone或者email邀请 '''
-    inviter_id = UUIDField(db_index=True)  # 邀请者
-    invitee_id = UUIDField(db_index=True)  # 被邀请者
-    phone = models.CharField(max_length=18)
-    relation = models.CharField(max_length=15)  # invitee是inviter的什么人
-    message = models.CharField(max_length=200)  # 邀请语
-    invitation_code = models.CharField(max_length=10)  # 也可以邀请码的方式
-    invitation_url = models.CharField(max_length=100)  # 邀请链接
-    accepted = models.BooleanField(default=False)
-    ignore = models.BooleanField(default=False)
-    deleted = models.BooleanField(default=False)
-
-    class Meta:
-        db_table = 'invitation'
 
 
 class AppSetting(CommonUpdateAble, models.Model, EnhancedModel):

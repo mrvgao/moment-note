@@ -2,7 +2,7 @@
 
 from customs.serializers import XModelSerializer
 from customs.fields import XImageField
-from .models import Group, GroupMember
+from .models import Group, GroupMember, Invitation
 
 
 class GroupSerializer(XModelSerializer):
@@ -17,11 +17,17 @@ class GroupSerializer(XModelSerializer):
         model = Group
         fields = ('id', 'group_type', 'name',
                   'avatar', 'creator_id',
-                  'admins', 'members', 'settings',
-                  'created_at', 'updated_at')
+                  'admins', 'members', 'max_members',
+                  'settings', 'created_at', 'updated_at')
 
 
 class GroupMemberSerializer(XModelSerializer):
 
     class Meta:
         model = GroupMember
+
+
+class InvitationSerializer(XModelSerializer):
+
+    class Meta:
+        model = Invitation

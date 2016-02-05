@@ -149,7 +149,7 @@ class GroupService(BaseService):
 
     @classmethod
     @transaction.atomic
-    def accept_invitation(cls, invitee, invitation):
+    def accept_group_invitation(cls, invitee, invitation):
         if str(invitee.id) != invitation.invitee:
             return False
         group = GroupService.get_group(id=invitation.group_id)

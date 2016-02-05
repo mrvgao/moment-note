@@ -186,7 +186,7 @@ class InvitationViewSet(viewsets.GenericViewSet):
             success = GroupService.delete_invitation(request.user, request.invitation)
             return SimpleResponse(success=success)
         elif accepted is True:
-            success = GroupService.accept_invitation(request.user, request.invitation)
+            success = GroupService.accept_group_invitation(request.user, request.invitation)
             return SimpleResponse(success=success)
         else:
             return SimpleResponse(status=status.HTTP_400_BAD_REQUEST)

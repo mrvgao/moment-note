@@ -3,14 +3,14 @@
 import redis
 from optparse import make_option
 from json import JSONDecoder, JSONEncoder
-
 from django.core.management.base import BaseCommand
+from settings import REDIS_PUBSUB_DB
 
 from apps.message.services import MessageService
 
 
 def listen_on_redis_pubsub():
-    r = redis.StrictRedis(db=2)
+    r = redis.StrictRedis(db=REDIS_PUBSUB_DB)
     p = r.pubsub(ignore_subscribe_messages=True)
     p.subscribe(">p2p")
     for m in p.listen():

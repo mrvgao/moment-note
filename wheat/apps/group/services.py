@@ -2,8 +2,10 @@
 
 from datetime import datetime
 from django.db import transaction
+from settings import REDIS_PUBSUB_DB
 
 from customs.services import BaseService
+from utils.redis_utils import publish_redis_message
 from .models import Group, GroupMember, Invitation
 from .serializers import GroupSerializer, GroupMemberSerializer, InvitationSerializer
 
@@ -94,7 +96,15 @@ class GroupService(BaseService):
             group_id=group.id,
             role=invitation_dict['role'],
             message=message)
-        # TODO: send invitation
+        # send invitation
+        message = {
+            'event': 'invitation',
+            'sub_event': 'sd_inv',  # send_invitation
+            'invitation_id': invitation.id,
+            'receiver_id': invitation_dict['invitee'],
+            'message': message
+        }
+        publish_redis_message(REDIS_PUBSUB_DB, 'invitation<', message)
         return invitation
 
     @classmethod
@@ -142,6 +152,16 @@ class GroupService(BaseService):
     def accept_invitation(cls, invitee, invitation):
         if str(invitee.id) != invitation.invitee:
             return False
-        invitation.update(accepted=True, accept_time=datetime.now())
         group = GroupService.get_group(id=invitation.group_id)
-        return GroupService.add_group_member(group, invitee, invitation.role)
+        if GroupService.add_group_member(group, invitee, invitation.role):
+            invitation.update(accepted=True, accept_time=datetime.now())
+            # send invitation
+            message = {
+                'event': 'invitation',
+                'sub_event': 'acc_inv_ntf',  # accept_invitation_notify
+                'invitation_id': invitation.id,
+                'receiver_id': invitation.inviter
+            }
+            publish_redis_message(REDIS_PUBSUB_DB, 'invitation<', message)
+            return True
+        return False

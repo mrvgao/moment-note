@@ -105,7 +105,8 @@ class Invitation(CommonUpdateAble, models.Model, EnhancedModel):
     invite_time = models.DateTimeField(auto_now_add=True)
     accepted = models.BooleanField(default=False)
     accept_time = models.DateTimeField(null=True, blank=True, default=None)
-    deleted = models.BooleanField(default=False)
+    deleted = models.BooleanField(default=False)  # 明确不接受则deleted=True
+    notified = models.BooleanField(default=False)  # 是否通知inviter接受或者不接受
 
     objects = CacheableManager()
 

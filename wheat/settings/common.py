@@ -498,3 +498,7 @@ class Common(Configuration):
     # SLUGLIFIER
     # AUTOSLUG_SLUGIFY_FUNCTION = "slugify.slugify"
     # END SLUGLIFIER
+
+    # REDIS DB
+    REDIS_PUBSUB_DB = 2
+    # END REDIS DB

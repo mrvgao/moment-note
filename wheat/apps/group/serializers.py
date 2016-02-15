@@ -1,7 +1,7 @@
 # -*- coding:utf-8 -*-
 
 from customs.serializers import XModelSerializer
-from customs.fields import XImageField
+from customs.fields import XImageField, DictStrField
 from .models import Group, GroupMember, Invitation
 
 
@@ -12,6 +12,9 @@ class GroupSerializer(XModelSerializer):
         required=False,
         use_url=True,
         style={'input_type': 'file'})
+    admins = DictStrField(required=False, allow_blank=True)
+    members = DictStrField(required=False, allow_blank=True)
+    settings = DictStrField(required=False, allow_blank=True)
 
     class Meta:
         model = Group

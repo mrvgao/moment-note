@@ -46,9 +46,8 @@ class GroupService(BaseService):
     @classmethod
     @transaction.atomic
     def create_group(cls, creator, group_type, name, creator_role):
-        if not Group.valid_group_type(group_type):
-            return None
-        if not GroupMember.valid_role(creator_role):
+        if not Group.valid_group_type(group_type) \
+                or not GroupMember.valid_role(creator_role):
             return None
         group = Group.objects.create(
             creator_id=creator.id,
@@ -104,17 +103,15 @@ class GroupService(BaseService):
             'receiver_id': invitation_dict['invitee'],
             'message': message
         }
-        publish_redis_message(REDIS_PUBSUB_DB, 'invitation<', message)
+        publish_redis_message(REDIS_PUBSUB_DB, 'invitation->', message)
         return invitation
 
     @classmethod
     @transaction.atomic
     def add_group_member(cls, group, user, role):
-        if not GroupMember.valid_role(role):
-            return False
-        if user.id in group.members:
-            return False
-        if len(group.members) >= group.max_members:
+        if not GroupMember.valid_role(role) \
+                or user.id in group.members \
+                or len(group.members) >= group.max_members:
             return False
         for member_id, member in group.members.items():
             if member['role'] == role and role != 'child':
@@ -162,6 +159,6 @@ class GroupService(BaseService):
                 'invitation_id': invitation.id,
                 'receiver_id': invitation.inviter
             }
-            publish_redis_message(REDIS_PUBSUB_DB, 'invitation<', message)
+            publish_redis_message(REDIS_PUBSUB_DB, 'invitation->', message)
             return True
         return False

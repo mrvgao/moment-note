@@ -68,6 +68,7 @@ class MessageService(BaseService):
 
     @classmethod
     def get_session_unreceived_messages(cls, sender_id, receiver_id):
+        ''' 获取某次会话中，第一条未接收到的消息之后的所有收发消息 '''
         messages = Message.objects.filter(
             sender_id=sender_id,
             receiver_id=receiver_id,
@@ -82,6 +83,7 @@ class MessageService(BaseService):
 
     @classmethod
     def get_user_unreceived_messages(cls, receiver_id):
+        ''' 获取某个用户的所有未接受到的消息 '''
         senders = set(Message.objects.filter(
             receiver_id=receiver_id,
             received=False).values_list('sender_id', flat=True))
@@ -120,6 +122,7 @@ class GroupMessageService(BaseService):
     @classmethod
     @transaction.atomic
     def create_messages(cls, message_dict):
+        ''' group里面除sender之外的所有成员都会创建一条新消息 '''
         sender_id = message_dict.get('sender_id')
         group_id = message_dict.get('group_id')
         content_type = message_dict.get('content_type')
@@ -128,9 +131,9 @@ class GroupMessageService(BaseService):
                 and GroupMessage.valid_content_type(content_type) \
                 and GroupMessage.valid_content(content):
             group = GroupService.get_group(id=group_id)
-            if not group:
-                return []
             messages = []
+            if not group:
+                return messages
             for member_id, member_info in group.members.items():
                 if member_id == sender_id:
                     continue
@@ -161,6 +164,7 @@ class GroupMessageService(BaseService):
 
     @classmethod
     def get_session_unreceived_messages(cls, group_id, receiver_id):
+        ''' 获取某个群会话中从第一条未接收的消息之后的所有群消息 '''
         messages = GroupMessage.objects.filter(
             group_id=group_id,
             receiver_id=receiver_id,
@@ -174,6 +178,7 @@ class GroupMessageService(BaseService):
 
     @classmethod
     def get_user_unreceived_messages(cls, receiver_id):
+        ''' 获取所有未接收到的群消息 '''
         group_ids = set(GroupMessage.objects.filter(
             receiver_id=receiver_id,
             received=False).values_list('group_id', flat=True))

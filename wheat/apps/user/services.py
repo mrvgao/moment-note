@@ -90,6 +90,13 @@ class UserService(BaseService):
             return Result(code=codes.INCORRECT_CREDENTIAL)
 
     @classmethod
+    def check_auth_token(cls, user_id, token):
+        token_obj = UserService.get_auth_token(user_id=user_id)
+        if token_obj and token_obj.key == token and not token_obj.expired():
+            return True
+        return False
+
+    @classmethod
     def get_auth_token(cls, **kwargs):
         return AuthToken.objects.get_or_none(**kwargs)
 

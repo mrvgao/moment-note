@@ -173,6 +173,7 @@ class GroupMessageService(BaseService):
             return []
         messages = GroupMessage.objects.filter(
             group_id=group_id,
+            receiver_id=receiver_id,
             post_date__gte=messages[0].post_date).order_by('post_date')
         return list(messages)
 

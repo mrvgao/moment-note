@@ -6,7 +6,7 @@ from rest_condition import Or
 from customs.permissions import AllowPostPermission
 from customs.response import SimpleResponse
 from customs.viewsets import ListModelMixin
-from apps.user.permissions import admin_required, login_required
+from apps.user.permissions import login_required
 from .services import MomentService
 
 
@@ -24,16 +24,32 @@ class MomentViewSet(ListModelMixin,
     permission_classes = [
         Or(permissions.IsAuthenticatedOrReadOnly, AllowPostPermission,)]
 
-    @admin_required
+    @login_required
     def list(self, request):
         '''
         List all moments by pages. Admin Required.
         page -- page
+        user_id -- user_id
         ---
         omit_serializer: true
         '''
-        response = super(MomentViewSet, self).list(request)
-        return SimpleResponse(response.data)
+        user_id = request.GET.get('user_id')
+        from_user = request.GET.get('from_user')
+        if user_id:
+            if user_id != str(request.user.id):
+                return SimpleResponse(status=status.HTTP_401_UNAUTHORIZED)
+            moments = MomentService.get_user_moments(user_id=user_id)
+            return SimpleResponse(MomentService.serialize_objs(moments))
+        elif from_user:
+            if from_user != str(request.user.id):
+                return SimpleResponse(status=status.HTTP_401_UNAUTHORIZED)
+            moments = MomentService.get_moments_from_user(user_id=from_user)
+            return SimpleResponse(MomentService.serialize_objs(moments))
+        elif request.user.is_admin:
+            response = super(MomentViewSet, self).list(request)
+            return SimpleResponse(response.data)
+        else:
+            return SimpleResponse(status=status.HTTP_403_FORBIDDEN)
 
     @login_required
     def create(self, request):
@@ -45,7 +61,7 @@ class MomentViewSet(ListModelMixin,
                 "user_id": "xxx",
                 "content_type": "text/pics/pics-text",
                 "content": {"text": "xxx", "pics": "xxx"},
-                "visible": "private/public/group_id"
+                "visible": "private/public/friends/group_id"
             }
         ---
         omit_serializer: true

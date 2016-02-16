@@ -19,19 +19,21 @@ def listen_on_redis_pubsub():
         if message_dict['event'] == 'chat':
             if message_dict['sub_event'] == 'p2p':
                 message = MessageService.create_message(message_dict)
-                print 'push message:', message.id
-                message = MessageService.serialize(message)
-                message['event'] = 'chat'
-                message['sub_event'] = 'p2p'
-                r.publish('chat->', JSONEncoder().encode(message))
+                if message:
+                    print 'push message:', message.id
+                    message = MessageService.serialize(message)
+                    message['event'] = 'chat'
+                    message['sub_event'] = 'p2p'
+                    r.publish('chat->', JSONEncoder().encode(message))
             elif message_dict['sub_event'] == 'p2g':
                 messages = GroupMessageService.create_messages(message_dict)
-                for message in messages:
-                    print 'push message:', message.id
-                    message = GroupMessageService.serialize(message)
-                    message['event'] = 'chat'
-                    message['sub_event'] = 'p2g'
-                    r.publish('chat->', JSONEncoder().encode(message))
+                if messages:
+                    for message in messages:
+                        print 'push message:', message.id
+                        message = GroupMessageService.serialize(message)
+                        message['event'] = 'chat'
+                        message['sub_event'] = 'p2g'
+                        r.publish('chat->', JSONEncoder().encode(message))
         elif message_dict['event'] == 'receive_messages':
             p2p_message_ids = message_dict.get('p2p_message_ids')
             if p2p_message_ids:

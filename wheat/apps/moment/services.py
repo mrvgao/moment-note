@@ -2,8 +2,11 @@
 
 from datetime import datetime
 from django.db import transaction
+from django.db.models import Q
 
 from customs.services import BaseService
+from apps.user.services import UserService
+from apps.group.services import GroupService
 from .models import Moment
 from .serializers import MomentSerializer
 
@@ -59,3 +62,21 @@ class MomentService(BaseService):
             moment.deleted = True
             moment.save()
         return True
+
+    @classmethod
+    def get_user_moments(cls, user_id):
+        friend_ids = UserService.get_user_friend_ids(user_id)
+        group_ids = GroupService.get_user_group_ids(user_id)
+        moments = Moment.objects.filter(
+            Q(Q(user_id__in=friend_ids) & Q(visible__in=['public', 'friends'])) |
+            Q(visible__in=group_ids) |
+            Q(user_id=user_id),
+            deleted=False).order_by('post_date')
+        return moments
+
+    @classmethod
+    def get_moments_from_user(cls, user_id):
+        moments = Moment.objects.filter(
+            user_id=user_id,
+            deleted=False).order_by('post_date')
+        return moments

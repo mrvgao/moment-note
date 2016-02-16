@@ -159,12 +159,13 @@ class FriendShip(CommonUpdateAble, models.Model, EnhancedModel):
     user_b = UUIDField(db_index=True)
     user_a_name = models.CharField(max_length=40)  # 备注名
     user_b_name = models.CharField(max_length=40)  # 备注名
-    inviter = UUIDField()  # 关系的发起者
+    inviter = UUIDField(null=True, blank=True, default='')  # 关系的发起者
     created_at = models.DateTimeField(auto_now_add=True)
     deleted = models.BooleanField(default=False)
 
     class Meta:
         db_table = "friendship"
+        unique_together = ('user_a', 'user_b')
 
 
 class UserCounter(CommonUpdateAble, models.Model, EnhancedModel):

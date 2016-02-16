@@ -25,7 +25,7 @@ class Moment(CommonUpdateAble, models.Model, EnhancedModel):
     content = JSONField(default={})  # {"text": "xx", "pics": []}
     post_date = models.DateTimeField(auto_now_add=True, db_index=True)
     moment_date = models.DateTimeField(auto_now_add=True, db_index=True)
-    visible = models.CharField(max_length=32, db_index=True, default='private')  # private, public, group_id
+    visible = models.CharField(max_length=32, db_index=True, default='private')  # private, public, friends, group_id
     deleted = models.BooleanField(default=False)
 
     objects = CacheableManager()
@@ -47,7 +47,7 @@ class Moment(CommonUpdateAble, models.Model, EnhancedModel):
 
     @classmethod
     def valid_visible_field(cls, visible):
-        return visible == 'public' or visible == 'private' or len(visible) == 32
+        return visible == 'private' or visible == 'public' or visible == 'friends' or len(visible) == 32
 
 
 class MomentStat(CommonUpdateAble, models.Model, EnhancedModel):

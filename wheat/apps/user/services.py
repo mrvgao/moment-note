@@ -6,7 +6,7 @@ from django.contrib.auth import authenticate, login
 from customs.services import BaseService
 from customs.response import Result
 from errors import codes
-from .models import User, AuthToken
+from .models import User, AuthToken, FriendShip
 from .serializers import UserSerializer, AuthTokenSerializer
 
 
@@ -105,3 +105,37 @@ class UserService(BaseService):
     def refresh_auth_token(cls, token):
         token = AuthToken.objects.refresh_token(token)
         return token
+
+    @classmethod
+    @transaction.atomic
+    def create_friendship(cls, user_a, user_b):
+        if user_a == user_b:
+            return None
+        if user_a > user_b:
+            user_a, user_b = user_b, user_a
+        friendship, created = FriendShip.objects.get_or_create(user_a=user_a, user_b=user_b)
+        return friendship
+
+    @classmethod
+    @transaction.atomic
+    def create_friendships(cls, user_id, friend_ids):
+        friendships = []
+        for friend_id in friend_ids:
+            user_a, user_b = user_id, friend_id
+            if user_a > user_b:
+                user_a, user_b = user_b, user_a
+            friendships.append(FriendShip(user_a=user_a, user_b=user_b))
+        if friendships:
+            FriendShip.objects.bulk_create(friendships)
+        return friendships
+
+    @classmethod
+    def get_user_friend_ids(cls, user_id):
+        friend_ids = []
+        ids = FriendShip.objects.filter(user_a=user_id, deleted=False).values_list('user_b', flat=True)
+        for id in ids:
+            friend_ids.append(str(id))
+        ids = FriendShip.objects.filter(user_b=user_id, deleted=False).values_list('user_a', flat=True)
+        for id in ids:
+            friend_ids.append(str(id))
+        return friend_ids

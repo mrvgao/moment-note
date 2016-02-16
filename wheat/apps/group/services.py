@@ -6,6 +6,7 @@ from settings import REDIS_PUBSUB_DB
 
 from customs.services import BaseService
 from utils.redis_utils import publish_redis_message
+from apps.user.services import UserService
 from .models import Group, GroupMember, Invitation
 from .serializers import GroupSerializer, GroupMemberSerializer, InvitationSerializer
 
@@ -116,6 +117,7 @@ class GroupService(BaseService):
         for member_id, member in group.members.items():
             if member['role'] == role and role != 'child':
                 return False
+        member_ids = group.members.keys()
         group.members[str(user.id)] = {
             'name': user.nickname,
             'joined_at': datetime.now(),
@@ -129,7 +131,8 @@ class GroupService(BaseService):
             avatar=user.avatar,
             nickname=user.nickname,
             role=role)
-        # TODO: group里所有成员建立“好友关系”
+        # group里所有成员建立“好友关系”
+        UserService.create_friendships(str(user.id), member_ids)
         return True
 
     @classmethod
@@ -162,3 +165,11 @@ class GroupService(BaseService):
             publish_redis_message(REDIS_PUBSUB_DB, 'invitation->', message)
             return True
         return False
+
+    @classmethod
+    def get_user_group_ids(cls, user_id):
+        group_ids = []
+        ids = GroupMember.objects.filter(member_id=user_id, deleted=False).values_list('group_id', flat=True)
+        for id in ids:
+            group_ids.append(str(id))
+        return group_ids

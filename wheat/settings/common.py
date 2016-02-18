@@ -87,6 +87,7 @@ class Common(Configuration):
         'apps.group',
         'apps.message',
         'apps.moment',
+        'apps.image',
         'apps.pubsub',
     )
     # END LOCAL APPS

@@ -25,4 +25,5 @@ urlpatterns += [
     url(r'^', include('apps.user.urls')),  # Don't set namespace
     url(r'^', include('apps.group.urls')),  # Don't set namespace
     url(r'^', include('apps.moment.urls')),  # Don't set namespace
+    url(r'^', include('apps.image.urls')),  # Don't set namespace
 ]

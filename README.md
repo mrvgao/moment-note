@@ -1,3 +1,15 @@
+### Setup Environment
+
+* install mysql
+* install redis
+* install pip + virtualenv + virtualenvwrapper
+* install packages in requirements/base.txt
+* create mysql database `wheat` with Default Collation `utf8mb4-utf8mb4_general_ci`
+* create folder `migrations` and file `migrations/__init__.py` under every app
+* create tables with two steps: python manage.py makemigrations, python manage.py migrate
+* create superuser: python manage.py createsuperuser, and set his auth_token key as '80a93e3c435775c0dec28f6a2ebafa49' and expired_at long enough
+* login swagger document: /api/0.1/auth/login, and then open /api/0.1/docs/
+
 ### Example users
 
 father

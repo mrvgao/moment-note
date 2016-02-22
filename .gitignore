@@ -48,3 +48,7 @@ media
 
 .ropeproject/
 
+
+*/settings/local.py
+*/settings/production.py
+*/settings/test.py

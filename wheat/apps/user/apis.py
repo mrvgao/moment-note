@@ -143,6 +143,7 @@ class UserViewSet(ListModelMixin,
             return SimpleResponse(status=status.HTTP_409_CONFLICT)
         user = UserService.create_user(phone=phone, password=password, **request.data)
         data = UserService.serialize(user)
+        UserService.login_user(request, phone, password)
         return SimpleResponse(data)
 
     @check_request('user')
@@ -232,6 +233,7 @@ class UserViewSet(ListModelMixin,
         phone = request.data.get('phone', '')
         password = request.data.get('password', '')
         result = UserService.login_user(request, phone, password)
+
         if result.success:
             data = UserService.serialize(result.data, context={'request': request})
             return SimpleResponse(data)

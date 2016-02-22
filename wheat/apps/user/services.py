@@ -148,7 +148,6 @@ class UserService(BaseService):
         if user:
             if user.activated:
                 login(request, user)
-                import pdb; pdb.set_trace()
                 request.session.setdefault('user_id', user.id)
                 return Result(data=user)
             else:

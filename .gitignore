@@ -1,7 +1,9 @@
 # Basics
 *.py[cod]
 *.pyc
-migrations/
+00*
+migrations/0*
+build/
 __pycache__
 
 # Logs

@@ -39,8 +39,47 @@ class UserViewSet(ListModelMixin,
         ---
         omit_serializer: true
         '''
+
         response = super(UserViewSet, self).list(request)
         return SimpleResponse(response.data)
+
+    @list_route(methods=['get'])
+    def register(self, request):
+        '''
+        获取关于注册列表的相关信息
+
+        ### Request example:
+
+        URL: {API_URL}/users/register?phone=18582227569 
+
+        phone -- phone number
+        ---
+        omit_serializer: true 
+        '''
+        PHONE = 'phone'
+        phone = request.query_params.get(PHONE, None)
+        if phone:
+            return self._check_if_registed(phone)
+        else:
+            return SimpleResponse(errors='query_params not support')
+
+
+    def _check_if_registed(self, phone):
+        user = UserService.get_users(phone=phone)
+
+        context = {
+            "data": {
+                "phone": "18582227569",
+                "registered": False
+            },
+            "request": "success"
+        }
+
+        if len(user) != 0:
+            context['data']['registered'] = True
+
+        return SimpleResponse(context)
+
 
     def create(self, request):
         '''

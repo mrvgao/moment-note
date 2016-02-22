@@ -13,6 +13,7 @@ from utils import utils
 from .permissions import admin_required, is_userself
 from .validators import check_request
 from .services import UserService
+from .services import MessageService
 
 
 class UserViewSet(ListModelMixin,
@@ -199,6 +200,83 @@ class UserViewSet(ListModelMixin,
         else:
             return SimpleResponse(errors=result.errors)
         return SimpleResponse(success=False)
+
+    @list_route(methods=['post'])
+    def captcha(self, request):
+        '''
+        Does actions for captcha.
+
+        用以处理和验证码相关的信息，根据action不同，可以有发送验证码（action = send）， 检查验证码是否相符（action = check）
+        ### Example Request
+
+            {
+                "phone": "18582227569"
+                // 该请求为发送验证码时候的请求
+            }
+
+            {
+                 "phone": "18857453090",
+                 "captcha": "259070"
+                 // 该请求为检查验证码是否相符时候的请求
+            }
+            
+
+        action -- action
+        ---
+        omit_serializer: true
+        omit_parameters:
+            - form
+        parameters:
+            - name: phone
+              paramType: body
+        '''
+
+        ACTION = 'action'
+        SEND, CHECK = 'send', 'check'
+        action = request.query_params.get(ACTION, None)
+        if action == SEND:
+            phone = request.data.get('phone', None)
+            return self._send_message(phone)
+        elif action == CHECK:
+            phone = request.data.get('phone', None)
+            captcha = request.data.get('captcha', None)
+            return self._check_captcha(phone, captcha)    
+        else:
+            return SimpleResponse(errors='action not supply')
+
+    def _check_captcha(self, phone, captcha):
+        match = MessageService.check_captcha(phone=phone, captcha=captcha)
+        return_context = {
+            'data': {
+                'phone': phone,
+                'captcha': captcha,
+                'matched': False
+            },
+            'request': 'success'
+        }
+
+        if match:
+            return_context['data']['matched'] = True
+
+        return SimpleResponse(return_context)
+
+    def _send_message(self, phone):
+        send_succeed, code = MessageService.send_message(phone)
+        
+        return_context = {
+            'data': {
+                'phone': phone,
+                'captcha': code
+            },
+
+            'request': 'success'
+        }
+
+        if not send_succeed:
+            return_context['request'] = 'failed'
+            return SimpleResponse(success=False)
+        else:
+            return SimpleResponse(return_context)
 
 
 class InvitationViewSet(ListModelMixin,

@@ -5,7 +5,7 @@
 * 检查手机号是否已注册
 
 Method: `GET`
-URL: {API_URL}/users/?phone=18582227569
+URL: {API_URL}/users/register?phone=18582227569
 Response:
 ```
 {

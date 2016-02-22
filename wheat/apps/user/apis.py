@@ -81,6 +81,39 @@ class UserViewSet(ListModelMixin,
         return SimpleResponse(context)
 
 
+    @list_route(methods=['post'])
+    def password(self, request):
+        '''
+        修改用户的密码，用于重置密码
+
+        ###Example Reqeust
+
+        {
+            "phone": "18582227569",
+            "password": "12345678"
+        }
+        ---
+        omit_serializer: true
+        omit_parameters:
+            - form
+        parameters:
+            - name: body
+              paramType: body
+        '''
+
+        phone = request.data.get('phone', None)
+        user = UserService.get_user(phone=phone)
+        return self._update_user_info(user, request.data)
+        
+    def _update_user_info(self, user, data):
+        if not user:
+            return SimpleResponse(errors=codes.errors(codes.USER_NOT_EXIST))
+        success = UserService.update_user(user, **data)
+        if success:
+            data = UserService.serialize(user)
+            return SimpleResponse(data)
+        return SimpleResponse(success=False)
+
     def create(self, request):
         '''
         Registration.

@@ -51,7 +51,7 @@ class MomentViewSet(ListModelMixin,
         else:
             return SimpleResponse(status=status.HTTP_403_FORBIDDEN)
 
-    @login_required
+    #@login_required
     def create(self, request):
         '''
         Create Moment.
@@ -71,19 +71,26 @@ class MomentViewSet(ListModelMixin,
             - name: body
               paramType: body
         '''
+        import pdb; pdb.set_trace()
         user_id = request.data.get('user_id')
         content_type = request.data.get('content_type')
         content = request.data.get('content')
         visible = request.data.get('visible')
-        if user_id != str(request.user.id):
+
+        session_user_id = request.session.get('user_id', None) # user id in session. If login, its value is user.id, or is null
+        if user_id != str(session_user_id):
             return SimpleResponse(status=status.HTTP_401_UNAUTHORIZED)
+            
         moment = MomentService.create_moment(
             user_id=user_id,
             content_type=content_type,
             content=content,
             visible=visible)
         if not moment:
-            return SimpleResponse(status=status.HTTP_400_BAD_REQUEST)
+            return SimpleResponse(
+                status=status.HTTP_400_BAD_REQUEST,
+                errors='please check request format, pic must be an array'
+            )
         return SimpleResponse(MomentService.serialize(moment))
 
     @login_required

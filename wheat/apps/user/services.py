@@ -142,12 +142,22 @@ class UserService(BaseService):
             return True
         return False
 
+
+    @staticmethod
+    def set_session_user_id(request, user_id):
+        '''
+        Set session user id. When user login or created.
+        '''
+        request.session.setdefault('user_id', user_id)
+
+        
     @classmethod
     def login_user(cls, request, phone, password):
         user = authenticate(username=phone, password=password)
         if user:
             if user.activated:
                 login(request, user)
+                UserService.set_session_user_id(request, user.id)
                 return Result(data=user)
             else:
                 return Result(code=codes.INACTIVE_ACCOUNT)

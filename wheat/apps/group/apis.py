@@ -25,16 +25,50 @@ class GroupViewSet(ListModelMixin,
     permission_classes = [
         Or(permissions.IsAuthenticatedOrReadOnly, AllowPostPermission,)]
 
-    @admin_required
+    # @admin_required
+    @login_required
     def list(self, request):
         '''
+        获得群组的列表，若owner-id和type为空 则列出全部群组的id
         List all groups by pages. Admin Required.
+
         page -- page
+        owner-id -- group所有者的id
+        type -- 该group的类型
         ---
         omit_serializer: true
         '''
-        response = super(GroupViewSet, self).list(request)
-        return SimpleResponse(response.data)
+
+        OWNER_ID = 'owner-id'
+        TYPE = 'type'
+        owner_id = request.query_params.get(OWNER_ID, None)
+        group_type = request.query_params.get(TYPE, None)
+
+        ALL_FRIENDS = 'all_friends'
+
+        if owner_id:
+            if group_type == ALL_FRIENDS:
+                result = GroupService.get_all_friend_group(owner_id)
+            elif group_type is None:
+                result = GroupService.filter_group(creator_id=owner_id)
+            else:
+                result = GroupService.filter_group(creator_id=owner_id, group_type=group_type)
+
+            result = GroupService.serialize_list(result)
+            return SimpleResponse(result)
+
+        else:
+            response = super(GroupViewSet, self).list(request)
+            return SimpleResponse(response.data)
+
+    def _get_specific_group(owner_id, group_type):
+        '''
+        Gets specific group's information by owner_id and group_type.
+        Returns:
+            this group list.
+
+        '''
+        pass
 
     @login_required
     def create(self, request):

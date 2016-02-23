@@ -31,6 +31,12 @@ class GroupService(BaseService):
         elif model == 'Invitation':
             return InvitationSerializer
 
+
+    @staticmethod
+    def serialize_list(obj_list):
+        if len(obj_list) > 0 and isinstance(obj_list[0], Group):
+            return GroupSerializer(obj_list, many=True).data
+            
     @classmethod
     def serialize(cls, obj, context={}):
         if isinstance(obj, Group):
@@ -40,13 +46,37 @@ class GroupService(BaseService):
         elif isinstance(obj, Invitation):
             return InvitationSerializer(obj, context=context).data
 
+
+    @staticmethod
+    def get_all_friend_group(owner_id):
+        ALL_FRIENDS = 'all_friends'
+        
+        user = UserService.get_user(id=owner_id)
+        result = Group.objects.filter(creator_id=owner_id, group_type=ALL_FRIENDS)
+
+        if user and len(result) == 0: # if this person no initial all friend group
+
+            SELF = 'self'
+            GroupService.create_group(
+                creator=user, group_type=ALL_FRIENDS, name=ALL_FRIENDS, creator_role=SELF
+            )
+
+            result = Group.objects.filter(creator_id=owner_id, group_type=ALL_FRIENDS)
+
+        return result
+
+    @staticmethod
+    def filter_group(**kwargs):
+        return Group.objects.filter(**kwargs)
+
     @classmethod
     def get_group(cls, **kwargs):
-        return Group.objects.get_or_none(**kwargs)
+        result =  Group.objects.get_or_none(**kwargs)
+        return result
 
     @classmethod
     @transaction.atomic
-    def create_group(cls, creator, group_type, name, creator_role):
+    def create_group(cls, creator, group_type, name, creator_role=None):
         if not Group.valid_group_type(group_type) \
                 or not GroupMember.valid_role(creator_role):
             return None
@@ -63,14 +93,16 @@ class GroupService(BaseService):
                 'joined_at': datetime.now(),
                 'role': creator_role
             }})
-        GroupMember.objects.create(
-            member_id=creator.id,
-            group_id=group.id,
-            authority='admin',
-            group_remark_name=name,
-            avatar=creator.avatar,
-            nickname=creator.nickname,
-            role=creator_role)
+
+        if creator_role is not None: 
+            GroupMember.objects.create(
+                member_id=creator.id,
+                group_id=group.id,
+                authority='admin',
+                group_remark_name=name,
+                avatar=creator.avatar,
+                nickname=creator.nickname,
+                role=creator_role)
         return group
 
     @classmethod

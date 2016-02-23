@@ -8,7 +8,7 @@ from apps.user.services import MessageService
 
 class MessageServiceTestCase(TestCase):
 	def test_send_message(self):
-		phone = '18857453090'
+		phone = '13362133816'
 		return_status = MessageService.send_message(phone)
 		self.assertIsNotNone(return_status)
 		self.assertEqual(return_status[0], True)

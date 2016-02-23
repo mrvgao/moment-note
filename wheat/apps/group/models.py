@@ -76,6 +76,7 @@ class GroupMember(CommonUpdateAble, models.Model, EnhancedModel):
         ("father", u"父亲"),
         ("mother", u"母亲"),
         ("child", u"孩子"),
+        ("self", "self")
     )
     member_id = UUIDField(db_index=True)
     group_id = UUIDField(db_index=True)

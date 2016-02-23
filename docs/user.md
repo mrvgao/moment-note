@@ -214,6 +214,20 @@ Response:
 
 #### 邀请家庭成员
 
+* 获得该用户的全部群组
+
+为了方便诸如家庭状态等信息的统一管理，我们把全部好友视为一个“大群”。 邀请一个好友，就类似于把一个人加入自己的一个群中。 所以当某个用户A邀请某人的时候，需要首先获得该用户A的全部“群”， 然后找到叫做“friend”的这个群的id，然后利用“发送邀请的id”， 把新好友加入进来。
+
+Method: `POST`
+URL: {API_URL}/users/groups?type=friend          // type == friend时候，获取该用户全部好友所属的群号，若无type，则返回所有群组
+Auth: Login required
+Request:
+```
+{
+  "user_id": "34f3ba7121d348b29f17fa0dd1678a3a"
+}
+```
+
 * 发送邀请
 
 与本人的关系：爷爷/奶奶/外公/外婆/爸爸/妈妈/公公(岳父)/婆婆(岳母)/儿子/女儿/老公/老婆/女婿/媳妇/亲家公/亲家母/孙子/孙女/外孙/外孙女/亲兄弟/亲姐妹
@@ -225,7 +239,7 @@ Auth: Loign required
 Request:
 ```
 {
-    "group_id": "34f3ba7121d348b29f17fa0dd1678a3a",
+    "group_id": "34f3ba7121d348b29f17fa0dd1678a3a", 
     "invitee": "0787ac6ad30b4bdeafc654a225eb96ba",
     "relation": "mother",
     "message": "欢迎来到麦粒家庭"

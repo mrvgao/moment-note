@@ -68,15 +68,12 @@ class UserViewSet(ListModelMixin,
         user = UserService.get_users(phone=phone)
 
         context = {
-            "data": {
-                "phone": "18582227569",
-                "registered": False
-            },
-            "request": "success"
+            "phone": "18582227569",
+            "registered": False
         }
 
         if len(user) != 0:
-            context['data']['registered'] = True
+            context['registered'] = True
 
         return SimpleResponse(context)
 
@@ -320,16 +317,13 @@ class UserViewSet(ListModelMixin,
     def _check_captcha(self, phone, captcha):
         match = MessageService.check_captcha(phone=phone, captcha=captcha)
         return_context = {
-            'data': {
-                'phone': phone,
-                'captcha': captcha,
-                'matched': False
-            },
-            'request': 'success'
+            'phone': phone,
+            'captcha': captcha,
+            'matched': False
         }
 
         if match:
-            return_context['data']['matched'] = True
+            return_context['matched'] = True
 
         return SimpleResponse(return_context)
 
@@ -337,16 +331,11 @@ class UserViewSet(ListModelMixin,
         send_succeed, code = MessageService.send_message(phone)
 
         return_context = {
-            'data': {
-                'phone': phone,
-                'captcha': code
-            },
-
-            'request': 'success'
+            'phone': phone,
+            'captcha': code
         }
 
         if not send_succeed:
-            return_context['request'] = 'failed'
             return SimpleResponse(success=False)
         else:
             return SimpleResponse(return_context)

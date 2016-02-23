@@ -280,7 +280,8 @@ class UserViewSet(ListModelMixin,
         '''
         Does actions for captcha.
 
-        用以处理和验证码相关的信息，根据action不同，可以有发送验证码（action = send）， 检查验证码是否相符（action = check）
+        用以处理和验证码相关的信息，根据action不同，可以有发送验证码（action = send），
+        检查验证码是否相符（action = check）
         ### Example Request
 
             {
@@ -293,7 +294,6 @@ class UserViewSet(ListModelMixin,
                  "captcha": "259070"
                  // 该请求为检查验证码是否相符时候的请求
             }
-            
 
         action -- action
         ---
@@ -314,7 +314,7 @@ class UserViewSet(ListModelMixin,
         elif action == CHECK:
             phone = request.data.get('phone', None)
             captcha = request.data.get('captcha', None)
-            return self._check_captcha(phone, captcha)    
+            return self._check_captcha(phone, captcha)
         else:
             return SimpleResponse(errors='action not supply')
 
@@ -336,7 +336,7 @@ class UserViewSet(ListModelMixin,
 
     def _send_message(self, phone):
         send_succeed, code = MessageService.send_message(phone)
-        
+
         return_context = {
             'data': {
                 'phone': phone,

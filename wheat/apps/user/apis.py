@@ -80,7 +80,6 @@ class UserViewSet(ListModelMixin,
 
         return SimpleResponse(context)
 
-
     @list_route(methods=['post'])
     def password(self, request):
         '''

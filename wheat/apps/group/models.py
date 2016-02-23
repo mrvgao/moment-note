@@ -14,9 +14,14 @@ class Group(CommonUpdateAble, models.Model, EnhancedModel):
     GROUP_TYPES = (
         ('common', u'普通群'),
         ('family', u'家庭'),
+        ('all_friends', u'所有好友'),
     )
     id = UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    group_type = models.CharField(max_length=15, choices=GROUP_TYPES, db_index=True)
+    group_type = models.CharField(
+        max_length=15,
+        choices=GROUP_TYPES,
+        db_index=True
+    )
     name = models.CharField(max_length=50)
     avatar = ProcessedImageField(
         max_length=100,

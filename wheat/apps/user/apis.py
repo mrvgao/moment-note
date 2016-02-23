@@ -128,8 +128,11 @@ class UserViewSet(ListModelMixin,
             - name: body
               paramType: body
         '''
-        phone = request.data.pop('phone', None)
-        password = request.data.pop('password', None)
+
+#        request.POST._mutable = True
+#        post_data = request.data.copy()
+        phone = request.data.get('phone', None)
+        password = request.data.get('password', None)
         if not phone or not password:
             return SimpleResponse(status=status.HTTP_400_BAD_REQUEST)
         if not utils.valid_phone(phone) or not utils.valid_password(password):
@@ -137,7 +140,7 @@ class UserViewSet(ListModelMixin,
         user = UserService.get_user(phone=phone)
         if user:
             return SimpleResponse(status=status.HTTP_409_CONFLICT)
-        user = UserService.create_user(phone=phone, password=password, **request.data)
+        user = UserService.create_user(**request.data)
         data = UserService.serialize(user)
         UserService.login_user(request, phone, password)
         return SimpleResponse(data)
@@ -334,7 +337,7 @@ class UserViewSet(ListModelMixin,
             'phone': phone,
             'captcha': code
         }
-
+        
         if not send_succeed:
             return SimpleResponse(success=False)
         else:

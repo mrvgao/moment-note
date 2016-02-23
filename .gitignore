@@ -52,3 +52,7 @@ media
 */settings/local.py
 */settings/production.py
 */settings/test.py
+
+*/static/admin/
+*/static/rest_framework_swagger/
+*/static/rest_framework/

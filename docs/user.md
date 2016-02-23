@@ -240,7 +240,7 @@ Request:
 ```
 {
     "group_id": "34f3ba7121d348b29f17fa0dd1678a3a", 
-    "invitee": "0787ac6ad30b4bdeafc654a225eb96ba",
+    "invitee": "18805711234",
     "relation": "mother",
     "message": "欢迎来到麦粒家庭"
 }

@@ -36,7 +36,7 @@ class GroupService(BaseService):
     def serialize_list(obj_list):
         if len(obj_list) > 0 and isinstance(obj_list[0], Group):
             return GroupSerializer(obj_list, many=True).data
-            
+
     @classmethod
     def serialize(cls, obj, context={}):
         if isinstance(obj, Group):
@@ -136,6 +136,8 @@ class GroupService(BaseService):
             'receiver_id': invitation_dict['invitee'],
             'message': message
         }
+
+        # if user is registered
         publish_redis_message(REDIS_PUBSUB_DB, 'invitation->', message)
         return invitation
 

@@ -8,6 +8,7 @@ from customs.response import SimpleResponse
 from customs.viewsets import ListModelMixin
 from apps.user.permissions import admin_required, login_required
 from .services import GroupService
+from apps.user.services import UserService
 from .validators import check_request
 
 
@@ -165,8 +166,8 @@ class InvitationViewSet(viewsets.GenericViewSet):
         ### Example Request
 
             {
-                "group_id": "xxx",
-                "invitee": "xxx",
+                "group_id": "a2b7c193f5df42a69942d0bc848c0467",
+                "invitee": "18805710001",
                 "role": "p-grandfather/p-grandmother/m-grandfather/m-grandmother/father/mother/child",
                 "message": "xxx"
             }
@@ -184,18 +185,52 @@ class InvitationViewSet(viewsets.GenericViewSet):
         message = request.data.get('message')
         if not group_id or not invitee or not role or not message:
             return SimpleResponse(status=status.HTTP_400_BAD_REQUEST)
+
         group = GroupService.get_group(id=group_id)
         if not group:
-            return SimpleResponse(status=status.HTTP_400_BAD_REQUEST)
+            return SimpleResponse(status=status.HTTP_400_BAD_REQUEST, errors="this group not found")
+
         invitation_dict = {
             'invitee': invitee,
             'role': role,
             'message': message
         }
-        invitation = GroupService.create_group_invitation(group, request.user, invitation_dict)
-        if invitation:
-            return SimpleResponse(GroupService.serialize(invitation))
-        return SimpleResponse(status=status.HTTP_400_BAD_REQUEST)
+
+        user_id = request.session.get('user_id', None)
+
+        user_okay = False
+        invitation_okay = False
+
+        try:
+            return self._create_invitation_by_group_and_user_id(user_id, group, invitation_dict)
+        except SyntaxError as e:
+            return SimpleResponse(status=status.HTTP_400_BAD_REQUEST, errors="invitation is unvalid")
+        except ReferenceError as e:
+            return SimpleResponse(status=status.HTTP_400_BAD_REQUEST, errors="You haven't login before giving invitation")
+
+    def _create_invitation_by_group_and_user_id(self, user_id, group, invitation_dict):
+        '''
+        Creates invitation message by group and user_id
+
+        Raises:
+            SyntaxError: if invitation initial informaiton is error, e.g, wrong user, wrong group, wrong dict, will raise this error
+            ReferenceError: if give wrong user_id, raise this error
+
+        Returns:
+            SimpleResponse: Invitation Response
+
+        Author: Minchiuan 2016-2-23
+        '''
+
+        user = UserService.get_user(id=user_id)
+        if user:
+            invitation = GroupService.create_group_invitation(group, user, invitation_dict)
+            if invitation:
+                return SimpleResponse(GroupService.serialize(invitation))
+            else:
+                raise SyntaxError('invitation initial message is error')
+        else:
+            raise ReferenceError('user id is error, no this user') # not login
 
     @login_required
     @check_request('invitation')

@@ -8,6 +8,10 @@ from customs.response import SimpleResponse
 from customs.viewsets import ListModelMixin
 from apps.user.permissions import login_required
 from .services import MomentService
+from . import services
+from rest_framework.decorators import list_route
+from .serializers import MomentSerializer
+
 
 
 class MomentViewSet(ListModelMixin,
@@ -28,28 +32,76 @@ class MomentViewSet(ListModelMixin,
     def list(self, request):
         '''
         List all moments by pages. Admin Required.
-        page -- page
-        user_id -- user_id
+        获取和家信息
+
+        ### Example Request:
+        Url: {API_URL}/moments/?receiver={id}&sender={id}&number={int}&begin-id={id}&compare={previous/after}
+
+        获取某人的和家页面的moments（不限制非得本人发的）
+
+        具体使用说明请参加以下参数说明，经过各种组合即可获得想要的数据
+
+        ### Example Requests
+
+        e.g 01.
+        /moment/?receiver=b231asd&begin=ajkdajkwld123&step=15&compare=previous
+
+        表示，获取与begin最接近的15条数据，会获得包括自己在内的所有好友发送的和家信息
+
+        e.g 02.
+        /moment?receiver=b123dwad&sender=dakwdjlka21231&compare=previous
+
+        表示，获取sender发送的且receiver能够看到的和家信息
+
+        e.g 03
+        /moment?receiver=alskjdajkls12&compare=previous
+
+        表示，获取receiver能接受到的最近的10条信息
+
+        e.g 04
+
+        /moment?receiver=b123asd128hjkasdhjk&begin=ajkhsd1234hkjasdhjk&step＝15compare=after
+        表示，获取比begin更新的15条数据
+
+
+        receiver -- 接收者的id, 为保证信息的安全，接收者的id必须与当前session的user_id一致，否则请求错误
+        sender -- 发送者的id， 可以为空，为空则返回所有好友的和家信息
+        number -- 获得的信息数量， 可以为空，为空则至多返回10条
+        begin-id -- 起始信息的id，可以为空，为空则返回系统中该用户可见的最新的信息（该信息有可能意见阅读或尚未阅读过）
+        compare -- 在begin－id之前发送的（previous）还是之后发送的（after），可以为空，为空时，既获得历史消息
+
+
         ---
         omit_serializer: true
         '''
-        user_id = request.GET.get('user_id')
-        from_user = request.GET.get('from_user')
-        if user_id:
-            if user_id != str(request.user.id):
-                return SimpleResponse(status=status.HTTP_401_UNAUTHORIZED)
-            moments = MomentService.get_user_moments(user_id=user_id)
-            return SimpleResponse(MomentService.serialize_objs(moments))
-        elif from_user:
-            if from_user != str(request.user.id):
-                return SimpleResponse(status=status.HTTP_401_UNAUTHORIZED)
-            moments = MomentService.get_moments_from_user(user_id=from_user)
-            return SimpleResponse(MomentService.serialize_objs(moments))
-        elif request.user.is_admin:
-            response = super(MomentViewSet, self).list(request)
-            return SimpleResponse(response.data)
+
+        RECEIVER, SENDER, STEP = 'receiver', 'sender', 'number'
+        BEGIN_ID, COMPARE = 'begin-id', 'compare' 
+
+        receiver_id = request.query_params.get(RECEIVER, None)
+        sender_id = request.query_params.get(SENDER, None)
+        step = request.query_params.get(STEP, 10)
+        begin_id = request.query_params.get(BEGIN_ID, None)
+        compare = request.query_params.get(COMPARE, None)
+
+        if receiver_id and receiver_id == str(request.session.get('user_id')):
+            moments = self._get_moment_by_condition(receiver_id, sender_id, step, begin_id, compare)
+            moments_json_data = MomentService.serialize_objs(moments)
+            return SimpleResponse(moments_json_data)
         else:
-            return SimpleResponse(status=status.HTTP_403_FORBIDDEN)
+            return SimpleResponse(
+                status=status.HTTP_401_UNAUTHORIZED, 
+                errors='need receiver_id the same as the id of login use'
+            )
+  
+    def _get_moment_by_condition(self, receiver, sender, step, begin_id, compare):
+        moments = services.get_moment_by_receiver_and_sender_id(receiver, sender)
+
+        moments = services.get_moment_compare_with_begin_id(moments, compare, begin_id)
+
+        moments = services.confine_moment_number(moments, step)
+
+        return moments
 
     #@login_required
     def create(self, request):
@@ -71,7 +123,7 @@ class MomentViewSet(ListModelMixin,
             - name: body
               paramType: body
         '''
-        import pdb; pdb.set_trace()
+
         user_id = request.data.get('user_id')
         content_type = request.data.get('content_type')
         content = request.data.get('content')

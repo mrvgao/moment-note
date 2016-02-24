@@ -184,7 +184,8 @@ class GroupService(BaseService):
     @classmethod
     @transaction.atomic
     def accept_group_invitation(cls, invitee, invitation):
-        if str(invitee.id) != invitation.invitee:
+        import pdb; pdb.set_trace()
+        if str(invitee.phone) != invitation.invitee:
             return False
         group = GroupService.get_group(id=invitation.group_id)
         if GroupService.add_group_member(group, invitee, invitation.role):

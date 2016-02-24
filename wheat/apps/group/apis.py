@@ -10,6 +10,7 @@ from apps.user.permissions import admin_required, login_required
 from .services import GroupService
 from apps.user.services import UserService
 from .validators import check_request
+from errors import codes
 
 
 class GroupViewSet(ListModelMixin,
@@ -163,6 +164,7 @@ class InvitationViewSet(viewsets.GenericViewSet):
     def create(self, request):
         '''
         Invite user into group.
+        !注意: 测试该接口前 请先登录
         ### Example Request
 
             {
@@ -202,6 +204,7 @@ class InvitationViewSet(viewsets.GenericViewSet):
         invitation_okay = False
 
         try:
+            request
             return self._create_invitation_by_group_and_user_id(user_id, group, invitation_dict)
         except SyntaxError as e:
             return SimpleResponse(status=status.HTTP_400_BAD_REQUEST, errors="invitation is unvalid")
@@ -237,6 +240,11 @@ class InvitationViewSet(viewsets.GenericViewSet):
     def update(self, request, id):
         '''
         Update invitation: accept invitation
+        !注意: 测试该接口前 请先登录
+
+        args:
+            id: 某个邀请信息的id
+        
         ### Example Request
 
             {
@@ -251,11 +259,19 @@ class InvitationViewSet(viewsets.GenericViewSet):
               paramType: body
         '''
         accepted = request.data.get('accepted')
+
+        user_id = request.session.get('user_id', None)
+
+        if user_id:
+            user = UserService.get_user(id=user_id)
+
+        if user is None:
+            return SimpleResponse(status=status.HTTP_400_BAD_REQUEST, erros=codes.LOGIN_REQUIRED_MSG)
         if accepted is False:
-            success = GroupService.delete_invitation(request.user, request.invitation)
+            success = GroupService.delete_invitation(user, request.invitation)
             return SimpleResponse(success=success)
         elif accepted is True:
-            success = GroupService.accept_group_invitation(request.user, request.invitation)
+            success = GroupService.accept_group_invitation(user, request.invitation)
             return SimpleResponse(success=success)
         else:
             return SimpleResponse(status=status.HTTP_400_BAD_REQUEST)

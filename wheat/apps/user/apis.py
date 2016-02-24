@@ -68,7 +68,7 @@ class UserViewSet(ListModelMixin,
         user = UserService.get_users(phone=phone)
 
         context = {
-            "phone": "18582227569",
+            "phone": phone,
             "registered": False
         }
 

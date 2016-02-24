@@ -13,7 +13,7 @@ from utils import utils
 from .permissions import admin_required, is_userself
 from .validators import check_request
 from .services import UserService
-from .services import MessageService
+from customs.services import MessageService
 
 
 class UserViewSet(ListModelMixin,
@@ -277,8 +277,10 @@ class UserViewSet(ListModelMixin,
         '''
         Does actions for captcha.
 
-        用以处理和验证码相关的信息，根据action不同，可以有发送验证码（action = send），
-        检查验证码是否相符（action = check）
+        用以处理和验证码相关的信息，根据action不同，可以有
+        1. 发送验证码（action = send），
+        2. 测试发送验证码但是不发送短信（action ＝ test_send）
+        3. 检查验证码是否相符（action = check）
         ### Example Request
 
             {
@@ -303,11 +305,15 @@ class UserViewSet(ListModelMixin,
         '''
 
         ACTION = 'action'
-        SEND, CHECK = 'send', 'check'
+        SEND, CHECK, TEST_SEND = 'send', 'check', 'test_send'
         action = request.query_params.get(ACTION, None)
         if action == SEND:
             phone = request.data.get('phone', None)
             return self._send_message(phone)
+        elif:
+            action = TEST_SEND:
+            phone = request.data.get('phone', None)
+            return self._send_message(phone, send=False)
         elif action == CHECK:
             phone = request.data.get('phone', None)
             captcha = request.data.get('captcha', None)

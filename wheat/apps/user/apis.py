@@ -129,8 +129,6 @@ class UserViewSet(ListModelMixin,
               paramType: body
         '''
 
-        request.POST._mutable = True
-#        post_data = request.data.copy()
         phone = request.data.pop('phone', None)
         password = request.data.pop('password', None)
         if not phone or not password:

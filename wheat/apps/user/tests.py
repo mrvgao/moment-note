@@ -4,11 +4,11 @@ Author: Minchiuan 2016-2-22
 '''
 
 from django.test import TestCase
-from apps.user.services import MessageService
+from customs.services import MessageService
 
 class MessageServiceTestCase(TestCase):
 	def test_send_message(self):
-		phone = '13362133816'
+		phone = '18857453090'
 		return_status = MessageService.send_message(phone)
 		self.assertIsNotNone(return_status)
 		self.assertEqual(return_status[0], True)

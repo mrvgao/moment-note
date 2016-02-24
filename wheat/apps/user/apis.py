@@ -96,7 +96,7 @@ class UserViewSet(ListModelMixin,
             - name: body
               paramType: body
         '''
-
+        
         phone = request.data.get('phone', None)
         user = UserService.get_user(phone=phone)
         return self._update_user_info(user, request.data)

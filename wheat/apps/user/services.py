@@ -13,7 +13,7 @@ import datetime
 
 
 UserUpdateFields = ('phone', 'nickname', 'first_name', 'last_name', 'avatar',
-                    'tagline', 'gender', 'city', 'province', 'country')
+                    'tagline', 'gender', 'city', 'province', 'country', 'password')
 
 
 class UserService(BaseService):
@@ -65,9 +65,14 @@ class UserService(BaseService):
     @classmethod
     @transaction.atomic
     def update_user(cls, user, **kwargs):
+        import pdb; pdb.set_trace()
+        PASSWORD = 'password'
         for field in UserUpdateFields:
             if field in kwargs:
-                setattr(user, field, kwargs[field])
+                if field == PASSWORD:
+                    user.set_password(kwargs[field])
+                else:
+                    setattr(user, field, kwargs[field])
         user.save()
         return user
 

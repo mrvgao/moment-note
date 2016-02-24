@@ -9,6 +9,9 @@ from utils.redis_utils import publish_redis_message
 from apps.user.services import UserService
 from .models import Group, GroupMember, Invitation
 from .serializers import GroupSerializer, GroupMemberSerializer, InvitationSerializer
+from customs.services import MessageService
+from customs.services import role_map
+
 
 
 class GroupService(BaseService):
@@ -139,6 +142,18 @@ class GroupService(BaseService):
 
         # if user is registered
         publish_redis_message(REDIS_PUBSUB_DB, 'invitation->', message)
+
+        maili_url = 'http://www.mailicn.com'
+
+        chinese_role = role_map.get(invitation_dict['role'], 'hi')
+        nickname = '(%s)%s' % (inviter.phone, inviter.nickname) 
+        send_message_param = '%s,%s,%s' % (chinese_role, nickname, maili_url)
+
+        send_succeed, code = MessageService.send_message(
+            phone=invitation_dict['invitee'], 
+            template_id='20721', 
+            message_param=send_message_param
+        )
         return invitation
 
     @classmethod

@@ -4,7 +4,6 @@ from django.db import transaction
 from django.contrib.auth import authenticate, login
 
 from customs.services import BaseService
-
 from customs.response import Result
 from errors import codes
 from .models import User, AuthToken, FriendShip
@@ -65,7 +64,6 @@ class UserService(BaseService):
     @classmethod
     @transaction.atomic
     def update_user(cls, user, **kwargs):
-        import pdb; pdb.set_trace()
         PASSWORD = 'password'
         for field in UserUpdateFields:
             if field in kwargs:
@@ -83,7 +81,6 @@ class UserService(BaseService):
             user.update(deleted=True)
             return True
         return False
-
 
     @staticmethod
     def set_session_user_id(request, user_id):

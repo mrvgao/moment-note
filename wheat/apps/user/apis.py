@@ -312,7 +312,7 @@ class UserViewSet(ListModelMixin,
             return self._send_message(phone)
         elif action == TEST_SEND:
             phone = request.data.get('phone', None)
-            return self._send_message(phone, send=False)
+            return self._send_message(phone)
         elif action == CHECK:
             phone = request.data.get('phone', None)
             captcha = request.data.get('captcha', None)
@@ -334,7 +334,7 @@ class UserViewSet(ListModelMixin,
         return SimpleResponse(return_context)
 
     def _send_message(self, phone):
-        send_succeed, code = MessageService.send_message(phone)
+        send_succeed, code = MessageService.send_message(phone, send=False)
 
         return_context = {
             'phone': phone,

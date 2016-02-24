@@ -310,8 +310,7 @@ class UserViewSet(ListModelMixin,
         if action == SEND:
             phone = request.data.get('phone', None)
             return self._send_message(phone)
-        elif:
-            action = TEST_SEND:
+        elif action == TEST_SEND:
             phone = request.data.get('phone', None)
             return self._send_message(phone, send=False)
         elif action == CHECK:

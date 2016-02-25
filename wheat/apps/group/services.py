@@ -132,16 +132,19 @@ class GroupService(BaseService):
             role=invitation_dict['role'],
             message=message)
         # send invitation
-        message = {
-            'event': 'invitation',
-            'sub_event': 'sd_inv',  # send_invitation
-            'invitation_id': invitation.id,
-            'receiver_id': invitation_dict['invitee'],
-            'message': message
-        }
 
-        # if user is registered
-        publish_redis_message(REDIS_PUBSUB_DB, 'invitation->', message)
+        invitee = UserService.get_user(phone=invitation_dict['invitee'])
+
+        if invitee:
+            # if user is registered send to redis
+            message = {
+                'event': 'invitation',
+                'sub_event': 'sd_inv',  # send_invitation
+                'invitation_id': invitation.id,
+                'receiver_id': invitee.id,
+                'message': message
+            }
+            publish_redis_message(REDIS_PUBSUB_DB, 'invitation->', message)
 
         maili_url = 'http://www.mailicn.com'
 

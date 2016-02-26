@@ -17,13 +17,17 @@ urlpatterns = patterns(
 ) + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 # add api urls here
-urlpatterns += [
-    url(r'^api/%s/auth/' % settings.API_VERSION,
-        include('rest_framework.urls', namespace='rest_framework')),
-    url(r'^docs/', include('rest_framework_swagger.urls', namespace='rest_framework_swagger')),
+try: 
+    urlpatterns += [
+        url(r'^api/%s/auth/' % settings.API_VERSION,
+            include('rest_framework.urls', namespace='rest_framework')),
+        url(r'^docs/', include('rest_framework_swagger.urls', namespace='rest_framework_swagger')),
 
-    url(r'^', include('apps.user.urls')),  # Don't set namespace
-    url(r'^', include('apps.group.urls')),  # Don't set namespace
-    url(r'^', include('apps.moment.urls')),  # Don't set namespace
-    url(r'^', include('apps.image.urls')),  # Don't set namespace
-]
+        url(r'^', include('apps.user.urls')),  # Don't set namespace
+        url(r'^', include('apps.group.urls')),  # Don't set namespace
+        url(r'^', include('apps.moment.urls')),  # Don't set namespace
+        url(r'^', include('apps.image.urls')),  # Don't set namespace
+        url(r'^', include('apps.book.urls')),  # Don't set namespace
+    ]
+except Exception as e:
+    print e

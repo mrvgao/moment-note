@@ -89,6 +89,7 @@ class Common(Configuration):
         'apps.moment',
         'apps.image',
         'apps.pubsub',
+        'apps.book',
     )
     # END LOCAL APPS
 

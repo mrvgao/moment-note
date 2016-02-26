@@ -4,8 +4,6 @@ import uuid
 from uuidfield import UUIDField
 from django.db import models
 from jsonfield import JSONCharField, JSONField
-from imagekit.models import ProcessedImageField
-from imagekit.processors import ResizeToFit, Transpose
 
 from customs.models import EnhancedModel, CommonUpdateAble, CacheableManager
 
@@ -47,7 +45,7 @@ class Order(CommonUpdateAble, models.Model, EnhancedModel):
     id = UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     book_id = UUIDField(db_index=True)  # 创建者
     price = models.FloatField()
-    status = models.CharField()
+    status = models.CharField(max_length=512)
     creator_at = models.DateTimeField(auto_now_add=True)
     updatte_at = models.DateTimeField(auto_now_add=True)
     info = JSONCharField(max_length=512, default={})

@@ -14,7 +14,6 @@ class MultiAuthorGroup(CommonUpdateAble, models.Model, EnhancedModel):
     members = JSONField(default={})  # 成员列表
     max_members = models.SmallIntegerField(default=15)
     created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
     objects = CacheableManager()
 

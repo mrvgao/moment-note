@@ -9,7 +9,8 @@ from apps.user.services import UserService
 from apps.group.services import GroupService
 from .models import Moment
 from .serializers import MomentSerializer
-from django.db.models import Avg, Max, Min
+from django.db.models import Min
+
 
 class MomentService(BaseService):
 
@@ -91,11 +92,11 @@ def get_moment_compare_with_begin_id(moment, compare, begin_id):
     if compare is None, give the neariest moments
     if begin_id is None, give the neariest moments
     '''
-    PREVIOUS, AFTER = 'previous', 'after'
+    AFTER = 'previous', 'after'
     POST_DATE = 'post_date'
-    GREATER_THAN, LESS_THAN, MIN = '__gte', '__lte', '__min' # will be used in django query
+    GREATER_THAN, LESS_THAN, MIN = '__gte', '__lte', '__min'  # will be used in django query
 
-    query = GREATER_THAN if compare == AFTER else LESS_THAN # if needs AFTER explicitly, need greather than, default is less than
+    query = GREATER_THAN if compare == AFTER else LESS_THAN  # if needs AFTER explicitly, need greather than, default is less than
     query_str = POST_DATE+query
 
     get_eariest_time = lambda: Moment.objects.aggregate(Min(POST_DATE)).get(POST_DATE + MIN, datetime.now())
@@ -104,22 +105,20 @@ def get_moment_compare_with_begin_id(moment, compare, begin_id):
 
     temp_moment = MomentService.get_moment(id=begin_id)
 
-    if forget_give_less_than_begin(query, temp_moment): # need less than query but not gave the begin id
+    if forget_give_less_than_begin(query, temp_moment):  # need less than query but not gave the begin id
         moment_date = datetime.now()
     else:
-        moment_date = temp_moment.post_date if temp_moment else get_eariest_time() 
+        moment_date = temp_moment.post_date if temp_moment else get_eariest_time()
 
     condition = {query_str: moment_date}         # get condition by compare key word
     # if compare said it need after, mean needs get new message, otherwish, get history message
 
-    import pdb; pdb.set_trace()
-
-    sort_order = '-' + POST_DATE # sort message by time order from newer to older
+    sort_order = '-' + POST_DATE  # sort message by time order from newer to older
 
     if compare == AFTER:
-        sort_order = POST_DATE # if get unread message, order from older to newer
+        sort_order = POST_DATE  # if get unread message, order from older to newer
 
-    return moment.filter(**condition).order_by(sort_order) # ordered by post date reversed order
+    return moment.filter(**condition).order_by(sort_order)  # ordered by post date reversed order
 
 
 def confine_moment_number(moment, number):
@@ -131,7 +130,6 @@ def get_moment_by_receiver_and_sender_id(receiver_id, sender_id):
     Author: Minchiuan 2016-2-24
     '''
     moments = None
-    import pdb; pdb.set_trace()
     if receiver_id == sender_id:  # means get self's moments
         moments = MomentService.get_moments_from_user(receiver_id)
     elif sender_id is None:

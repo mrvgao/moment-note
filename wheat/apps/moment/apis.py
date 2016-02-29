@@ -103,7 +103,7 @@ class MomentViewSet(ListModelMixin,
 
         return moments
 
-    #@login_required
+    @login_required
     def create(self, request):
         '''
         Create Moment.

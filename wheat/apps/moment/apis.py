@@ -93,7 +93,7 @@ class MomentViewSet(ListModelMixin,
                 status=status.HTTP_401_UNAUTHORIZED, 
                 errors='need receiver_id the same as the id of login use'
             )
-  
+
     def _get_moment_by_condition(self, receiver, sender, step, begin_id, compare):
         moments = services.get_moment_by_receiver_and_sender_id(receiver, sender)
 
@@ -129,10 +129,9 @@ class MomentViewSet(ListModelMixin,
         content = request.data.get('content')
         visible = request.data.get('visible')
 
-        session_user_id = request.session.get('user_id', None) # user id in session. If login, its value is user.id, or is null
-        if user_id != str(session_user_id):
+        if user_id != str(request.user.id):
             return SimpleResponse(status=status.HTTP_401_UNAUTHORIZED)
-            
+
         moment = MomentService.create_moment(
             user_id=user_id,
             content_type=content_type,

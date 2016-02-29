@@ -32,11 +32,14 @@ class GroupViewSet(ListModelMixin,
     def list(self, request):
         '''
         获得群组的列表，若owner-id和type为空 则列出全部群组的id
+        在邀请好友时候，系统需要一个group_id，该group承载该用户的所有好友
+        要获得该group_id，需要将type设置为all_home_member
+
         List all groups by pages. Admin Required.
 
         page -- page
         owner-id -- group所有者的id
-        type -- 该group的类型
+        type -- 该group的类型， 邀请好友请设置为all_home_member
         ---
         omit_serializer: true
         '''
@@ -46,11 +49,14 @@ class GroupViewSet(ListModelMixin,
         owner_id = request.query_params.get(OWNER_ID, None)
         group_type = request.query_params.get(TYPE, None)
 
-        ALL_FRIENDS = 'all_friends'
+        ALL_FRIENDS = 'all_home_member'
 
         if owner_id:
             if group_type == ALL_FRIENDS:
-                result = GroupService.get_all_friend_group(owner_id)
+                result = GroupService.get_group_if_without_create(
+                    owner_id,
+                    ALL_FRIENDS
+                )
             elif group_type is None:
                 result = GroupService.filter_group(creator_id=owner_id)
             else:
@@ -164,6 +170,7 @@ class InvitationViewSet(viewsets.GenericViewSet):
     def create(self, request):
         '''
         Invite user into group.
+        该接口所需的group_id 请在/api/0.1/groups/ 将type设置为all_home_member进行获取
         !注意: 测试该接口前 请先登录
         ### Example Request
 
@@ -272,6 +279,9 @@ class InvitationViewSet(viewsets.GenericViewSet):
             return SimpleResponse(success=success)
         elif accepted is True:
             success = GroupService.accept_group_invitation(user, request.invitation)
-            return SimpleResponse(success=success)
+            if success:
+                return SimpleResponse(success=success)
+            else:
+                return SimpleResponse(success=False, errors=codes.LOGIN_REQUIRED_MSG)
         else:
             return SimpleResponse(status=status.HTTP_400_BAD_REQUEST)

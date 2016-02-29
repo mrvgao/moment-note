@@ -49,22 +49,24 @@ class GroupService(BaseService):
         elif isinstance(obj, Invitation):
             return InvitationSerializer(obj, context=context).data
 
-
     @staticmethod
-    def get_all_friend_group(owner_id):
-        ALL_FRIENDS = 'all_friends'
-        
+    def get_group_if_without_create(owner_id, KEYWORD):
         user = UserService.get_user(id=owner_id)
-        result = Group.objects.filter(creator_id=owner_id, group_type=ALL_FRIENDS)
+        result = Group.objects.filter(creator_id=owner_id, group_type=KEYWORD)
 
-        if user and len(result) == 0: # if this person no initial all friend group
+        if user and len(result) == 0:
+            # if this person no initial all friend group
 
             SELF = 'self'
             GroupService.create_group(
-                creator=user, group_type=ALL_FRIENDS, name=ALL_FRIENDS, creator_role=SELF
+                creator=user, group_type=KEYWORD,
+                name=KEYWORD, creator_role=SELF
             )
 
-            result = Group.objects.filter(creator_id=owner_id, group_type=ALL_FRIENDS)
+            result = Group.objects.filter(
+                creator_id=owner_id,
+                group_type=KEYWORD
+            )
 
         return result
 
@@ -202,7 +204,6 @@ class GroupService(BaseService):
     @classmethod
     @transaction.atomic
     def accept_group_invitation(cls, invitee, invitation):
-        import pdb; pdb.set_trace()
         if str(invitee.phone) != invitation.invitee:
             return False
         group = GroupService.get_group(id=invitation.group_id)

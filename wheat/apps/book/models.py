@@ -33,12 +33,12 @@ class Book(CommonUpdateAble, models.Model, EnhancedModel):
     id = UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     creator_id = UUIDField(db_index=True)
     group_id = UUIDField(db_index=True)
-    remark_name = models.CharField(max_length=50)  # The remark name of this book.
-    avatar = models.CharField(max_length=100)  # The book avatar.
-    book_name = models.CharField(max_length=50)
+    remark_name = models.CharField(max_length=50, default=None)  # The remark name of this book.
+    avatar = models.CharField(max_length=100, default=None)  # The book avatar.
+    book_name = models.CharField(max_length=50, default=None)
     author = models.CharField(max_length=50)  # wroten name
-    page_format = models.CharField(max_length=50)
-    preview_url = models.CharField(max_length=50)
+    page_format = models.CharField(max_length=50, default=None)
+    preview_url = models.CharField(max_length=50, default=None)
     creator_at = models.DateTimeField(auto_now_add=True)
     deleted = models.BooleanField(default=False)
 

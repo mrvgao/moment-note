@@ -64,6 +64,10 @@ class BookService:
     def get_model():
         return Book
 
+    @staticmethod
+    def create_book():
+        pass
+
 
 class OrderService:
     @staticmethod

@@ -112,12 +112,24 @@ class BookViewSet(ListModelMixin, viewsets.GenericViewSet):
     def create(self, request):
         '''
         创建书籍信息
+        使用场景： 新书后台点击制作书本完成之后，后台即创建一本书
+
+        创建一本书所需要的信息：
+        creator_id: 这本书的创建者的id
+        avatar: 这本书的封面图的URL
+        book_name: 为该书所起的名字
+        author: 该书的作者的名字（若无则与用户的昵称相同）
+        page_format: 该书的板式
+        preview_url: 该书预览页的URL
+
+        
         '''
         pass
 
     def update(self, request, book_id):
         '''
         更新书籍信息
+        使用场景： 新书后台制作书本完成之后，将书籍相关的信息，使用put方式发送过来，更改其中的预览路径、封面图URL等信息
         '''
         pass
 
@@ -129,7 +141,7 @@ class OrderViewSet(ListModelMixin, viewsets.GenericViewSet):
     lookup_field = 'id'
     permission_classes = [
     Or(permissions.IsAuthenticatedOrReadOnly, AllowPostPermission,)]
-    
+
     def list(self, reqeust):
         '''
         '''

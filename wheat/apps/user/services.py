@@ -153,3 +153,15 @@ class UserService(BaseService):
         for id in ids:
             friend_ids.append(str(id))
         return friend_ids
+
+
+class AuthService(object):
+    @staticmethod
+    def check_if_token_valid(token):
+        auth_token = AuthToken.objects.get_or_none(key=token)
+
+        if auth_token:
+            expired_time = auth_token.expired_at
+            return expired_time > datetime.datetime.now()
+        else:
+            return False

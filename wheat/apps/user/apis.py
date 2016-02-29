@@ -12,7 +12,7 @@ from errors import codes
 from utils import utils
 from .permissions import admin_required, is_userself
 from .validators import check_request
-from .services import UserService
+from .services import UserService, AuthService
 from customs.services import MessageService
 
 
@@ -236,17 +236,30 @@ class UserViewSet(ListModelMixin,
             return SimpleResponse(data)
         return SimpleResponse(errors=result.errors)
 
-    @list_route(methods=['post'])
+    @list_route(methods=['post', 'get'])
     def token(self, request):
         '''
-        Get token(old or new) by phone and password or refresh old token.
+        1. POST: Get token(old or new) by phone and password or refresh old token.
         ### Example Request
+
+        When POST:
+
 
             {
                 "phone": "18582227569",
                 "password": "q1w2e3",
                 "token": "old token"
             }
+
+        2. GET: 获得关于某个token的信息
+
+        When GET:
+
+            {URL}/user/token/?action=check&token=XXX
+
+        token -- token
+        action -- 对token采取的操作，当action == check 时候，返回该token是否有效
+
         ---
         omit_serializer: true
         omit_parameters:
@@ -254,23 +267,33 @@ class UserViewSet(ListModelMixin,
         parameters:
             - name: body
               paramType: body
+
         '''
-        key = request.data.get('token', '')
-        if key:
-            token = UserService.get_auth_token(key=key)
-            if token:
-                token = UserService.refresh_auth_token(token)
-                return SimpleResponse(token.token)
+        if request.method == 'POST':
+            key = request.data.get('token', '')
+            if key:
+                token = UserService.get_auth_token(key=key)
+                if token:
+                    token = UserService.refresh_auth_token(token)
+                    return SimpleResponse(token.token)
+                else:
+                    return SimpleResponse(code=codes.INVALID_TOKEN)
+            phone = request.data.get('phone', '')
+            password = request.data.get('password', '')
+            result = UserService.login_user(request, phone, password)
+            if result.success:
+                return SimpleResponse(result.data.token)
             else:
-                return SimpleResponse(code=codes.INVALID_TOKEN)
-        phone = request.data.get('phone', '')
-        password = request.data.get('password', '')
-        result = UserService.login_user(request, phone, password)
-        if result.success:
-            return SimpleResponse(result.data.token)
-        else:
-            return SimpleResponse(errors=result.errors)
-        return SimpleResponse(success=False)
+                return SimpleResponse(errors=result.errors)
+            return SimpleResponse(success=False)
+        elif request.method == 'GET':
+            TOKEN, VALID = 'token', 'valid'
+            token = request.query_params.get(TOKEN, None)
+            data = {VALID: False}
+
+            data[VALID] = AuthService.check_if_token_valid(token)
+            return SimpleResponse(data)
+
 
     @list_route(methods=['get'])
     def online(self, request):

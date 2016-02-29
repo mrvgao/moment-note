@@ -8,7 +8,7 @@ from .models import MultiAuthorGroup, Book, Order
 class MultiAuthorGroupSerializer(XModelSerializer):
     class Meta:
         model = MultiAuthorGroup
-        fields = ('id', 'creator_id', 'created_at')
+        fields = ('id', 'creator_id', 'created_at', 'members')
 
 
 class BookSerializer(XModelSerializer):

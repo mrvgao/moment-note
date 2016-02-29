@@ -1,6 +1,7 @@
 # -*- coding:utf-8 -*-
 
 import uuid
+from datetime import datetime
 from uuidfield import UUIDField
 from django.db import models
 from jsonfield import JSONCharField, JSONField
@@ -16,6 +17,13 @@ class MultiAuthorGroup(CommonUpdateAble, models.Model, EnhancedModel):
     created_at = models.DateTimeField(auto_now_add=True)
 
     objects = CacheableManager()
+
+    def add_group_member(self, user_list):
+        for index, user in enumerate(user_list):
+            self.members[str(index)] = {
+                'user_id': str(user),
+                'joined_at': str(datetime.now())
+            }
 
     class Meta:
         db_table = "muti_author_group"

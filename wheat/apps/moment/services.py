@@ -10,6 +10,8 @@ from apps.group.services import GroupService
 from .models import Moment
 from .serializers import MomentSerializer
 from django.db.models import Min
+from apps.book.services import AuthorService
+from itertools import chain
 
 
 class MomentService(BaseService):
@@ -85,6 +87,19 @@ class MomentService(BaseService):
             user_id=user_id,
             deleted=False).order_by('post_date')
         return moments
+
+
+def get_moment_from_author_list(receiver, group_id):
+    author_list = AuthorService.get_author_list_by_author_group(group_id)
+
+    moments_list = []
+    for author in author_list:
+        temp_moment = get_moment_by_receiver_and_sender_id(receiver, author)
+        moments_list.append(temp_moment)
+
+    moments = reduce(lambda m1, m2: m1 | m2, moments_list)
+
+    return moments
 
 
 def get_moment_compare_with_begin_id(moment, compare, begin_id):

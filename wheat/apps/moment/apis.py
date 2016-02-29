@@ -11,6 +11,8 @@ from .services import MomentService
 from . import services
 from rest_framework.decorators import list_route
 from .serializers import MomentSerializer
+from apps.book.services import AuthorService
+from itertools import chain
 
 
 
@@ -63,12 +65,17 @@ class MomentViewSet(ListModelMixin,
         /moment?receiver=b123asd128hjkasdhjk&begin=ajkhsd1234hkjasdhjk&step＝15compare=after
         表示，获取比begin更新的15条数据
 
+        e.g 05
+        /moment?receiver=b123asd128hjkasdhjk&begin=ajkhsd1234hkjasdhjk&step＝15compare=after&query_type=group
+        表示，获得author_group的id为XXX的全部用户的状态，且该状态要求比begin更早，返回数量最大为15条
+
 
         receiver -- 接收者的id, 为保证信息的安全，接收者的id必须与当前session的user_id一致，否则请求错误
         sender -- 发送者的id， 可以为空，为空则返回所有好友的和家信息
         number -- 获得的信息数量， 可以为空，为空则至多返回10条
         begin-id -- 起始信息的id，可以为空，为空则返回系统中该用户可见的最新的信息（该信息有可能意见阅读或尚未阅读过）
         compare -- 在begin－id之前发送的（previous）还是之后发送的（after），可以为空，为空时，既获得历史消息
+        group -- 当该值为1的时候，所传送的id为查询某个“作者组”的和家状态, 如果该参数为空，默认为0，既查询的是关于个人的和家状态
 
 
         ---
@@ -76,32 +83,47 @@ class MomentViewSet(ListModelMixin,
         '''
 
         RECEIVER, SENDER, STEP = 'receiver', 'sender', 'number'
-        BEGIN_ID, COMPARE = 'begin-id', 'compare' 
+        BEGIN_ID, COMPARE = 'begin-id', 'compare'
+        GROUP = 'group'
 
         receiver_id = request.query_params.get(RECEIVER, None)
         sender_id = request.query_params.get(SENDER, None)
         step = request.query_params.get(STEP, 10)
         begin_id = request.query_params.get(BEGIN_ID, None)
         compare = request.query_params.get(COMPARE, None)
+        group = request.query_params.get(GROUP, False)
 
-        if receiver_id and receiver_id == str(request.session.get('user_id')):
-            moments = self._get_moment_by_condition(receiver_id, sender_id, step, begin_id, compare)
+        if receiver_id:
+            moments = self._get_moment_by_condition(
+                receiver_id,
+                sender_id, step, begin_id, compare, group
+            )
             moments_json_data = MomentService.serialize_objs(moments)
             return SimpleResponse(moments_json_data)
         else:
             return SimpleResponse(
-                status=status.HTTP_401_UNAUTHORIZED, 
+                status=status.HTTP_401_UNAUTHORIZED,
                 errors='need receiver_id the same as the id of login use'
             )
 
-    def _get_moment_by_condition(self, receiver, sender, step, begin_id, compare):
-        moments = services.get_moment_by_receiver_and_sender_id(receiver, sender)
+    def _get_moment_by_condition(self, receiver, sender, step, begin_id, compare, group):
+        if str(group) == '1':
+            # moments = AuthorService.get_author_list_by_author_group(sender)
+            moments = services.get_moment_from_author_list(receiver, sender)
+        else:
+            moments = services.get_moment_by_receiver_and_sender_id(receiver, sender)
 
         moments = services.get_moment_compare_with_begin_id(moments, compare, begin_id)
 
         moments = services.confine_moment_number(moments, step)
 
         return moments
+
+    @list_route(methods=['get'])
+    def author_group(self, request, group_id):
+        '''
+        获得某个author_group的全部信息
+        '''
 
     @login_required
     def create(self, request):
@@ -147,6 +169,8 @@ class MomentViewSet(ListModelMixin,
     @login_required
     def retrieve(self, request, id):
         '''
+        获得某个moment为id的moment详情，如果想获得某个作者组，或者某个作者的状态的详情，请
+        访问：{API_URL}/moments/
         Retrieve moment.
         ---
         omit_serializer: true
@@ -154,8 +178,8 @@ class MomentViewSet(ListModelMixin,
         moment = MomentService.get_moment(id=id)
         if not moment:
             return SimpleResponse(status=status.HTTP_404_NOT_FOUND)
-        elif moment.user_id != request.user.id:
-            return SimpleResponse(status=status.HTTP_401_UNAUTHORIZED)
+        # elif moment.user_id != request.user.id:
+        #   return SimpleResponse(status=status.HTTP_401_UNAUTHORIZED)
         return SimpleResponse(MomentService.serialize(moment))
 
     @login_required

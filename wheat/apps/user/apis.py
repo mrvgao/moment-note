@@ -272,6 +272,34 @@ class UserViewSet(ListModelMixin,
             return SimpleResponse(errors=result.errors)
         return SimpleResponse(success=False)
 
+    @list_route(methods=['get'])
+    def online(self, request):
+        '''
+        测试该user_id是否正保持在线，保持在线是指，该client登录之后，session没有中断
+
+        返回样例：
+
+        online ＝ ｛
+            “online”： False
+        ｝
+
+        该用户未在此session登录
+
+        user_id -- user_id
+        ---
+        omit_serializer: true
+        '''
+        online = {
+            "online": False
+        }
+
+        user_id = request.query_params.get('user_id', None)
+
+        if request.session.get('user_id', None) == user_id:
+            online['online'] = True
+
+        return SimpleResponse(online)
+
     @list_route(methods=['post'])
     def captcha(self, request):
         '''

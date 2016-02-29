@@ -122,7 +122,6 @@ class BookViewSet(ListModelMixin, viewsets.GenericViewSet):
         page_format: 该书的板式
         preview_url: 该书预览页的URL
 
-        
         '''
         pass
 

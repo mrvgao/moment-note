@@ -54,7 +54,6 @@ class AuthorService:
         return author_list
 
 
-
 class BookService:
     @staticmethod
     def get_serializer():

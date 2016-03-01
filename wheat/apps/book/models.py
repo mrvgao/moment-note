@@ -54,7 +54,7 @@ class Order(CommonUpdateAble, models.Model, EnhancedModel):
     price = models.FloatField()
     status = models.CharField(max_length=512)
     created_at = models.DateTimeField(auto_now_add=True)
-    update_at = models.DateTimeField(auto_now_add=True)
+    update_at = models.DateTimeField(auto_now=True)
     info = JSONCharField(max_length=512, default={})
 
     objects = CacheableManager()

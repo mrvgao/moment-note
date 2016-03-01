@@ -10,6 +10,8 @@ from .models import MultiAuthorGroup, Book, Order
 from .serializers import MultiAuthorGroupSerializer, BookSerializer, OrderSerializer
 from customs.services import MessageService
 import ast
+from functools import partial
+from customs import funcs
 
 
 class AuthorService:
@@ -28,6 +30,7 @@ class AuthorService:
             return MultiAuthorGroupSerializer(group).data
         else:
             return None
+
 
     @staticmethod
     def serialize(obj):
@@ -88,6 +91,23 @@ class BookService:
         else:
             book = Book.objects.create(**kwargs)
             return book
+
+    @staticmethod
+    def get_book(**kwagrs):
+        return Book.objects.get_or_none(**kwagrs)
+
+
+@transaction.atomic
+def _update_valid_fileds_by_dic(FIELDS, obj, DIC):
+    valid_keys = filter(lambda k: k in FIELDS, DIC)
+    obj = funcs.reduce(lambda o, k: setattr(o, k, DIC[k]), valid_keys, obj)
+    obj.save()
+    return obj
+
+BOOK_FIELDS = ('avatar', 'book_name', 'author', 'page_format', 'preview_url')
+update_book_field = partial(_update_valid_fileds_by_dic, BOOK_FIELDS)
+
+ORDER_FIELDS = ('price', 'status', 'info')
 
 
 class OrderService:

@@ -8,6 +8,7 @@ from customs.response import SimpleResponse
 from customs.viewsets import ListModelMixin
 from apps.user.permissions import admin_required, login_required
 from .services import AuthorService, BookService, OrderService
+from .services import update_book_field
 from apps.user.services import UserService
 from errors import codes
 
@@ -109,7 +110,16 @@ class BookViewSet(ListModelMixin, viewsets.GenericViewSet):
         ---
         omit_serializer: true
         '''
-        pass
+        BOOK_ID = 'id'
+        book_id = request.query_params.get(BOOK_ID, None)
+        book = BookService.get_book(id=book_id)
+        if book:
+            book_data = BookViewSet.serializer_class(book).data
+            return SimpleResponse(book_data)
+        else:
+            return SimpleResponse(
+                success=False, code=404, errors='this book not exist'
+            )
 
     @login_required
     def create(self, request):
@@ -159,12 +169,36 @@ class BookViewSet(ListModelMixin, viewsets.GenericViewSet):
             except KeyError:
                 return SimpleResponse(success=False, errors="Lacks of args")
 
-    def update(self, request, book_id):
+    def update(self, request, id):
         '''
-        更新书籍信息
+        根据author_group_id更新书籍信息
         使用场景： 新书后台制作书本完成之后，将书籍相关的信息，使用put方式发送过来，更改其中的预览路径、封面图URL等信息
+
+        ### Example Request:
+            {
+                "avatar": String,
+                "book_name": String,
+                "author": String,
+                "page_format": String,
+                "preview_url": String
+            }
+        ---
+        omit_serializer: true
+        omit_parameters:
+            - form
+        parameters:
+            - name: body
+              paramType: body
+
         '''
-        pass
+
+        book = BookService.get_book(id=id)
+        if book:
+            new_book = update_book_field(book, request.data)
+            new_book_data = BookViewSet.serializer_class(new_book).data
+            return SimpleResponse(new_book_data)
+        else:
+            return SimpleResponse(success=False, errors='this book not exist')
 
 
 class OrderViewSet(ListModelMixin, viewsets.GenericViewSet):
@@ -173,7 +207,7 @@ class OrderViewSet(ListModelMixin, viewsets.GenericViewSet):
     serializer_class = OrderService.get_serializer()
     lookup_field = 'id'
     permission_classes = [
-    Or(permissions.IsAuthenticatedOrReadOnly, AllowPostPermission,)]
+        Or(permissions.IsAuthenticatedOrReadOnly, AllowPostPermission,)]
 
     def list(self, reqeust):
         '''

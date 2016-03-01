@@ -2,7 +2,7 @@
 
 from collections import OrderedDict
 from json import JSONDecoder
-from django.conf import settings
+from settings.common import Common
 from rest_framework import serializers
 
 
@@ -66,6 +66,6 @@ class XImageField(serializers.ImageField):
         if str(obj).startswith('http'):
             return str(obj)
         elif str(obj) != '':
-            return '%s%s%s' % (settings.BASE_URL, settings.MEDIA_URL, str(obj))
+            return '%s%s%s' % (Common.BASE_URL, Common.MEDIA_URL, str(obj))
         else:
             return ''

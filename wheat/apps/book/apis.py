@@ -37,6 +37,7 @@ class AuthorViewSet(ListModelMixin, viewsets.GenericViewSet):
         type -- 查询类型 (person | group)
         id -- 用户或者group的id (String), !注意， id两个字母均为小写
         ---
+        omit_serializer: true
 
         '''
         TYPE, ID = 'type', 'id'
@@ -53,7 +54,6 @@ class AuthorViewSet(ListModelMixin, viewsets.GenericViewSet):
             return SimpleResponse(data)
         else:
             return SimpleResponse(success=False, errors="Params Unvlid")
-
 
     @login_required
     def create(self, request):
@@ -99,16 +99,19 @@ class BookViewSet(ListModelMixin, viewsets.GenericViewSet):
     serializer_class = BookService.get_serializer()
     lookup_field = 'id'
     permission_classes = [
-    Or(permissions.IsAuthenticatedOrReadOnly, AllowPostPermission,)]
+        Or(permissions.IsAuthenticatedOrReadOnly, AllowPostPermission,)]
 
     def list(self, request):
         '''
         获得关于书本的信息
-        ---
+
         id -- Book id
+        ---
+        omit_serializer: true
         '''
         pass
 
+    @login_required
     def create(self, request):
         '''
         创建书籍信息
@@ -122,8 +125,40 @@ class BookViewSet(ListModelMixin, viewsets.GenericViewSet):
         page_format: 该书的板式
         preview_url: 该书预览页的URL
 
+        ### Request Example
+
+            {
+                "creator_id": String, (required)
+                "group_id": String, (所隶属的作者组， required)
+                "avatar": String,
+                "book_name": String,
+                "author": String,
+                "page_format": String,
+                "preview_url": String
+            }
+
+        ---
+        omit_serializer: true
+        omit_parameters:
+            - form
+        parameters:
+            - name: body
+              paramType: body
         '''
-        pass
+
+        CREATOR_ID = 'creator_id'
+
+        creator_id = request.data.get(CREATOR_ID, None)
+        import pdb; pdb.set_trace()
+        if str(creator_id) != str(request.user.id):
+            return SimpleResponse(success=False, errors="Not Login")
+        else:
+            try:
+                book = BookService.create_book(**request.data)
+                data = BookViewSet.serializer_class(book).data
+                return SimpleResponse(data)
+            except KeyError:
+                return SimpleResponse(success=False, errors="Lacks of args")
 
     def update(self, request, book_id):
         '''

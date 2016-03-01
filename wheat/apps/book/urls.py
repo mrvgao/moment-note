@@ -15,8 +15,9 @@ author_router.register(r'author', apis.AuthorViewSet)
 order_router = DefaultRouter()
 order_router.register(r'order', apis.OrderViewSet)
 
+
 book_router = DefaultRouter()
-book_router.register(r'book', apis.OrderViewSet)
+book_router.register(r'book', apis.BookViewSet)
 
 # The API URLs are now determined automatically by the router.
 # Additionally, we include the login URLs for the browseable API.

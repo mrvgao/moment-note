@@ -64,8 +64,30 @@ class BookService:
         return Book
 
     @staticmethod
-    def create_book():
-        pass
+    def create_book(**kwargs):
+        '''
+        create book by args
+
+        Returns:
+
+            Book Object
+
+        Raises:
+
+            KeyError: If no creator_id or group_id in args
+
+        '''
+        CREATOR_ID, GROUP_ID = "creator_id", "group_id"
+        AUTHOR = 'author'
+
+        if AUTHOR not in kwargs:
+            kwargs[AUTHOR] = ""
+
+        if not (CREATOR_ID in kwargs and GROUP_ID in kwargs):
+            raise KeyError
+        else:
+            book = Book.objects.create(**kwargs)
+            return book
 
 
 class OrderService:

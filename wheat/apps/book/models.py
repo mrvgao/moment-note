@@ -33,13 +33,13 @@ class Book(CommonUpdateAble, models.Model, EnhancedModel):
     id = UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     creator_id = UUIDField(db_index=True)
     group_id = UUIDField(db_index=True)
-    remark_name = models.CharField(max_length=50, default=None)  # The remark name of this book.
-    avatar = models.CharField(max_length=100, default=None)  # The book avatar.
-    book_name = models.CharField(max_length=50, default=None)
+    remark_name = models.CharField(max_length=50, default="")  # The remark name of this book.
+    avatar = models.CharField(max_length=100, default="")  # The book avatar.
+    book_name = models.CharField(max_length=50, default="")
     author = models.CharField(max_length=50)  # wroten name
-    page_format = models.CharField(max_length=50, default=None)
-    preview_url = models.CharField(max_length=50, default=None)
-    creator_at = models.DateTimeField(auto_now_add=True)
+    page_format = models.CharField(max_length=50, default="")
+    preview_url = models.CharField(max_length=50, default="")
+    created_at = models.DateTimeField(auto_now_add=True)
     deleted = models.BooleanField(default=False)
 
     objects = CacheableManager()
@@ -53,7 +53,7 @@ class Order(CommonUpdateAble, models.Model, EnhancedModel):
     book_id = UUIDField(db_index=True)  # 创建者
     price = models.FloatField()
     status = models.CharField(max_length=512)
-    creator_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True)
     update_at = models.DateTimeField(auto_now_add=True)
     info = JSONCharField(max_length=512, default={})
 

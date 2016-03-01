@@ -149,7 +149,6 @@ class BookViewSet(ListModelMixin, viewsets.GenericViewSet):
         CREATOR_ID = 'creator_id'
 
         creator_id = request.data.get(CREATOR_ID, None)
-        import pdb; pdb.set_trace()
         if str(creator_id) != str(request.user.id):
             return SimpleResponse(success=False, errors="Not Login")
         else:

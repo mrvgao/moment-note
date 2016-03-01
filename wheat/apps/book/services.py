@@ -90,6 +90,7 @@ class BookService:
             raise KeyError
         else:
             book = Book.objects.create(**kwargs)
+            book.save()
             return book
 
     @staticmethod
@@ -108,6 +109,7 @@ BOOK_FIELDS = ('avatar', 'book_name', 'author', 'page_format', 'preview_url')
 update_book_field = partial(_update_valid_fileds_by_dic, BOOK_FIELDS)
 
 ORDER_FIELDS = ('price', 'status', 'info')
+update_order_field = partial(_update_valid_fileds_by_dic, ORDER_FIELDS)
 
 
 class OrderService:
@@ -118,3 +120,17 @@ class OrderService:
     @staticmethod
     def get_model():
         return Order
+
+    @staticmethod
+    def get_order(**kwargs):
+        return Order.objects.get_or_none(**kwargs)
+
+    @staticmethod
+    def create_order(**kwargs):
+        BOOK_ID = 'book_id'
+        if BOOK_ID not in kwargs:
+            raise KeyError
+        else:
+            order = Order.objects.create(**kwargs)
+            order.save()
+            return order

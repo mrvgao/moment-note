@@ -48,7 +48,10 @@ class AuthorViewSet(ListModelMixin, viewsets.GenericViewSet):
         query_id = request.query_params.get(ID, None)
 
         if query_type == GROUP:
-            data = AuthorService.get_author_group(group_id=query_id)
+            data = AuthorService.get_author_group_info(
+                group_id=query_id, user_service=UserService
+            )
+
             return SimpleResponse(data)
         elif query_type == PERSON:
             user = UserService.get_user(id=query_id)

@@ -24,13 +24,28 @@ class AuthorService:
         return MultiAuthorGroup
 
     @staticmethod
-    def get_author_group(group_id):
+    def get_author_group_info(group_id, user_service):
         group = MultiAuthorGroup.objects.get_or_none(id=group_id)
-        if group:
-            return MultiAuthorGroupSerializer(group).data
-        else:
-            return None
+#        if group:
+#           return MultiAuthorGroupSerializer(group).data
 
+        user_info_list = []
+
+        info = {
+            'id': group.id,
+            'creator_id': group.creator_id,
+            'user_info': []
+        }
+
+        if group:
+            for index in group.members:
+                member_id = group.members[index]['user_id']
+                user = user_service.get_user(id=str(member_id))
+                user_data = user_service.serialize(user)
+                user_info_list.append(user_data)
+
+        info['user_info'] = user_info_list
+        return info
 
     @staticmethod
     def serialize(obj):

@@ -66,7 +66,7 @@ class MomentViewSet(ListModelMixin,
         表示，获取比begin更新的15条数据
 
         e.g 05
-        /moment?receiver=b123asd128hjkasdhjk&begin=ajkhsd1234hkjasdhjk&step＝15compare=after&query_type=group
+        /moment?receiver=b123asd128hjkasdhjk&begin=ajkhsd1234hkjasdhjk&step＝15compare=after&query=1&sender={String}
         表示，获得author_group的id为XXX的全部用户的状态，且该状态要求比begin更早，返回数量最大为15条
 
 
@@ -118,12 +118,6 @@ class MomentViewSet(ListModelMixin,
         moments = services.confine_moment_number(moments, step)
 
         return moments
-
-    @list_route(methods=['get'])
-    def author_group(self, request, group_id):
-        '''
-        获得某个author_group的全部信息
-        '''
 
     @login_required
     def create(self, request):

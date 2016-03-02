@@ -259,6 +259,7 @@ class OrderViewSet(ListModelMixin, viewsets.GenericViewSet):
 
     def update(self, request, id):
         '''
+        根据书本的id，更新订单信息
         Update Order Information.
 
         ### Example Request:
@@ -278,7 +279,7 @@ class OrderViewSet(ListModelMixin, viewsets.GenericViewSet):
               paramType: body
         '''
 
-        order = OrderService.get_order(id=id)
+        order = OrderService.get_order(book_id=id)
         if order:
             new_order = services.update_order_field(order, request.data)
             new_order_data = OrderViewSet.serializer_class(new_order).data

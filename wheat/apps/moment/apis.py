@@ -70,7 +70,7 @@ class MomentViewSet(ListModelMixin,
         表示，获得author_group的id为XXX的全部用户的状态，且该状态要求比begin更早，返回数量最大为15条
 
 
-        receiver -- 接收者的id, 为保证信息的安全，接收者的id必须与当前session的user_id一致，否则请求错误
+        receiver -- 接收者的id, 为保证信息的安全，接收者的id必须与当前 token 的user_id一致，否则请求错误
         sender -- 发送者的id， 可以为空，为空则返回所有好友的和家信息
         number -- 获得的信息数量， 可以为空，为空则至多返回10条
         begin-id -- 起始信息的id，可以为空，为空则返回系统中该用户可见的最新的信息（该信息有可能意见阅读或尚未阅读过）
@@ -93,7 +93,7 @@ class MomentViewSet(ListModelMixin,
         compare = request.query_params.get(COMPARE, None)
         group = request.query_params.get(GROUP, False)
 
-        if receiver_id:
+        if receiver_id == str(request.user.id):
             moments = self._get_moment_by_condition(
                 receiver_id,
                 sender_id, step, begin_id, compare, group

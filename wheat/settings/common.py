@@ -138,7 +138,7 @@ class Common(Configuration):
         ],
         "api_key": '80a93e3c435775c0dec28f6a2ebafa49',
         "is_authenticated": True,
-        "is_superuser": True,
+        "is_superuser": False,
         # "permission_denied_handler": 'TODO',
         "info": {
             'contact': 'cyb@xinshu.me',

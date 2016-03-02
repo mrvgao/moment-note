@@ -31,21 +31,23 @@ class AuthorService:
 
         user_info_list = []
 
-        info = {
-            'id': group.id,
-            'creator_id': group.creator_id,
-            'user_info': []
-        }
-
         if group:
+            info = {
+                'id': group.id,
+                'creator_id': group.creator_id,
+                'user_info': []
+            }
+
             for index in group.members:
                 member_id = group.members[index]['user_id']
                 user = user_service.get_user(id=str(member_id))
                 user_data = user_service.serialize(user)
                 user_info_list.append(user_data)
 
-        info['user_info'] = user_info_list
-        return info
+            info['user_info'] = user_info_list
+            return info
+        else:
+            return None
 
     @staticmethod
     def serialize(obj):

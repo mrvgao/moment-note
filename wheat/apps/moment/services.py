@@ -47,6 +47,7 @@ class MomentService(BaseService):
         content = kwargs.get('content')
         moment_date = kwargs.get('moment_date', datetime.now())
         visible = kwargs.get('visible')
+
         if user_id and Moment.valid_content_type(content_type, content) \
                 and Moment.valid_visible_field(visible):
             moment = Moment.objects.create(

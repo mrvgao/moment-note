@@ -13,7 +13,7 @@ from rest_framework.decorators import list_route
 from .serializers import MomentSerializer
 from apps.book.services import AuthorService
 from itertools import chain
-
+from customs.utility import get_image_from_maili_by_img_list
 
 
 class MomentViewSet(ListModelMixin,
@@ -117,7 +117,17 @@ class MomentViewSet(ListModelMixin,
 
         moments = services.confine_moment_number(moments, step)
 
+        moments = map(self._get_moment_img_size, moments)
+
         return moments
+
+    def _get_moment_img_size(self, moment):
+        PICS, IMG_SIZE = 'pics', 'img_size'
+        if PICS in moment.content:
+            pictures = moment.content[PICS]
+            moment.content.setdefault(IMG_SIZE, get_image_from_maili_by_img_list(pictures))
+
+        return moment
 
     @login_required
     def create(self, request):

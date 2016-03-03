@@ -109,7 +109,7 @@ def get_moment_compare_with_begin_id(moment, compare, begin_id):
     '''
     AFTER = 'previous', 'after'
     POST_DATE = 'post_date'
-    GREATER_THAN, LESS_THAN, MIN = '__gte', '__lte', '__min'  # will be used in django query
+    GREATER_THAN, LESS_THAN, MIN = '__gt', '__lt', '__min'  # will be used in django query
 
     query = GREATER_THAN if compare == AFTER else LESS_THAN  # if needs AFTER explicitly, need greather than, default is less than
     query_str = POST_DATE+query

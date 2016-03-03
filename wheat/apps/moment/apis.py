@@ -117,7 +117,10 @@ class MomentViewSet(ListModelMixin,
 
         moments = services.confine_moment_number(moments, step)
 
-        moments = map(self._get_moment_img_size, moments)
+        try:
+            moments = map(self._get_moment_img_size, moments)
+        except IOError:
+            print('Cannot find this picture')
 
         return moments
 

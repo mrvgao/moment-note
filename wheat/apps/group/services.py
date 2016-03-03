@@ -54,7 +54,6 @@ class GroupService(BaseService):
         user = UserService.get_user(id=owner_id)
         result = Group.objects.filter(creator_id=owner_id, group_type=KEYWORD)
 
-        import pdb; pdb.set_trace()
         if user and len(result) == 0:
             # if this person no initial all friend group
 
@@ -100,7 +99,7 @@ class GroupService(BaseService):
                 'role': creator_role
             }})
 
-        if creator_role is not None: 
+        if creator_role is not None:
             GroupMember.objects.create(
                 member_id=creator.id,
                 group_id=group.id,
@@ -152,12 +151,12 @@ class GroupService(BaseService):
         maili_url = 'http://www.mailicn.com'
 
         chinese_role = role_map.get(invitation_dict['role'], 'hi')
-        nickname = '(%s)%s' % (inviter.phone, inviter.nickname) 
+        nickname = '(%s)%s' % (inviter.phone, inviter.nickname)
         send_message_param = '%s,%s,%s' % (chinese_role, nickname, maili_url)
 
         send_succeed, code = MessageService.send_message(
-            phone=invitation_dict['invitee'], 
-            template_id='20721', 
+            phone=invitation_dict['invitee'],
+            template_id='20721',
             message_param=send_message_param
         )
         return invitation

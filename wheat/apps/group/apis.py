@@ -51,7 +51,6 @@ class GroupViewSet(ListModelMixin,
 
         ALL_FRIENDS = 'all_home_member'
 
-        import pdb; pdb.set_trace()
         if owner_id:
             if group_type == ALL_FRIENDS:
                 result = GroupService.get_group_if_without_create(
@@ -251,7 +250,7 @@ class InvitationViewSet(viewsets.GenericViewSet):
 
         args:
             id: 某个邀请信息的id
-        
+
         ### Example Request
 
             {

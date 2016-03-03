@@ -54,6 +54,7 @@ class GroupService(BaseService):
         user = UserService.get_user(id=owner_id)
         result = Group.objects.filter(creator_id=owner_id, group_type=KEYWORD)
 
+        import pdb; pdb.set_trace()
         if user and len(result) == 0:
             # if this person no initial all friend group
 

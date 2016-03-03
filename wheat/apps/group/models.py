@@ -14,7 +14,7 @@ class Group(CommonUpdateAble, models.Model, EnhancedModel):
     GROUP_TYPES = (
         ('common', u'普通群'),
         ('family', u'家庭'),
-        ('all_friends', u'所有好友'),
+        ('all_home_member', u'所有好友'),
     )
     id = UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     group_type = models.CharField(

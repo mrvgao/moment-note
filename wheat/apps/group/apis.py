@@ -204,7 +204,7 @@ class InvitationViewSet(viewsets.GenericViewSet):
             'message': message
         }
 
-        user_id = request.session.get('user_id', None)
+        user_id = request.user.id
 
         user_okay = False
         invitation_okay = False
@@ -266,7 +266,7 @@ class InvitationViewSet(viewsets.GenericViewSet):
         '''
         accepted = request.data.get('accepted')
 
-        user_id = request.session.get('user_id', None)
+        user_id = request.user.id
 
         if user_id:
             user = UserService.get_user(id=user_id)

@@ -38,7 +38,7 @@ class Moment(CommonUpdateAble, models.Model, EnhancedModel):
         if not isinstance(content, dict):
             return False
         if content_type == 'text':
-            return content.keys() == ['text']
+            return 'text' in content.keys() 
         elif content_type == 'pics':
             return content.keys() == ['pics'] and isinstance(content['pics'], list)
         elif content_type == 'pics-text':

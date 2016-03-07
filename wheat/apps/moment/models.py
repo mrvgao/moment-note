@@ -35,14 +35,15 @@ class Moment(CommonUpdateAble, models.Model, EnhancedModel):
 
     @classmethod
     def valid_content_type(cls, content_type, content):
+        TEXT, PICS = 'text', 'pics'
         if not isinstance(content, dict):
             return False
-        if content_type == 'text':
-            return 'text' in content.keys() 
-        elif content_type == 'pics':
-            return content.keys() == ['pics'] and isinstance(content['pics'], list)
+        if content_type == TEXT:
+            return TEXT in content.keys() 
+        elif content_type == PICS:
+            return PICS in content.keys() and isinstance(content['pics'], list)
         elif content_type == 'pics-text':
-            return content.keys() == ['text', 'pics'] and isinstance(content['pics'], list)
+            return TEXT in content.keys() and PICS in content.keys() and isinstance(content['pics'], list)
         return False
 
     @classmethod

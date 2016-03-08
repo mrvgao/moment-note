@@ -99,7 +99,7 @@ class User(AbstractBaseUser, EnhancedModel, CommonUpdateAble):
         options={'quality': 85})
     tagline = models.CharField(max_length=100, blank=True)  # 个人的签名档
     gender = models.CharField(max_length=1, default='N', choices=GENDERS)
-    marital_status = models.BooleanField(default=None)  # 婚否
+    marital_status = models.BooleanField(default=None, blank=True)  # 婚否
     birthday = models.DateField(null=True, blank=True, default=None)
     country = models.CharField(max_length=30, blank=True)
     province = models.CharField(max_length=30, blank=True)

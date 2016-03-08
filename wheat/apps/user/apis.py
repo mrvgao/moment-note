@@ -10,7 +10,7 @@ from customs.response import SimpleResponse
 from customs.viewsets import ListModelMixin
 from errors import codes
 from utils import utils
-from .permissions import admin_required, is_userself
+from .permissions import admin_required, is_userself, login_required
 from .validators import check_request
 from .services import UserService, AuthService
 from customs.services import MessageService
@@ -294,6 +294,39 @@ class UserViewSet(ListModelMixin,
             data[VALID] = AuthService.check_if_token_valid(token)
             return SimpleResponse(data)
 
+    @login_required
+    @list_route(methods=['put'])
+    def avatar(self, request):
+        '''
+        修改用户的头像信息
+
+        ### Example Request:
+
+            {
+                "avatar": "new avatar url",
+                "user_id": "the id of the updated user"
+            }
+        ---
+        omit_serializer: true
+        omit_parameters:
+            - form
+        parameters:
+            - name: data
+              paramType: body
+        '''
+
+        UESR_ID, AVATAR = 'user_id', 'avatar'
+
+        user_id = request.data.get(UESR_ID, None)
+        avatar = request.data.get(AVATAR, None)
+
+        if user_id != str(request.user.id):
+            return SimpleResponse(errors='user id != logined user')
+        elif not avatar:
+            return SimpleResponse(errors='avatar value cannot be null')
+        else:
+            data = UserService.update_avatar(user_id, avatar)
+            return SimpleResponse(data)
 
     @list_route(methods=['get'])
     def online(self, request):

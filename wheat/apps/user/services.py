@@ -89,7 +89,6 @@ class UserService(BaseService):
         '''
         request.session.setdefault('user_id', user_id)
 
-        
     @classmethod
     def login_user(cls, request, phone, password):
         user = authenticate(username=phone, password=password)
@@ -153,6 +152,17 @@ class UserService(BaseService):
         for id in ids:
             friend_ids.append(str(id))
         return friend_ids
+
+    @staticmethod
+    def update_avatar(user_id, avatar):
+        try:
+            user = UserService.get_user(id=user_id)
+            user.avatar = avatar
+            user.save()
+        except:
+            return None
+        else:
+            return {'user_id': user_id, 'avatar': avatar}
 
 
 class AuthService(object):

@@ -39,6 +39,15 @@ class MomentService(BaseService):
     def get_moments(cls, **kwargs):
         return Moment.objects.filter(**kwargs)
 
+    @staticmethod
+    def _fix_content(content):
+        PICS, TEXT = 'pics', 'text'
+        fix_list = [PICS, TEXT]
+        for f in fix_list:
+            if f not in content:
+                content.setdefault(f, [])
+        return content
+
     @classmethod
     @transaction.atomic
     def create_moment(cls, **kwargs):
@@ -50,6 +59,8 @@ class MomentService(BaseService):
 
         if user_id and Moment.valid_content_type(content_type, content) \
                 and Moment.valid_visible_field(visible):
+
+            content = MomentService._fix_content(content)
             moment = Moment.objects.create(
                 user_id=user_id,
                 content_type=content_type,

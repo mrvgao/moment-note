@@ -214,7 +214,8 @@ class GroupService(BaseService):
                 'event': 'invitation',
                 'sub_event': 'acc_inv_ntf',  # accept_invitation_notify
                 'invitation_id': invitation.id,
-                'receiver_id': invitation.inviter
+                'receiver_id': invitation.inviter,
+                'invitee': invitee
             }
             publish_redis_message(REDIS_PUBSUB_DB, 'invitation->', message)
             return True

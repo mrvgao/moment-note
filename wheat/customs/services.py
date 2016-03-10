@@ -25,7 +25,8 @@ role_map = {
     'suocera': '岳母',
     'qj-g': '亲家母',
     'qj-m': '亲家公',
-    'l-son': '女婿' 
+    'l-son': '女婿',
+    'self': 'self'
 }
 
 class BaseService:

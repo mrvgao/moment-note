@@ -83,7 +83,7 @@ class GroupService(BaseService):
     @transaction.atomic
     def create_group(cls, creator, group_type, name, creator_role=None):
         if not Group.valid_group_type(group_type) \
-                or not GroupMember.valid_role(creator_role):
+                or creator_role not in role_map:
             return None
         group = Group.objects.create(
             creator_id=creator.id,
@@ -170,7 +170,7 @@ class GroupService(BaseService):
     @classmethod
     @transaction.atomic
     def add_group_member(cls, group, user, role):
-        if not GroupMember.valid_role(role) \
+        if role not in role_map \
                 or user.id in group.members \
                 or len(group.members) >= group.max_members:
             return False

@@ -119,7 +119,7 @@ def get_moment_compare_with_begin_id(moment, compare, begin_id):
     if compare is None, give the neariest moments
     if begin_id is None, give the neariest moments
     '''
-    AFTER = 'previous', 'after'
+    PREVIOUS, AFTER = 'previous', 'after'
     POST_DATE = 'post_date'
     GREATER_THAN, LESS_THAN, MIN = '__gt', '__lt', '__min'  # will be used in django query
 

@@ -393,9 +393,9 @@ class UserViewSet(ListModelMixin,
         action = request.query_params.get(ACTION, None)
         if action == SEND:
             phone = request.data.get('phone', None)
-            return self._send_message(phone)
+            return self._send_message(phone, send=True)
         elif action == TEST_SEND:
-            phone = request.data.get('phone', None)
+            phone = request.data.get('phone', send=False)
             return self._send_message(phone)
         elif action == CHECK:
             phone = request.data.get('phone', None)
@@ -417,8 +417,8 @@ class UserViewSet(ListModelMixin,
 
         return SimpleResponse(return_context)
 
-    def _send_message(self, phone):
-        send_succeed, code = MessageService.send_message(phone, send=False)
+    def _send_message(self, phone, send):
+        send_succeed, code = MessageService.send_message(phone=phone, send=send)
 
         return_context = {
             'phone': phone,

@@ -155,7 +155,7 @@ class GroupService(BaseService):
             msg = 'hi'
 
         chinese_role = role_map.get(invitation_dict['role'], 'hi')
-        msg_string = chinese_role + ', ' + msg
+        msg_string = chinese_role + '， ' + msg
         nickname = '(%s)%s' % (inviter.phone, inviter.nickname)
         send_message_param = '%s,%s,%s' % (msg_string, nickname, maili_url)
 
@@ -164,6 +164,7 @@ class GroupService(BaseService):
             template_id='20721',
             message_param=send_message_param
         )
+
         return invitation
 
     @classmethod

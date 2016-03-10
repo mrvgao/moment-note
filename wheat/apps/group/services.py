@@ -204,8 +204,14 @@ class GroupService(BaseService):
     @classmethod
     @transaction.atomic
     def accept_group_invitation(cls, invitee, invitation):
+        '''
+        If invitee is already is his gorup member. 
+        Raises:
+            ReferenceError When invitation.invitee value is not same as invitee.phone, which means this use not login.
+        '''
         if str(invitee.phone) != invitation.invitee:
-            return False
+            raise ReferenceError
+        
         group = GroupService.get_group(id=invitation.group_id)
         if GroupService.add_group_member(group, invitee, invitation.role):
             invitation.update(accepted=True, accept_time=datetime.now())

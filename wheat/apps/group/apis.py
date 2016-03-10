@@ -210,7 +210,6 @@ class InvitationViewSet(viewsets.GenericViewSet):
         invitation_okay = False
 
         try:
-            request
             return self._create_invitation_by_group_and_user_id(user_id, group, invitation_dict)
         except SyntaxError as e:
             return SimpleResponse(status=status.HTTP_400_BAD_REQUEST, errors="invitation is unvalid")
@@ -277,10 +276,10 @@ class InvitationViewSet(viewsets.GenericViewSet):
             success = GroupService.delete_invitation(user, request.invitation)
             return SimpleResponse(success=success)
         elif accepted is True:
-            success = GroupService.accept_group_invitation(user, request.invitation)
-            if success:
-                return SimpleResponse(success=success)
-            else:
+            try:
+                success = GroupService.accept_group_invitation(user, request.invitation)
+                return SimpleResponse(success=True)
+            except ReferenceError as e:
                 return SimpleResponse(success=False, errors=codes.LOGIN_REQUIRED_MSG)
         else:
             return SimpleResponse(status=status.HTTP_400_BAD_REQUEST)

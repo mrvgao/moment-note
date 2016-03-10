@@ -182,6 +182,7 @@ class InvitationViewSet(viewsets.GenericViewSet):
                 'mother': u'妈妈',
                 'child': u'孩子',
                 'wife': u'老婆',
+                'husband': u'老公',
                 'son': u'儿子',
                 'daughter': u'女儿',
                 'slibe':u'哥哥/弟弟',

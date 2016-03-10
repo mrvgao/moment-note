@@ -160,8 +160,8 @@ class InvitationViewSet(viewsets.GenericViewSet):
     麦粒邀请相关API.
     ### Resource Description
     """
-    INVITATION = 'invitation'
-    model = GroupService._get_model(INVITATION)
+    INVITATION = 'Invitation'
+    model = GroupService._get_model()
     queryset = model.get_queryset()
     serializer_class = GroupService.get_serializer(INVITATION)
     lookup_field = 'id'

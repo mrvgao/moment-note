@@ -142,8 +142,8 @@ def get_moment_compare_with_begin_id(moment, compare, begin_id):
 
     sort_order = '-' + POST_DATE  # sort message by time order from newer to older
 
-    if compare == AFTER:
-        sort_order = POST_DATE  # if get unread message, order from older to newer
+   # if compare == AFTER:
+    #    sort_order = POST_DATE  # if get unread message, order from older to newer
 
     return moment.filter(**condition).order_by(sort_order)  # ordered by post date reversed order
 

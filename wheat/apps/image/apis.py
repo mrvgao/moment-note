@@ -29,9 +29,10 @@ class ImageViewSet(viewsets.GenericViewSet):
             - name: image
               type: file
         """
-        if 'image' not in request.data or not isinstance(request.data['image'], InMemoryUploadedFile):
+        IMAGE, REQUEST = 'image', 'request'
+        if IMAGE not in request.data or not isinstance(request.data[IMAGE], InMemoryUploadedFile):
             return SimpleResponse(status=status.HTTP_400_BAD_REQUEST)
-        serializer = self.serializer_class(data=request.data, context={'request': request})
+        serializer = self.serializer_class(data=request.data, context={REQUEST: request})
         if serializer.is_valid():
             serializer.save()
             return SimpleResponse(serializer.data, status=status.HTTP_201_CREATED)

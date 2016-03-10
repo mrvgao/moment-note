@@ -136,7 +136,9 @@ class GroupViewSet(ListModelMixin,
         group = GroupService.get_group(id=id)
         if not group:
             return SimpleResponse(status=status.HTTP_404_NOT_FOUND)
-        name = request.data.get('name')
+
+        NAME = 'name'
+        name = request.data.get(NAME)
         if name:
             group.update(name=name)
             return SimpleResponse(GroupService.serialize(group))
@@ -158,9 +160,10 @@ class InvitationViewSet(viewsets.GenericViewSet):
     麦粒邀请相关API.
     ### Resource Description
     """
-    model = GroupService._get_model('Invitation')
+    INVITATION = 'invitation'
+    model = GroupService._get_model(INVITATION)
     queryset = model.get_queryset()
-    serializer_class = GroupService.get_serializer('Invitation')
+    serializer_class = GroupService.get_serializer(INVITATION)
     lookup_field = 'id'
     permission_classes = [
         Or(permissions.IsAuthenticatedOrReadOnly, AllowPostPermission,)]
@@ -212,10 +215,13 @@ class InvitationViewSet(viewsets.GenericViewSet):
             - name: body
               paramType: body
         '''
-        group_id = request.data.get('group_id')
-        invitee = request.data.get('invitee')
-        role = request.data.get('role')
-        message = request.data.get('message')
+
+        GROUP_ID, INVITEE = 'group_id', 'invitee'
+        ROLE, MESSAGE = 'role', 'message'
+        group_id = request.data.get(GROUP_ID)
+        invitee = request.data.get(INVITEE)
+        role = request.data.get(ROLE)
+        message = request.data.get(MESSAGE)
         if not group_id or not invitee or not role or not message:
             return SimpleResponse(status=status.HTTP_400_BAD_REQUEST)
 
@@ -224,9 +230,9 @@ class InvitationViewSet(viewsets.GenericViewSet):
             return SimpleResponse(status=status.HTTP_400_BAD_REQUEST, errors="this group not found")
 
         invitation_dict = {
-            'invitee': invitee,
-            'role': role,
-            'message': message
+            INVITEE: invitee,
+            ROLE: role,
+            MESSAGE: message
         }
 
         user_id = request.user.id
@@ -288,7 +294,8 @@ class InvitationViewSet(viewsets.GenericViewSet):
             - name: body
               paramType: body
         '''
-        accepted = request.data.get('accepted')
+        ACCEPTED = 'accepted'
+        accepted = request.data.get(ACCEPTED)
 
         user_id = request.user.id
 

@@ -113,7 +113,7 @@ class GroupService(BaseService):
     @classmethod
     @transaction.atomic
     def create_group_invitation(cls, group, inviter, invitation_dict):
-        if not GroupMember.valid_role(invitation_dict['role'])\
+        if invitation_dict['role'] not in role_map\
                 or str(inviter.id) not in group.members:
             return None
         message = {
@@ -150,9 +150,14 @@ class GroupService(BaseService):
 
         maili_url = 'http://www.mailicn.com'
 
+        msg = str(invitation_dict['message']).strip()
+        if msg == "":
+            msg = 'hi'
+
         chinese_role = role_map.get(invitation_dict['role'], 'hi')
+        msg_string = chinese_role + ', ' + msg
         nickname = '(%s)%s' % (inviter.phone, inviter.nickname)
-        send_message_param = '%s,%s,%s' % (chinese_role, nickname, maili_url)
+        send_message_param = '%s,%s,%s' % (msg_string, nickname, maili_url)
 
         send_succeed, code = MessageService.send_message(
             phone=invitation_dict['invitee'],
@@ -211,7 +216,7 @@ class GroupService(BaseService):
         '''
         if str(invitee.phone) != invitation.invitee:
             raise ReferenceError
-        
+
         group = GroupService.get_group(id=invitation.group_id)
         if GroupService.add_group_member(group, invitee, invitation.role):
             invitation.update(accepted=True, accept_time=datetime.now())

@@ -171,12 +171,36 @@ class InvitationViewSet(viewsets.GenericViewSet):
         Invite user into group.
         该接口所需的group_id 请在/api/0.1/groups/ 将type设置为all_home_member进行获取
         !注意: 测试该接口前 请先登录
+
+        ### 目前支持的关系：
+            {
+                'p-grandfather': u'外公',
+                'p-grandmother': u'外婆',
+                'm-grandfather': u'爷爷',
+                'm-grandmother': u'奶奶',
+                'father': u'爸爸',
+                'mother': u'妈妈',
+                'child': u'孩子',
+                'wife': u'老婆',
+                'son': u'儿子',
+                'daughter': u'女儿',
+                'slibe':u'哥哥/弟弟',
+                'sister':u'姐姐／妹妹',
+                'l-father': '公公',
+                'l-mother': '婆婆',
+                'suocero': '岳父',
+                'suocera': '岳母',
+                'qj-g': '亲家母',
+                'qj-m': '亲家公',
+                'l-son': '女婿'
+            }
+
         ### Example Request
 
             {
                 "group_id": "a2b7c193f5df42a69942d0bc848c0467",
                 "invitee": "18805710001",
-                "role": "p-grandfather/p-grandmother/m-grandfather/m-grandmother/father/mother/child",
+                "role": "p-grandfather/p-grandmother/...",
                 "message": "xxx"
             }
         ---

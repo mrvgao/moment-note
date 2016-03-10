@@ -68,6 +68,7 @@ class GroupMember(CommonUpdateAble, models.Model, EnhancedModel):
         ("common", u"普通成员"),
         ("admin", u"管理员"),
     )
+
     ROLES = (
         ("p-grandfather", u"爷爷"),
         ("p-grandmother", u"奶奶"),
@@ -78,11 +79,12 @@ class GroupMember(CommonUpdateAble, models.Model, EnhancedModel):
         ("child", u"孩子"),
         ("self", "self")
     )
+
     member_id = UUIDField(db_index=True)
     group_id = UUIDField(db_index=True)
     authority = models.CharField(max_length=10, choices=AUTHORITIES, default="common")
     group_remark_name = models.CharField(max_length=50)  # 个人对群的备注名称
-    role = models.CharField(max_length=15, choices=ROLES)
+    role = models.CharField(max_length=15)
     nickname = models.CharField(max_length=30)  # 个人在群里的名称
     avatar = models.CharField(max_length=100)  # 个人在群里的头像
     joined_at = models.DateTimeField(auto_now_add=True)
@@ -93,12 +95,14 @@ class GroupMember(CommonUpdateAble, models.Model, EnhancedModel):
     class Meta:
         db_table = "group_member"
 
+    '''
     @classmethod
     def valid_role(cls, role):
         for t, d in GroupMember.ROLES:
             if t == role:
                 return True
         return False
+    '''
 
 
 class Invitation(CommonUpdateAble, models.Model, EnhancedModel):

@@ -12,7 +12,19 @@ role_map = {
 	'm-grandmother': u'奶奶',
 	'father': u'爸爸',
 	'mother': u'妈妈',
-	'child': u'孩子'
+	'child': u'孩子',
+    'wife': u'老婆',
+    'son': u'儿子',
+    'daughter': u'女儿',
+    'slibe':u'哥哥/弟弟',
+    'sister':u'姐姐／妹妹',
+    'l-father': '公公',
+    'l-mother': '婆婆',
+    'suocero': '岳父',
+    'suocera': '岳母',
+    'qj-g': '亲家母',
+    'qj-m': '亲家公',
+    'l-son': '女婿' 
 }
 
 class BaseService:
@@ -84,6 +96,7 @@ class MessageService(object):
 
         SUCCEED_MARK = '000000'
 
+        import pdb; pdb.set_trace()
         if send:
        		response = requests.post(HOST, data=post_message, verify=False)
        	 	status = response.json()['resp']['respCode']

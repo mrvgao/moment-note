@@ -96,7 +96,6 @@ class MessageService(object):
 
         SUCCEED_MARK = '000000'
 
-        import pdb; pdb.set_trace()
         if send:
        		response = requests.post(HOST, data=post_message, verify=False)
        	 	status = response.json()['resp']['respCode']

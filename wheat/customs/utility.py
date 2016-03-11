@@ -7,11 +7,14 @@ from functools import partial
 
 
 def get_image_size(http_site_url, image_src):
-    URL = http_site_url + image_src
-    file = cStringIO.StringIO(urllib.urlopen(URL).read())
-    im = Image.open(file)
-    width, height = im.size
-    return width, height
+  try:
+      URL = http_site_url + image_src
+      file = cStringIO.StringIO(urllib.urlopen(URL).read())
+      im = Image.open(file)
+      width, height = im.size
+      return width, height
+  except Exception as e:
+      return "Pciture Unvalid", "Picture Unvalid"
 
 MAILI_URL = 'http://121.40.158.110'
 get_image_from_maili = partial(get_image_size, MAILI_URL)

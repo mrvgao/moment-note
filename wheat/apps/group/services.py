@@ -279,5 +279,3 @@ def get_group_member_avatar(groups):
 
 def get_group_member_activity(groups):
     return add_group_info(groups,  _set_activity)
- #   return add_group_info(groups,  _get_activity)
-#

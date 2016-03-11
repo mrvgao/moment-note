@@ -6,7 +6,6 @@ from django.db.models import Q
 
 from customs.services import BaseService
 from apps.user.services import UserService
-from apps.group.services import GroupService
 from .models import Moment
 from .serializers import MomentSerializer
 from django.db.models import Min
@@ -80,6 +79,7 @@ class MomentService(BaseService):
 
     @classmethod
     def get_user_moments(cls, user_id):
+        from apps.group.services import GroupService
         friend_ids = UserService.get_user_friend_ids(user_id)
         group_ids = GroupService.get_user_group_ids(user_id)
         moments = Moment.objects.filter(
@@ -99,6 +99,15 @@ class MomentService(BaseService):
             user_id=user_id,
             deleted=False).order_by('post_date')
         return moments
+
+    @staticmethod
+    def get_recent_moment(user_id):
+        try:
+            moment = MomentService.get_moment(user_id=user_id)
+            return moment.id, moment.post_date
+        except Exception as e:
+            print e
+            return None, None
 
 
 def get_moment_from_author_list(receiver, group_id):
@@ -121,9 +130,11 @@ def get_moment_compare_with_begin_id(moment, compare, begin_id):
     '''
     PREVIOUS, AFTER = 'previous', 'after'
     POST_DATE = 'post_date'
-    GREATER_THAN, LESS_THAN, MIN = '__gt', '__lt', '__min'  # will be used in django query
+    GREATER_THAN, LESS_THAN, MIN = '__gt', '__lt', '__min'
+    # will be used in django query
 
-    query = GREATER_THAN if compare == AFTER else LESS_THAN  # if needs AFTER explicitly, need greather than, default is less than
+    query = GREATER_THAN if compare == AFTER else LESS_THAN
+    # if needs AFTER explicitly, need greather than, default is less than
     query_str = POST_DATE+query
 
     get_eariest_time = lambda: Moment.objects.aggregate(Min(POST_DATE)).get(POST_DATE + MIN, datetime.now())

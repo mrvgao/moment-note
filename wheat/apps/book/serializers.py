@@ -7,6 +7,9 @@ from rest_framework import serializers
 
 
 class MultiAuthorGroupSerializer(XModelSerializer):
+
+    members = DictStrField(required=False, allow_blank=True)
+
     class Meta:
         model = MultiAuthorGroup
         fields = ('id', 'creator_id', 'created_at', 'members')

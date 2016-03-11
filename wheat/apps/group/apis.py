@@ -11,6 +11,7 @@ from .services import GroupService
 from apps.user.services import UserService
 from .validators import check_request
 from errors import codes
+from . import services
 
 
 class GroupViewSet(ListModelMixin,
@@ -62,11 +63,20 @@ class GroupViewSet(ListModelMixin,
             else:
                 result = GroupService.filter_group(creator_id=owner_id, group_type=group_type)
 
+            result = GroupViewSet._get_group_member_info(result)
             result = GroupService.serialize_list(result)
             return SimpleResponse(result)
         else:
             response = super(GroupViewSet, self).list(request)
             return SimpleResponse(response.data)
+
+    @staticmethod
+    def _get_group_member_info(result):
+        result = services.get_group_member_avatar(result)
+
+        result = services.get_group_member_activity(result)
+
+        return result
 
     def _get_specific_group(owner_id, group_type):
         '''

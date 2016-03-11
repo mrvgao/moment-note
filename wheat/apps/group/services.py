@@ -11,7 +11,7 @@ from .models import Group, GroupMember, Invitation
 from .serializers import GroupSerializer, GroupMemberSerializer, InvitationSerializer
 from customs.services import MessageService
 from customs.services import role_map
-
+from apps.moment.services import MomentService
 
 
 class GroupService(BaseService):
@@ -240,3 +240,44 @@ class GroupService(BaseService):
         for id in ids:
             group_ids.append(str(id))
         return group_ids
+
+
+def __get_avatar(user_id):
+    try:
+        return str(UserService.get_user(id=user_id).avatar)
+    except Exception as e:
+        print e
+        return None
+
+
+def __get_activity(u):
+    m_id, date = MomentService.get_recent_moment(u)
+    return {'moment_id': m_id, 'date': date}
+
+
+def _set_avatar(group):
+    return lambda u: group.members[u].setdefault('avatar', __get_avatar(u))
+
+
+def _set_activity(group):
+    return lambda u: group.members[u].setdefault('activity', __get_activity(u))
+
+
+def _action_on_group_member(group, func):
+    map(func(group), group.members)
+    return group
+
+
+def add_group_info(groups, func):
+    map(lambda g: _action_on_group_member(g, func), groups)
+    return groups
+
+
+def get_group_member_avatar(groups):
+    return add_group_info(groups,  _set_avatar)
+
+
+def get_group_member_activity(groups):
+    return add_group_info(groups,  _set_activity)
+ #   return add_group_info(groups,  _get_activity)
+#

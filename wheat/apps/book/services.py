@@ -69,8 +69,8 @@ class AuthorService:
         author_list = []
         author_group_member = MultiAuthorGroup.objects.get_or_none(id=group_id).members
 
-        for user in author_group_member:
-            author_list.append(str(author_group_member[user]['user_id']))
+        for user in author_group_member['user']:
+            author_list.append(user)
 
         return author_list
 

@@ -14,6 +14,8 @@ import services
 from errors import codes
 from .utility import login_wxbook
 from .services import send_create_book_request_to_wxbook
+from utils.redis_utils import publish_redis_message
+from settings import REDIS_PUBSUB_DB
 
 
 class AuthorViewSet(ListModelMixin, viewsets.GenericViewSet):
@@ -211,6 +213,12 @@ class BookViewSet(ListModelMixin, viewsets.GenericViewSet):
         if book:
             new_book = services.update_book_field(book, request.data)
             new_book_data = BookViewSet.serializer_class(new_book).data
+            msg = {
+                'book_id': new_book.id,
+                'receiver_id': new_book.creator_id,
+                'event': 'book'
+                }
+            publish_redis_message(REDIS_PUBSUB_DB, 'book->', msg)
             return SimpleResponse(new_book_data)
         else:
             return SimpleResponse(success=False, errors='this book not exist')

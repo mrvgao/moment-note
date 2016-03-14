@@ -12,6 +12,8 @@ from .services import update_book_field
 from apps.user.services import UserService
 import services
 from errors import codes
+from .utility import login_wxbook
+from .services import send_create_book_request_to_wxbook
 
 
 class AuthorViewSet(ListModelMixin, viewsets.GenericViewSet):
@@ -126,6 +128,7 @@ class BookViewSet(ListModelMixin, viewsets.GenericViewSet):
             )
 
     @login_required
+    @login_wxbook
     def create(self, request):
         '''
         创建书籍信息
@@ -163,15 +166,23 @@ class BookViewSet(ListModelMixin, viewsets.GenericViewSet):
         CREATOR_ID = 'creator_id'
 
         creator_id = request.data.get(CREATOR_ID, None)
+
         if str(creator_id) != str(request.user.id):
             return SimpleResponse(success=False, errors="Not Login")
         else:
             try:
                 book = BookService.create_book(**request.data)
+                book_id = book.id
+                group_id = book.group_id
+                send_create_book_request_to_wxbook(
+                    book_id=book_id, group_id=group_id, creator_id=creator_id)
                 data = BookViewSet.serializer_class(book).data
                 return SimpleResponse(data)
             except KeyError:
                 return SimpleResponse(success=False, errors="Lacks of args")
+            except ReferenceError:
+                return SimpleResponse(success=False, errors="Cannot connect to wx book")
+
 
     def update(self, request, id):
         '''
@@ -231,6 +242,7 @@ class OrderViewSet(ListModelMixin, viewsets.GenericViewSet):
             return SimpleResponse(order_data)
         else:
             return SimpleResponse(success=False, errors='this order not exist')
+
 
     def create(self, request):
         '''

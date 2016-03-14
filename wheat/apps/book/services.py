@@ -12,6 +12,7 @@ from customs.services import MessageService
 import ast
 from functools import partial
 from customs import funcs
+import requests
 
 
 class AuthorService:
@@ -97,8 +98,15 @@ class BookService:
             KeyError: If no creator_id or group_id in args
 
         '''
+
         CREATOR_ID, GROUP_ID = "creator_id", "group_id"
         AUTHOR = 'author'
+
+        if not isinstance(kwargs[CREATOR_ID], str):
+            kwargs[CREATOR_ID] = kwargs[CREATOR_ID][0]
+
+        if not isinstance(kwargs[GROUP_ID], str):
+            kwargs[GROUP_ID] = kwargs[GROUP_ID][0]
 
         if AUTHOR not in kwargs:
             kwargs[AUTHOR] = ""
@@ -151,3 +159,20 @@ class OrderService:
             order = Order.objects.create(**kwargs)
             order.save()
             return order
+
+
+def send_create_book_request_to_wxbook(book_id, group_id, creator_id):
+    creator_token = UserService.get_auth_token(user_id=creator_id).key
+ #   URL = 'http://192.168.0.126:8009/maili/book/{0}/typeset?group_id={1}'.format(book_id, group_id)
+    URL = 'http://open.weixinshu.com/maili/book/{0}/typeset?group_id={1}'.format(book_id, group_id)
+    response = requests.get(
+        URL,
+        headers={'Authorization': creator_token}
+    )
+
+    res = response.json()
+    STATUS, SUCCESS, ERR_MSG = 'status', 'success', 'err_msg'
+    if res[STATUS] == SUCCESS:
+        return True
+    else:
+        raise ReferenceError(res[ERR_MSG])

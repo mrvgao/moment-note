@@ -10,20 +10,19 @@ from customs.models import EnhancedModel, CommonUpdateAble, CacheableManager
 
 
 class MultiAuthorGroup(CommonUpdateAble, models.Model, EnhancedModel):
+    USER = 'user'
+
     id = UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     creator_id = UUIDField(db_index=True)  # 创建者
-    members = JSONField(default={})  # 成员列表
+    members = JSONField(default={USER: []})  # 成员列表
     max_members = models.SmallIntegerField(default=15)
     created_at = models.DateTimeField(auto_now_add=True)
 
     objects = CacheableManager()
 
     def add_group_member(self, user_list):
-        for index, user in enumerate(user_list):
-            self.members[str(index)] = {
-                'user_id': str(user),
-                'joined_at': str(datetime.now())
-            }
+        USER = MultiAuthorGroup.USER
+        map(lambda user_id: self.members[USER].append(str(user_id)), user_list)
 
     class Meta:
         db_table = "muti_author_group"

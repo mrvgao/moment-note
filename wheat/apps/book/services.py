@@ -38,8 +38,8 @@ class AuthorService:
                 'user_info': []
             }
 
-            for index in group.members:
-                member_id = group.members[index]['user_id']
+            for user_id in group.members["user"]:
+                member_id = user_id
                 user = user_service.get_user(id=str(member_id))
                 user_data = user_service.serialize(user)
                 user_info_list.append(user_data)

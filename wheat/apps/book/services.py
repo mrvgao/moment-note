@@ -102,10 +102,10 @@ class BookService:
         CREATOR_ID, GROUP_ID = "creator_id", "group_id"
         AUTHOR = 'author'
 
-        if not isinstance(kwargs[CREATOR_ID], str):
+        if not isinstance(kwargs[CREATOR_ID], str) and not isinstance(kwargs[CREATOR_ID], unicode):
             kwargs[CREATOR_ID] = kwargs[CREATOR_ID][0]
 
-        if not isinstance(kwargs[GROUP_ID], str):
+        if not isinstance(kwargs[GROUP_ID], str) and not isinstance(kwargs[GROUP_ID], unicode):
             kwargs[GROUP_ID] = kwargs[GROUP_ID][0]
 
         if AUTHOR not in kwargs:

@@ -11,6 +11,8 @@ from .serializers import MomentSerializer
 from django.db.models import Min
 from apps.book.services import AuthorService
 from itertools import chain
+from settings import REDIS_PUBSUB_DB
+from utils.redis_utils import publish_redis_message
 
 
 class MomentService(BaseService):
@@ -66,7 +68,10 @@ class MomentService(BaseService):
                 content=content,
                 moment_date=moment_date,
                 visible=visible)
+
+            _notify_moment_to_firends(visible, user_id, moment.id)
             return moment
+
         return None
 
     @classmethod
@@ -108,6 +113,34 @@ class MomentService(BaseService):
         except Exception as e:
             print e
             return None, None
+
+
+def _send_msg(sender_id, moment_id):
+    def send_redis(receiver_id):
+        message = {
+            'sender': sender_id,
+            'moment_id': moment_id,
+            'receiver_id': receiver_id,
+            'event': 'moment'
+        }
+
+        publish_redis_message(REDIS_PUBSUB_DB, 'moment->', message)
+        print('send msg to ' + receiver_id)
+
+    return send_redis
+
+
+def _notify_moment_to_firends(visible, user_id, moment_id):
+    from apps.group.services import get_friend_from_group_id
+    from apps.group.services import get_all_home_member_list
+
+    PUBLIC, FRIENDS = 'public', 'friends'
+    if visible == PUBLIC or visible == FRIENDS:
+        friend_list = get_all_home_member_list(user_id)
+    else:
+        friend_list = get_friend_from_group_id(visible, user_id)
+
+    map(_send_msg(user_id, moment_id), friend_list)
 
 
 def get_moment_from_author_list(receiver, group_id):

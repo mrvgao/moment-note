@@ -3,9 +3,9 @@
 from datetime import datetime
 from django.db import transaction
 from settings import REDIS_PUBSUB_DB
+from utils.redis_utils import publish_redis_message
 
 from customs.services import BaseService
-from utils.redis_utils import publish_redis_message
 from apps.user.services import UserService
 from .models import Group, GroupMember, Invitation
 from .serializers import GroupSerializer, GroupMemberSerializer, InvitationSerializer
@@ -240,6 +240,35 @@ class GroupService(BaseService):
         for id in ids:
             group_ids.append(str(id))
         return group_ids
+
+
+def _get_all_friend_home_id(user_id):
+    A_H_M = 'all_home_member'
+    group = GroupService.get_group(creator_id=user_id, group_type=A_H_M)
+    if group:
+        return group.id
+    else:
+        return None
+
+
+def _add_friend(friends_list, group_id):
+    try:
+        group = GroupService.get_group(id=group_id)
+        map(lambda members_id: friends_list.append(members_id), group.members)
+    except Exception:
+        print 'group not exist'
+    return friends_list
+
+
+def get_friend_from_group_id(group_id_list, user_id):
+    friend_list = []
+    reduce(_add_friend, group_id_list, friend_list)
+    return filter(lambda id: id != user_id, friend_list)
+
+
+def get_all_home_member_list(user_id):
+    all_home_group_id = _get_all_friend_home_id(user_id)
+    return get_friend_from_group_id([all_home_group_id], user_id)
 
 
 def __get_avatar(user_id):

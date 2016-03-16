@@ -110,24 +110,35 @@ class BookViewSet(ListModelMixin, viewsets.GenericViewSet):
     permission_classes = [
         Or(permissions.IsAuthenticatedOrReadOnly, AllowPostPermission,)]
 
+    @login_required
     def list(self, request):
         '''
-        获得关于书本的信息
+        获得书本的列表
 
-        id -- Book id
+        creator_id -- creator's id
         ---
         omit_serializer: true
         '''
-        BOOK_ID = 'id'
-        book_id = request.query_params.get(BOOK_ID, None)
-        book = BookService.get_book(id=book_id)
-        if book:
-            book_data = BookViewSet.serializer_class(book).data
-            return SimpleResponse(book_data)
-        else:
-            return SimpleResponse(
-                success=False, code=404, errors='this book not exist'
+        CREATOR_ID = 'creator_id'
+        _CREATOR_ID = request.query_params.get(CREATOR_ID, None)
+
+        books = super(BookViewSet, self).list(request)
+        book_data = books.data
+        if _CREATOR_ID:
+            book_data = filter(
+                lambda b: b[CREATOR_ID] == _CREATOR_ID, book_data
             )
+
+        return SimpleResponse(book_data)
+#        CREATOR = 'creator'
+#        creator_id = request.query_params.get(CREATOR, None)
+#        if book:
+#            book_data = BookViewSet.serializer_class(book).data
+#            return SimpleResponse(book_data)
+#        else:
+#            return SimpleResponse(
+#                success=False, code=404, errors='this book not exist'
+#            )
 
     @login_required
     @login_wxbook
@@ -185,6 +196,17 @@ class BookViewSet(ListModelMixin, viewsets.GenericViewSet):
             except ReferenceError:
                 return SimpleResponse(success=False, errors="Cannot connect to wx book")
 
+    @login_required
+    def retrieve(self, request, id):
+        '''
+        Retrieve Book info.
+        ---
+        omit_serializer: true
+        '''
+        book = BookService.get_book(id=id)
+        if not book:
+            return SimpleResponse(status=status.HTTP_404_NOT_FOUND)
+        return SimpleResponse(BookViewSet.serializer_class(book).data)
 
     def update(self, request, id):
         '''

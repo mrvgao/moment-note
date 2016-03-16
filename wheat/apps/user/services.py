@@ -96,6 +96,7 @@ class UserService(BaseService):
             if user.activated:
                 login(request, user)
                 UserService.set_session_user_id(request, user.id)
+                AuthService.refresh_token(user_id=user.id)
                 return Result(data=user)
             else:
                 return Result(code=codes.INACTIVE_ACCOUNT)
@@ -175,3 +176,9 @@ class AuthService(object):
             return expired_time > datetime.datetime.now()
         else:
             return False
+
+    @staticmethod
+    def refresh_token(user_id):
+        token = AuthToken.objects.get_or_none(user_id=user_id)
+        token = token.refresh_token()
+        return token

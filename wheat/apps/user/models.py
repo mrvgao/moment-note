@@ -39,6 +39,12 @@ class AuthToken(EnhancedModel, CommonUpdateAble, models.Model):
     class Meta:
         db_table = 'auth_token'
 
+    def refresh_token(self):
+        self.key = self.generate_key()
+        self.created_at = datetime.now()
+        self.save()
+        return self.key
+
     def save(self, *args, **kwargs):
         if not self.key:
             self.key = self.generate_key()

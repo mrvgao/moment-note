@@ -238,7 +238,8 @@ class BookViewSet(ListModelMixin, viewsets.GenericViewSet):
             msg = {
                 'book_id': new_book.id,
                 'receiver_id': new_book.creator_id,
-                'event': 'book'
+                'event': 'book',
+                'data': new_book_data
             }
             publish_redis_message(REDIS_PUBSUB_DB, 'book->', msg)
             return SimpleResponse(new_book_data)

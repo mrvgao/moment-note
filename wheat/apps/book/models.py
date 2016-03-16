@@ -34,10 +34,11 @@ class Book(CommonUpdateAble, models.Model, EnhancedModel):
     group_id = UUIDField(db_index=True)
     remark_name = models.CharField(max_length=50, default="")  # The remark name of this book.
     avatar = models.CharField(max_length=100, default="")  # The book avatar.
+    cover = JSONCharField(max_length=200, default={})
     book_name = models.CharField(max_length=50, default="")
     author = models.CharField(max_length=50)  # wroten name
     page_format = models.CharField(max_length=50, default="")
-    preview_url = models.CharField(max_length=50, default="")
+    preview_url = models.CharField(max_length=100, default="")
     created_at = models.DateTimeField(auto_now_add=True)
     deleted = models.BooleanField(default=False)
 

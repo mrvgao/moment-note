@@ -138,7 +138,7 @@ class BookViewSet(ListModelMixin, viewsets.GenericViewSet):
 
         创建一本书所需要的信息：
         creator_id: 这本书的创建者的id
-        avatar: 这本书的封面图的URL
+        cover: 这本书的封面图的URL
         book_name: 为该书所起的名字
         author: 该书的作者的名字（若无则与用户的昵称相同）
         page_format: 该书的板式
@@ -149,7 +149,7 @@ class BookViewSet(ListModelMixin, viewsets.GenericViewSet):
             {
                 "creator_id": String, (required)
                 "group_id": String, (所隶属的作者组， required)
-                "avatar": String,
+                "cover": String,
                 "book_name": String,
                 "author": String,
                 "page_format": String,
@@ -193,7 +193,7 @@ class BookViewSet(ListModelMixin, viewsets.GenericViewSet):
 
         ### Example Request:
             {
-                "avatar": String,
+                "cover": String,
                 "book_name": String,
                 "author": String,
                 "page_format": String,
@@ -217,7 +217,7 @@ class BookViewSet(ListModelMixin, viewsets.GenericViewSet):
                 'book_id': new_book.id,
                 'receiver_id': new_book.creator_id,
                 'event': 'book'
-                }
+            }
             publish_redis_message(REDIS_PUBSUB_DB, 'book->', msg)
             return SimpleResponse(new_book_data)
         else:

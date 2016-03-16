@@ -130,7 +130,7 @@ def _update_valid_fileds_by_dic(FIELDS, obj, DIC):
     obj.save()
     return obj
 
-BOOK_FIELDS = ('avatar', 'book_name', 'author', 'page_format', 'preview_url')
+BOOK_FIELDS = ('avatar', 'book_name', 'author', 'page_format', 'preview_url', 'cover')
 update_book_field = partial(_update_valid_fileds_by_dic, BOOK_FIELDS)
 
 ORDER_FIELDS = ('price', 'status', 'info')

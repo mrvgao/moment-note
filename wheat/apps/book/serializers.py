@@ -24,6 +24,7 @@ class BookSerializer(XModelSerializer):
         style={'input_type': 'file'}
     )
 
+    cover = DictStrField(required=False, allow_blank=True)
     remark_name = serializers.CharField(required=False, allow_blank=True)
     book_name = serializers.CharField(required=False, allow_blank=True)
     author = serializers.CharField(required=False, allow_blank=True)
@@ -32,7 +33,7 @@ class BookSerializer(XModelSerializer):
 
     class Meta:
         model = Book
-        fields = ('id', 'creator_id', 'group_id',
+        fields = ('id', 'creator_id', 'group_id', 'cover',
                   'remark_name', 'avatar', 'book_name',
                   'author', 'page_format', 'preview_url',
                   'created_at')

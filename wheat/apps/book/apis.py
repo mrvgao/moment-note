@@ -278,7 +278,7 @@ class OrderViewSet(ListModelMixin, viewsets.GenericViewSet):
             data = OrderViewSet.serializer_class(order).data
             return SimpleResponse(data)
         except KeyError:
-            return SimpleResponse(success=False, erros="Lack of requied keys")
+            return SimpleResponse(success=False, errors="Lack of requied keys")
 
     def update(self, request, id):
         '''

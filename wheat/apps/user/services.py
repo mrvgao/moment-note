@@ -11,7 +11,7 @@ from .serializers import UserSerializer, AuthTokenSerializer
 import datetime
 
 
-UserUpdateFields = ('phone', 'nickname', 'first_name', 'last_name', 'avatar',
+UserUpdateFields = ('phone', 'marital_status', 'nickname', 'first_name', 'last_name', 'avatar',
                     'tagline', 'gender', 'city', 'province', 'country', 'password')
 
 

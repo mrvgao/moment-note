@@ -98,7 +98,7 @@ class AuthorViewSet(ListModelMixin, viewsets.GenericViewSet):
             return SimpleResponse(data)
         else:
             return SimpleResponse(
-                success=False, erros="Params Unvalid"
+                success=False, errors="Params Unvalid"
             )
 
 

@@ -236,18 +236,19 @@ class UserViewSet(ListModelMixin,
             return SimpleResponse(data)
         return SimpleResponse(errors=result.errors)
 
-    @list_route(methods=['post', 'get'])
+    @login_required
+    @list_route(methods=['put', 'get'])
     def token(self, request):
         '''
-        1. POST: Get token(old or new) by phone and password or refresh old token.
+        1. put: refresh old token.
+        2. GET: check token if valid.
         ### Example Request
 
         When POST:
 
 
             {
-                "phone": "18582227569",
-                "password": "q1w2e3",
+                "user_id": "user_id",
                 "token": "old token"
             }
 
@@ -257,8 +258,8 @@ class UserViewSet(ListModelMixin,
 
             {URL}/user/token/?action=check&token=XXX
 
-        token -- token
-        action -- 对token采取的操作，当action == check 时候，返回该token是否有效
+        token -- token, 仅当Get时使用
+        action -- 仅当Get时使用，对token采取的操作，当action == check 时候，返回该token是否有效
 
         ---
         omit_serializer: true
@@ -269,23 +270,22 @@ class UserViewSet(ListModelMixin,
               paramType: body
 
         '''
-        if request.method == 'POST':
-            key = request.data.get('token', '')
-            if key:
+
+        USER_ID, TOKEN = 'user_id', 'token'
+        if request.method == 'PUT':
+            user_id = request.data.get(USER_ID)
+            key = request.data.get(TOKEN, None)
+            if not key:
+                return SimpleResponse(code=codes.INVALID_TOKEN)
+            elif str(user_id) != str(request.user.id):
+                return SimpleResponse(code=codes.LOGIN_REQUIRED)
+            else:
                 token = UserService.get_auth_token(key=key)
                 if token:
                     token = UserService.refresh_auth_token(token)
-                    return SimpleResponse(token.token)
+                    return SimpleResponse(token)
                 else:
                     return SimpleResponse(code=codes.INVALID_TOKEN)
-            phone = request.data.get('phone', '')
-            password = request.data.get('password', '')
-            result = UserService.login_user(request, phone, password)
-            if result.success:
-                return SimpleResponse(result.data.token)
-            else:
-                return SimpleResponse(errors=result.errors)
-            return SimpleResponse(success=False)
         elif request.method == 'GET':
             TOKEN, VALID = 'token', 'valid'
             token = request.query_params.get(TOKEN, None)

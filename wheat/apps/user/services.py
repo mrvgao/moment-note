@@ -117,7 +117,12 @@ class UserService(BaseService):
     @classmethod
     @transaction.atomic
     def refresh_auth_token(cls, token):
-        token = AuthToken.objects.refresh_token(token)
+        token = AuthToken.objects.get_or_none(key=token)
+        if token.expired():
+            token = token.refresh_token()
+        else:
+            token = token.token['token']
+
         return token
 
     @classmethod

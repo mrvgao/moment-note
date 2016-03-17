@@ -506,4 +506,5 @@ class Common(Configuration):
 
     # REDIS DB
     REDIS_PUBSUB_DB = 2
+    REDIS_PUBSUB_TAG = 'dev'
     # END REDIS DB

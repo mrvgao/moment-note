@@ -4,7 +4,7 @@ import redis
 from optparse import make_option
 from json import JSONDecoder, JSONEncoder
 from django.core.management.base import BaseCommand
-from settings import REDIS_PUBSUB_DB
+from settings import REDIS_PUBSUB_DB, REDIS_PUBSUB_TAG
 
 from apps.user.services import UserService
 
@@ -12,7 +12,7 @@ from apps.user.services import UserService
 def listen_on_redis_pubsub():
     r = redis.StrictRedis(db=REDIS_PUBSUB_DB)
     p = r.pubsub(ignore_subscribe_messages=True)
-    p.subscribe("->login")
+    p.subscribe(REDIS_PUBSUB_TAG + ":->login")
     for m in p.listen():
         print 'receive message:', m
         login_data = JSONDecoder().decode(m['data'])
@@ -26,14 +26,14 @@ def listen_on_redis_pubsub():
                 'receiver_id': user_id,
                 'user': UserService.serialize(user)
             }
-            r.publish('login->', JSONEncoder().encode(data))
+            r.publish(REDIS_PUBSUB_TAG + ':login->', JSONEncoder().encode(data))
         else:
             data = {
                 'event': 'login',
                 'login': False,
                 'receiver_id': user_id,
             }
-            r.publish('login->', JSONEncoder().encode(data))
+            r.publish(REDIS_PUBSUB_TAG + ':login->', JSONEncoder().encode(data))
 
 
 class Command(BaseCommand):

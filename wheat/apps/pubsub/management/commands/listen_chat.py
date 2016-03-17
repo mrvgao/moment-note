@@ -4,7 +4,7 @@ import redis
 from optparse import make_option
 from json import JSONDecoder, JSONEncoder
 from django.core.management.base import BaseCommand
-from settings import REDIS_PUBSUB_DB
+from settings import REDIS_PUBSUB_DB, REDIS_PUBSUB_TAG
 
 from apps.message.services import MessageService, GroupMessageService
 
@@ -12,7 +12,7 @@ from apps.message.services import MessageService, GroupMessageService
 def listen_on_redis_pubsub():
     r = redis.StrictRedis(db=REDIS_PUBSUB_DB)
     p = r.pubsub(ignore_subscribe_messages=True)
-    p.subscribe("->chat")
+    p.subscribe(REDIS_PUBSUB_TAG + ":->chat")
     for m in p.listen():
         print 'receive message:', m
         message_dict = JSONDecoder().decode(m['data'])
@@ -24,7 +24,7 @@ def listen_on_redis_pubsub():
                     message = MessageService.serialize(message)
                     message['event'] = 'chat'
                     message['sub_event'] = 'p2p'
-                    r.publish('chat->', JSONEncoder().encode(message))
+                    r.publish(REDIS_PUBSUB_TAG + ':chat->', JSONEncoder().encode(message))
             elif message_dict['sub_event'] == 'p2g':
                 messages = GroupMessageService.create_messages(message_dict)
                 if messages:
@@ -33,7 +33,7 @@ def listen_on_redis_pubsub():
                         message = GroupMessageService.serialize(message)
                         message['event'] = 'chat'
                         message['sub_event'] = 'p2g'
-                        r.publish('chat->', JSONEncoder().encode(message))
+                        r.publish(REDIS_PUBSUB_TAG + ':chat->', JSONEncoder().encode(message))
         elif message_dict['event'] == 'receive_messages':
             p2p_message_ids = message_dict.get('p2p_message_ids')
             if p2p_message_ids:
@@ -55,7 +55,7 @@ def listen_on_redis_pubsub():
             }
             print 'get unreceived p2p messages of', receiver_id, ':', p2p_messages
             print 'get unreceived p2g messages of', receiver_id, ':', p2g_messages
-            r.publish('chat->', JSONEncoder().encode(message_dict))
+            r.publish(REDIS_PUBSUB_TAG + ':chat->', JSONEncoder().encode(message_dict))
 
 
 class Command(BaseCommand):

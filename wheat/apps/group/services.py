@@ -83,7 +83,7 @@ class GroupService(BaseService):
     @transaction.atomic
     def create_group(cls, creator, group_type, name, creator_role=None):
         if not Group.valid_group_type(group_type) \
-                or creator_role not in role_map:
+                or not _valid_role(creator_role):
             return None
         group = Group.objects.create(
             creator_id=creator.id,
@@ -113,7 +113,7 @@ class GroupService(BaseService):
     @classmethod
     @transaction.atomic
     def create_group_invitation(cls, group, inviter, invitation_dict):
-        if invitation_dict['role'] not in role_map\
+        if not _valid_role(invitation_dict['role']) \
                 or str(inviter.id) not in group.members:
             return None
         message = {
@@ -170,7 +170,7 @@ class GroupService(BaseService):
     @classmethod
     @transaction.atomic
     def add_group_member(cls, group, user, role):
-        if role not in role_map \
+        if not _valid_role(role) \
                 or user.id in group.members \
                 or len(group.members) >= group.max_members:
             return False
@@ -192,7 +192,8 @@ class GroupService(BaseService):
             nickname=user.nickname,
             role=role)
         # group里所有成员建立“好友关系”
-        UserService.create_friendships(str(user.id), member_ids)
+        if not role.startswith('r-'):
+            UserService.create_friendships(str(user.id), member_ids)
         return True
 
     @classmethod
@@ -211,7 +212,7 @@ class GroupService(BaseService):
     @transaction.atomic
     def accept_group_invitation(cls, invitee, invitation):
         '''
-        If invitee is already is his gorup member. 
+        If invitee is already is his gorup member.
         Raises:
             ReferenceError When invitation.invitee value is not same as invitee.phone, which means this use not login.
         '''
@@ -220,17 +221,21 @@ class GroupService(BaseService):
 
         group = GroupService.get_group(id=invitation.group_id)
         if GroupService.add_group_member(group, invitee, invitation.role):
-            invitation.update(accepted=True, accept_time=datetime.now())
-            # send invitation
-            message = {
-                'event': 'invitation',
-                'sub_event': 'acc_inv_ntf',  # accept_invitation_notify
-                'invitation_id': invitation.id,
-                'receiver_id': invitation.inviter,
-                'invitee': str(invitee.id)
-            }
-            publish_redis_message(REDIS_PUBSUB_DB, 'invitation->', message)
-            return True
+            # inviter and invitee will both enter each other's `all_home_member` group
+            invitee_group = GroupService.get_group(creator_id=invitee.id, group_type="all_home_member")
+            inviter = UserService.get_user(id=invitation.inviter)
+            if GroupService.add_group_member(invitee_group, inviter, 'r-' + invitation.role):
+                invitation.update(accepted=True, accept_time=datetime.now())
+                # send invitation
+                message = {
+                    'event': 'invitation',
+                    'sub_event': 'acc_inv_ntf',  # accept_invitation_notify
+                    'invitation_id': invitation.id,
+                    'receiver_id': invitation.inviter,
+                    'invitee': str(invitee.id)
+                }
+                publish_redis_message(REDIS_PUBSUB_DB, 'invitation->', message)
+                return True
         return False
 
     @classmethod
@@ -310,3 +315,8 @@ def get_group_member_avatar(groups):
 
 def get_group_member_activity(groups):
     return add_group_info(groups,  _set_activity)
+
+def _valid_role(r):
+    if r.startswith('r-'):
+        return r[2:] in role_map
+    return r in role_map

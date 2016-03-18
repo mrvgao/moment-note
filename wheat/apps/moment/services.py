@@ -139,6 +139,7 @@ def _notify_moment_to_firends(visible, user_id, moment_id):
         friend_list = get_all_home_member_list(user_id)
     else:
         friend_list = get_friend_from_group_id(visible, user_id)
+    print 'friend list:', friend_list
 
     map(_send_msg(user_id, moment_id), friend_list)
 

@@ -243,12 +243,14 @@ class GroupService(BaseService):
 
 
 def _get_all_friend_home_id(user_id):
-    A_H_M = 'all_home_member'
-    group = GroupService.get_group(creator_id=user_id, group_type=A_H_M)
-    if group:
-        return group.id
-    else:
-        return None
+    group_ids = list(GroupMember.objects.filter(member_id=user_id, deleted=False).values_list('group_id', flat=True))
+    return group_ids
+    # A_H_M = 'all_home_member'
+    # group = GroupService.get_group(creator_id=user_id, group_type=A_H_M)
+    # if group:
+    #     return group.id
+    # else:
+    #     return None
 
 
 def _add_friend(friends_list, group_id):
@@ -267,8 +269,8 @@ def get_friend_from_group_id(group_id_list, user_id):
 
 
 def get_all_home_member_list(user_id):
-    all_home_group_id = _get_all_friend_home_id(user_id)
-    return get_friend_from_group_id([all_home_group_id], user_id)
+    all_home_group_ids = _get_all_friend_home_id(user_id)
+    return get_friend_from_group_id(all_home_group_ids, user_id)
 
 
 def __get_avatar(user_id):

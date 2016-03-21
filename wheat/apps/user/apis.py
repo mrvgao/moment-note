@@ -388,18 +388,18 @@ class UserViewSet(ListModelMixin,
               paramType: body
         '''
 
-        ACTION = 'action'
+        ACTION, PHONE, CAPTCHA = 'action','phone', 'captcha'
         SEND, CHECK, TEST_SEND = 'send', 'check', 'test_send'
         action = request.query_params.get(ACTION, None)
         if action == SEND:
-            phone = request.data.get('phone', None)
+            phone = request.data.get(PHONE, None)
             return self._send_message(phone, send=True)
         elif action == TEST_SEND:
-            phone = request.data.get('phone', send=False)
-            return self._send_message(phone)
+            phone = request.data.get(PHONE, None)
+            return self._send_message(phone, send=False)
         elif action == CHECK:
-            phone = request.data.get('phone', None)
-            captcha = request.data.get('captcha', None)
+            phone = request.data.get(PHONE, None)
+            captcha = request.data.get(CAPTCHA, None)
             return self._check_captcha(phone, captcha)
         else:
             return SimpleResponse(errors='action not supply')

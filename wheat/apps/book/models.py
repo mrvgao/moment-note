@@ -49,8 +49,18 @@ class Book(CommonUpdateAble, models.Model, EnhancedModel):
 
     objects = CacheableManager()
 
+    def delete(self):
+        try:
+            self.deleted = True
+            self.save()
+            return True
+        except Exception as e:
+            print e
+            return False
+
     class Meta:
         db_table = "book"
+
 
 
 class Order(CommonUpdateAble, models.Model, EnhancedModel):

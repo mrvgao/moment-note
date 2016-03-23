@@ -14,8 +14,10 @@ import services
 from errors import codes
 from .utility import login_wxbook
 from .services import send_create_book_request_to_wxbook
+from .services import delete_book_list_some_field
 from utils.redis_utils import publish_redis_message
 from settings import REDIS_PUBSUB_DB
+from rest_framework.decorators import list_route
 
 
 class AuthorViewSet(ListModelMixin, viewsets.GenericViewSet):
@@ -129,6 +131,13 @@ class BookViewSet(ListModelMixin, viewsets.GenericViewSet):
                 lambda b: b[CREATOR_ID] == _CREATOR_ID, book_data
             )
 
+            DELETED = 'deleted'
+            book_data = filter(
+                lambda b: b[DELETED] is False, book_data
+            )
+
+            book_data = delete_book_list_some_field(book_data)
+
         return SimpleResponse(book_data)
 #        CREATOR = 'creator'
 #        creator_id = request.query_params.get(CREATOR, None)
@@ -139,6 +148,22 @@ class BookViewSet(ListModelMixin, viewsets.GenericViewSet):
 #            return SimpleResponse(
 #                success=False, code=404, errors='this book not exist'
 #            )
+
+    @login_required
+    def destroy(self, request, id):
+        '''
+        Delete One Book By Book's id
+        ---
+        omit_serializer: true
+        '''
+        BOOK_ID = id
+
+        try:
+            deleted = BookService.delete_book(request.user.id, BOOK_ID)
+            data = {'datelated': deleted, 'book_id': BOOK_ID}
+            return SimpleResponse(data=data)
+        except ReferenceError as e:
+            return SimpleResponse(success=False, errors=e.message)
 
     @login_required
     @login_wxbook

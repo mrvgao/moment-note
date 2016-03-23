@@ -31,13 +31,14 @@ class BookSerializer(XModelSerializer):
     author = serializers.CharField(required=False, allow_blank=True)
     page_format = serializers.CharField(required=False, allow_blank=True)
     preview_url = serializers.URLField(required=False, allow_blank=True)
+    deleted = serializers.BooleanField(required=False)
 
     class Meta:
         model = Book
         fields = ('id', 'creator_id', 'group_id', 'cover', 'more_info',
                   'remark_name', 'avatar', 'book_name',
                   'author', 'page_format', 'preview_url',
-                  'created_at', 'page_num', 'from_date', 'to_date', 'status')
+                  'created_at', 'page_num', 'from_date', 'to_date', 'status', 'deleted')
 
 
 class OrderSerializer(XModelSerializer):

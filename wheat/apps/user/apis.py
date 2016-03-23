@@ -96,11 +96,11 @@ class UserViewSet(ListModelMixin,
             - name: body
               paramType: body
         '''
-        
+
         phone = request.data.get('phone', None)
         user = UserService.get_user(phone=phone)
         return self._update_user_info(user, request.data)
-        
+
     def _update_user_info(self, user, data):
         if not user:
             return SimpleResponse(errors=codes.errors(codes.USER_NOT_EXIST))

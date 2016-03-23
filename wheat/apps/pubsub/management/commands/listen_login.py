@@ -1,12 +1,16 @@
 # -*- coding:utf-8 -*-
 
 import redis
+import logging
 from optparse import make_option
 from json import JSONDecoder, JSONEncoder
 from django.core.management.base import BaseCommand
+from django.db import connection
 from settings import REDIS_PUBSUB_DB, REDIS_PUBSUB_TAG
 
 from apps.user.services import UserService
+
+logger = logging.getLogger('pubsub')
 
 
 def listen_on_redis_pubsub():
@@ -14,7 +18,7 @@ def listen_on_redis_pubsub():
     p = r.pubsub(ignore_subscribe_messages=True)
     p.subscribe(REDIS_PUBSUB_TAG + ":->login")
     for m in p.listen():
-        print 'receive message:', m
+        logger.info('receive message: {0}'.format(m))
         login_data = JSONDecoder().decode(m['data'])
         user_id = login_data.get('user_id')
         token = login_data.get('token')
@@ -34,6 +38,8 @@ def listen_on_redis_pubsub():
                 'receiver_id': user_id,
             }
             r.publish(REDIS_PUBSUB_TAG + ':login->', JSONEncoder().encode(data))
+        logger.info('publish message to {0}: {1}'.format(REDIS_PUBSUB_TAG + ':login->', data))
+        connection.close()
 
 
 class Command(BaseCommand):

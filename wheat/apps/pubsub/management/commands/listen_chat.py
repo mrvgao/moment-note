@@ -4,6 +4,7 @@ import redis
 from optparse import make_option
 from json import JSONDecoder, JSONEncoder
 from django.core.management.base import BaseCommand
+from django.db import connection
 from settings import REDIS_PUBSUB_DB, REDIS_PUBSUB_TAG
 
 from apps.message.services import MessageService, GroupMessageService
@@ -56,6 +57,7 @@ def listen_on_redis_pubsub():
             print 'get unreceived p2p messages of', receiver_id, ':', p2p_messages
             print 'get unreceived p2g messages of', receiver_id, ':', p2g_messages
             r.publish(REDIS_PUBSUB_TAG + ':chat->', JSONEncoder().encode(message_dict))
+        connection.close()
 
 
 class Command(BaseCommand):

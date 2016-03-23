@@ -48,7 +48,19 @@ class Moment(CommonUpdateAble, models.Model, EnhancedModel):
 
     @classmethod
     def valid_visible_field(cls, visible):
-        return visible == 'private' or visible == 'public' or visible == 'friends' or len(visible) == 32
+        PRIVATE, PUBLIC, FRIENDS = 'private', 'public', 'friends'
+        AVALIABLE_SCOPES = [PRIVATE, PUBLIC, FRIENDS]
+        return visible in AVALIABLE_SCOPES or len(visible) == 32
+
+
+class Comment(CommonUpdateAble, models.Model, EnhancedModel):
+    pass
+
+
+class Mark(CommonUpdateAble, models.Model, EnhancedModel):
+    TYPES = (
+        ('like', 'like'),
+    )
 
 
 class MomentStat(CommonUpdateAble, models.Model, EnhancedModel):

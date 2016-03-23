@@ -122,6 +122,22 @@ class BookService:
     def get_book(**kwagrs):
         return Book.objects.get_or_none(**kwagrs)
 
+    @staticmethod
+    def delete_book(USER_ID, BOOK_ID):
+        '''
+        Delete a book by user_id and book_id
+        Returns:
+            delete: {Boolean}, if book is deleted
+        Raises:
+            Reference: if this user don't have this book
+        '''
+        ReferenceError_MSG = 'this user cannot delete this book'
+        book = BookService.get_book(creator_id=USER_ID, id=BOOK_ID)
+        if book:
+            return book.delete()
+        else:
+            raise ReferenceError(ReferenceError_MSG)
+
 
 @transaction.atomic
 def _update_valid_fileds_by_dic(FIELDS, obj, DIC):
@@ -176,3 +192,23 @@ def send_create_book_request_to_wxbook(book_id, group_id, creator_id):
         return True
     else:
         raise ReferenceError(res[ERR_MSG])
+
+
+def _delete_one_fields(book):
+    DELETED = 'deleted'
+    fields = [DELETED]
+
+    def delete_books_fields(book):
+        def delete_field(f):
+            del book[f]
+        return delete_field
+
+    delete_book_one_field = delete_books_fields(book)
+
+    map(lambda f: delete_book_one_field(f), fields)
+
+    return book
+
+def delete_book_list_some_field(books):
+    new_books = map(_delete_one_fields, books)
+    return new_books

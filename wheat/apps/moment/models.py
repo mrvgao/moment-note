@@ -6,6 +6,7 @@ from uuidfield import UUIDField
 from jsonfield import JSONField
 
 from customs.models import EnhancedModel, CommonUpdateAble, CacheableManager
+from datetime import datetime
 
 
 class Moment(CommonUpdateAble, models.Model, EnhancedModel):
@@ -54,13 +55,34 @@ class Moment(CommonUpdateAble, models.Model, EnhancedModel):
 
 
 class Comment(CommonUpdateAble, models.Model, EnhancedModel):
-    pass
+    id = UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    moment_id = UUIDField(default=None)
+    receiver_id = UUIDField(default=None)
+    if_to_specific_person = models.BooleanField(default=False)
+    sender_id = UUIDField(default=None)
+    create = models.DateTimeField(
+        auto_now_add=True,
+        db_index=True,
+        default=datetime.now()
+    )
+    deleted = models.BooleanField(default=False)
 
 
 class Mark(CommonUpdateAble, models.Model, EnhancedModel):
     TYPES = (
         ('like', 'like'),
     )
+
+    id = UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    moment_id = UUIDField(default=None)
+    sender_id = UUIDField(default=None)
+    mark_type = models.CharField(max_length=10, choices=TYPES, default=None)
+    create = models.DateTimeField(
+        auto_now_add=True,
+        db_index=True,
+        default=datetime.now()
+    )
+    deleted = models.BooleanField(default=False)
 
 
 class MomentStat(CommonUpdateAble, models.Model, EnhancedModel):

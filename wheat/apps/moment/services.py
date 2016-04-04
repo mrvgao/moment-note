@@ -13,7 +13,8 @@ from apps.book.services import AuthorService
 from itertools import chain
 from settings import REDIS_PUBSUB_DB
 from utils.redis_utils import publish_redis_message
-
+from .models import Comment
+from .models import Mark
 
 class MomentService(BaseService):
 
@@ -210,3 +211,72 @@ def get_moment_by_receiver_and_sender_id(receiver_id, sender_id):
         moments = MomentService.filter_public_moments(sender_all_moment)
 
     return moments
+
+'''
+Visible Service
+Caculate if a person could see the momment or mark.
+Author: Minchiuan Gao 2016-4-26
+'''
+
+
+def is_visible(moment_owver, message_sender, message_receiver):
+    '''
+    Message_sender sends a message(comment or mark) to one moment,
+    Judge if message_receiver could see this message.
+    '''
+    return True
+
+
+def create_comment_or_mark(Statement, moment_id, sender_id, receiver_id=None):
+    new_statement = Statement()
+    if receiver_id is not None:
+        new_statement.if_to_specific_person = True
+        new_statement.receiver_id = receiver_id
+    new_statement.moment_id = moment_id
+    new_statement.sender_id = sender_id
+    new_statement.save()
+
+
+def cancle_comment_or_mark(Statement, moment_id)
+'''
+Commemt Service Functions
+Author: Minchiuan Gao 2016-4-26
+'''
+
+
+def make_comment(moment_id, sender_id, receiver_id=None):
+    create_comment_or_mark(Comment, moment_id, sender_id, receiver_id)
+
+
+def cancle_comment(mark_id, user_id):
+
+    pass
+
+
+def get_comment_info(moment_id, user_id):
+    '''
+    Gets mark info, marks total number and mark's person.
+    Returns:
+        (total_number, marked_person_id_list)
+    '''
+
+
+'''
+Mark Service Functions
+Author: Minchiuan Gao 2016-4-26
+'''
+
+
+def make_mark(moment_id, sender_id):
+    create_comment_or_mark(Mark, moment_id, sender_id)
+
+
+def cancle_mark(comment_id, user_id):
+
+    pass
+
+
+def get_mark_info(moment_id, user_id):
+    '''
+    Gets comment info, comment total number and comment statements.
+    '''

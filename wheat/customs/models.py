@@ -146,7 +146,8 @@ class CacheableManager(models.Manager):
         try:
             obj = self.get(*args, **kwargs)
             return obj
-        except:
+        except Exception as e:
+            logger.error(e)
             return None
 
     def this(self, *args, **kwargs):
@@ -172,7 +173,8 @@ class CacheableManager(models.Manager):
             if defaults:
                 obj.update(**defaults)
             return obj, False
-        except:
+        except Exception as e:
+            logger.error(e)
             if defaults:
                 kwargs.update(defaults)
             obj = self.create(**kwargs)

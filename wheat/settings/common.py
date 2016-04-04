@@ -317,7 +317,21 @@ class Common(Configuration):
                 'filename': os.path.join(BASE_DIR, 'logs/error.log'),
                 'maxBytes': '16777216',  # 16megabytes
                 'formatter': 'verbose'
-            }
+            },
+            'query': {
+                'level': 'ERROR',
+                'class': 'logging.handlers.RotatingFileHandler',
+                'filename': os.path.join(BASE_DIR, 'logs/query.log'),
+                'maxBytes': '16777216',  # 16megabytes
+                'formatter': 'verbose'
+            },
+            'pubsub': {
+                'level': 'DEBUG',
+                'class': 'logging.handlers.RotatingFileHandler',
+                'filename': os.path.join(BASE_DIR, 'logs/redis-pubsub-supervisor.log'),
+                'maxBytes': '16777216',  # 16megabytes
+                'formatter': 'verbose'
+            },
         },
         'loggers': {
             'django.request': {
@@ -326,10 +340,15 @@ class Common(Configuration):
                 'propagate': True,
             },
             'django': {
-                'handlers': ['error'],
+                'handlers': ['error', 'query'],
                 'level': 'ERROR',
                 'propagate': True,
-            }
+            },
+            'pubsub': {
+                'handlers': ['pubsub'],
+                'level': 'DEBUG',
+                'propagate': True,
+            },
         },
         # you can also shortcut 'loggers' and just configure logging for EVERYTHING at once
         'root': {

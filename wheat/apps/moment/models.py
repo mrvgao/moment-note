@@ -57,10 +57,10 @@ class Moment(CommonUpdateAble, models.Model, EnhancedModel):
 class Comment(CommonUpdateAble, models.Model, EnhancedModel):
     id = UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     moment_id = UUIDField(default=None)
-    receiver_id = UUIDField(default=None)
-    if_to_specific_person = models.BooleanField(default=False)
+    specific_person = UUIDField(default=None)
     sender_id = UUIDField(default=None)
-    create = models.DateTimeField(
+    content = models.CharField(max_length=140, default=None)
+    create_at = models.DateTimeField(
         auto_now_add=True,
         db_index=True,
         default=datetime.now()
@@ -77,7 +77,7 @@ class Mark(CommonUpdateAble, models.Model, EnhancedModel):
     moment_id = UUIDField(default=None)
     sender_id = UUIDField(default=None)
     mark_type = models.CharField(max_length=10, choices=TYPES, default=None)
-    create = models.DateTimeField(
+    create_at = models.DateTimeField(
         auto_now_add=True,
         db_index=True,
         default=datetime.now()

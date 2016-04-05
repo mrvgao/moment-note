@@ -15,6 +15,8 @@ from settings import REDIS_PUBSUB_DB
 from utils.redis_utils import publish_redis_message
 from .models import Comment
 from .models import Mark
+import abc
+
 
 class MomentService(BaseService):
 
@@ -237,46 +239,110 @@ def create_comment_or_mark(Statement, moment_id, sender_id, receiver_id=None):
     new_statement.save()
 
 
-def cancle_comment_or_mark(Statement, moment_id)
+def cancle_comment_or_mark(Statement, moment_id):
+    pass
+
 '''
 Commemt Service Functions
 Author: Minchiuan Gao 2016-4-26
 '''
 
 
-def make_comment(moment_id, sender_id, receiver_id=None):
-    create_comment_or_mark(Comment, moment_id, sender_id, receiver_id)
+class BaseCommentService(object):
+    __metaclass__ = abc.ABCMeta
 
+    factory_model = None
 
-def cancle_comment(mark_id, user_id):
+    def add(self, moment_id, sender_id, body):
+        if self.is_visible(moment_id, sender_id):
+            target = self.set_moment_and_sender(moment_id, sender_id)
+            target = self.set_target_content(target, body)
+            return target
+        else:
+            raise ReferenceError
 
-    pass
+    def set_moment_and_sender(self, moment_id, sender_id, body):
+        target = BaseCommentService.factory_model()
+        target.moment_id = moment_id
+        target.sender_id = sender_id
+        target.save()
+        return target
 
+    @abc.abstractmethod
+    def set_target_content(self, model_target, body):
+        '''
+        Set model target content by request body.
+        '''
+        return
 
-def get_comment_info(moment_id, user_id):
-    '''
-    Gets mark info, marks total number and mark's person.
-    Returns:
-        (total_number, marked_person_id_list)
-    '''
+    def cancle(self, moment_id, user_id):
+        '''
+        Cancle a moment or mark.
+            if the sender of the moment_id is the same as argument,
+            set delete to true
+        Raises:
+            ReferenceError:
+                when cannot find a moment_id's user_id is arg's user_id
+        '''
+        target = self.get_or_none(moment_id=moment_id, sneder_id=user_id)
+        if target:
+            self.deleted = False
+            self.save()
+        else:
+            raise ReferenceError
+
+    def is_visible(self, user_id, moment_id):
+        '''
+        Test if this moment is visible to this user.
+        '''
+        return True
+
+    def get_comment_info(moment_id, user_id):
+        '''
+        Gets mark info, marks total number and mark's person.
+        Returns:
+            (total_number, marked_person_id_list)
+        '''
 
 
 '''
-Mark Service Functions
+Mark Service
 Author: Minchiuan Gao 2016-4-26
 '''
 
 
-def make_mark(moment_id, sender_id):
-    create_comment_or_mark(Mark, moment_id, sender_id)
+class MarkService(BaseCommentService):
+
+    factory_model = Mark
+
+    def set_target_content(self, model_target, body):
+        MARK = 'mark'
+        mark_type = body.get(MARK, None)
+        try:
+            model_target.mark_type = mark_type
+            model_target.save()
+            return model_target
+        except Exception as e:
+            raise e
+
+'''
+Comment Service
+Author: Minchiuan Gao 2016-4-5
+'''
 
 
-def cancle_mark(comment_id, user_id):
+class CommentService(BaseCommentService):
 
-    pass
+    factory_model = Comment
 
+    def set_target_content(self, model_target, body):
+        MSG = 'msg'
+        AT = 'at'
 
-def get_mark_info(moment_id, user_id):
-    '''
-    Gets comment info, comment total number and comment statements.
-    '''
+        msg = body.get(MSG, None)
+        at = body.get(AT, None)
+
+        model_target.specific_person = at
+        model_target.content = msg
+        model_target.save()
+        return model_target

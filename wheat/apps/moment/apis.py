@@ -9,7 +9,7 @@ from customs.viewsets import ListModelMixin
 from apps.user.permissions import login_required
 from .services import MomentService
 from . import services
-from rest_framework.decorators import list_route
+from rest_framework.decorators import list_route, detail_route
 from .serializers import MomentSerializer
 from apps.book.services import AuthorService
 from itertools import chain
@@ -203,3 +203,92 @@ class MomentViewSet(ListModelMixin,
             return SimpleResponse(success=MomentService.delete_moment(moment))
         else:
             return SimpleResponse(status=status.HTTP_401_UNAUTHORIZED)
+
+    @login_required
+    @detail_route(methods=['post'])
+    def comment(self, request, moment_id):
+        '''
+        Add comment to the moment
+
+        ###Example Data:
+
+        ##1. Type == 'comment', Action == add
+
+        Request:
+
+            {
+                'msg': {String},
+                'at': {UID} | None // if you want mention someone, you need write this clause. 
+            }
+
+        Response:
+
+            {
+                'success': {Boolean},
+                'data':{
+                    'comment_id': {String}
+                }
+            }
+
+        ##2. Type == 'comment', Action == cancle
+
+        Request:
+
+            {
+                'comment_id': {String}
+            }
+
+        Response:
+
+            {
+                'success': {Boolean},
+            }
+
+        ##3. Type == 'mark', action == 'add'
+
+        Just Send: moments/comment/{moment_id}
+
+            {
+                'mark': 'like' | 'argry' // etc, like facebook
+            }
+
+            Type == 'mark' and action == 'cancle'
+
+        Request:
+
+            {
+                'comment_id': {String}
+            }
+
+        action -- action , 'add' | 'cancle',  ('add' for none)
+        type -- type, 'comment'(评论)* |'mark'(点赞), ('mark' for none)
+        ---
+        omit_serializer: true
+        omit_parameters:
+            - form
+        parameters:
+            - name: body
+              paramType: body
+        '''
+
+        COMMENT, MARK = 'comment', 'mark'
+
+        TYPE, ACTINO = 'type', 'action'
+
+        action_type = request.query_params.get(TYPE, None)
+        action = request.query_params.get(ACTINO, None)
+
+        _cancle_or_add_by_action_type = functools.partial(_cancle_or_add)(action_type)
+
+        if action == CANCLE:
+            COMMENT_ID = 'comment_id'
+            _get_cancle_action(action_type).cancle(request.body.get(COMMENT_ID, None))
+        if action == ADD:
+            _get_cancle_action(action_type).add(moment_id, request.user.id, request.body)
+
+
+        def _get_cancle_action(action_type):
+            if action_type == COMMENT:
+                return CommentService
+            elif action_type == MARK:
+                return MarkService

@@ -13,6 +13,9 @@ from apps.book.services import AuthorService
 from itertools import chain
 from settings import REDIS_PUBSUB_DB
 from utils.redis_utils import publish_redis_message
+from .models import Comment
+from .models import Mark
+import abc
 
 
 class MomentService(BaseService):
@@ -85,10 +88,11 @@ class MomentService(BaseService):
     @classmethod
     def get_user_moments(cls, user_id):
         from apps.group.services import GroupService
-        friend_ids = UserService.get_user_friend_ids(user_id)
+        #friend_ids = UserService.get_user_friend_ids(user_id)
         group_ids = GroupService.get_user_group_ids(user_id)
         moments = Moment.objects.filter(
-            Q(Q(user_id__in=friend_ids) & Q(visible__in=['public', 'friends'])) |
+            #Q(Q(user_id__in=friend_ids) & Q(visible__in=['public', 'friends'])) |
+            Q(Q(visible__in=['public', 'friends'])) |
             Q(visible__in=group_ids) |
             Q(user_id=user_id),
             deleted=False).order_by('post_date')
@@ -211,3 +215,136 @@ def get_moment_by_receiver_and_sender_id(receiver_id, sender_id):
         moments = MomentService.filter_public_moments(sender_all_moment)
 
     return moments
+
+'''
+Visible Service
+Caculate if a person could see the momment or mark.
+Author: Minchiuan Gao 2016-4-26
+'''
+
+
+def is_visible(moment_owver, message_sender, message_receiver):
+    '''
+    Message_sender sends a message(comment or mark) to one moment,
+    Judge if message_receiver could see this message.
+    '''
+    return True
+
+
+def create_comment_or_mark(Statement, moment_id, sender_id, receiver_id=None):
+    new_statement = Statement()
+    if receiver_id is not None:
+        new_statement.if_to_specific_person = True
+        new_statement.receiver_id = receiver_id
+    new_statement.moment_id = moment_id
+    new_statement.sender_id = sender_id
+    new_statement.save()
+
+
+def cancle_comment_or_mark(Statement, moment_id):
+    pass
+
+'''
+Commemt Service Functions
+Author: Minchiuan Gao 2016-4-26
+'''
+
+
+class BaseCommentService(object):
+    __metaclass__ = abc.ABCMeta
+
+    factory_model = None
+
+    def add(self, moment_id, sender_id, body):
+        if self.is_visible(moment_id, sender_id):
+            target = self.set_moment_and_sender(moment_id, sender_id)
+            target = self.set_target_content(target, body)
+            return target
+        else:
+            raise ReferenceError
+
+    def set_moment_and_sender(self, moment_id, sender_id, body):
+        target = BaseCommentService.factory_model()
+        target.moment_id = moment_id
+        target.sender_id = sender_id
+        target.save()
+        return target
+
+    @abc.abstractmethod
+    def set_target_content(self, model_target, body):
+        '''
+        Set model target content by request body.
+        '''
+        return
+
+    def cancle(self, moment_id, user_id, body=None):
+        '''
+        Cancle a moment or mark.
+            if the sender of the moment_id is the same as argument,
+            set delete to true
+        Raises:
+            ReferenceError:
+                when cannot find a moment_id's user_id is arg's user_id
+        '''
+        target = self.get_or_none(moment_id=moment_id, sneder_id=user_id)
+        if target:
+            self.deleted = False
+            self.save()
+        else:
+            raise ReferenceError
+
+    def is_visible(self, user_id, moment_id):
+        '''
+        Test if this moment is visible to this user.
+        '''
+        return True
+
+    def get_comment_info(moment_id, user_id):
+        '''
+        Gets mark info, marks total number and mark's person.
+        Returns:
+            (total_number, marked_person_id_list)
+        '''
+
+
+'''
+Mark Service
+Author: Minchiuan Gao 2016-4-26
+'''
+
+
+class MarkService(BaseCommentService):
+
+    factory_model = Mark
+
+    def set_target_content(self, model_target, body):
+        MARK = 'mark'
+        mark_type = body.get(MARK, None)
+        try:
+            model_target.mark_type = mark_type
+            model_target.save()
+            return model_target
+        except Exception as e:
+            raise e
+
+'''
+Comment Service
+Author: Minchiuan Gao 2016-4-5
+'''
+
+
+class CommentService(BaseCommentService):
+
+    factory_model = Comment
+
+    def set_target_content(self, model_target, body):
+        MSG = 'msg'
+        AT = 'at'
+
+        msg = body.get(MSG, None)
+        at = body.get(AT, None)
+
+        model_target.specific_person = at
+        model_target.content = msg
+        model_target.save()
+        return model_target

@@ -88,10 +88,11 @@ class MomentService(BaseService):
     @classmethod
     def get_user_moments(cls, user_id):
         from apps.group.services import GroupService
-        friend_ids = UserService.get_user_friend_ids(user_id)
+        #friend_ids = UserService.get_user_friend_ids(user_id)
         group_ids = GroupService.get_user_group_ids(user_id)
         moments = Moment.objects.filter(
-            Q(Q(user_id__in=friend_ids) & Q(visible__in=['public', 'friends'])) |
+            #Q(Q(user_id__in=friend_ids) & Q(visible__in=['public', 'friends'])) |
+            Q(Q(visible__in=['public', 'friends'])) |
             Q(visible__in=group_ids) |
             Q(user_id=user_id),
             deleted=False).order_by('post_date')
@@ -275,7 +276,7 @@ class BaseCommentService(object):
         '''
         return
 
-    def cancle(self, moment_id, user_id):
+    def cancle(self, moment_id, user_id, body=None):
         '''
         Cancle a moment or mark.
             if the sender of the moment_id is the same as argument,

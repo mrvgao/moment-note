@@ -195,6 +195,14 @@ class GroupService(BaseService):
         UserService.create_friendships(str(user.id), member_ids)
         return True
 
+    @staticmethod
+    def get_home_member(user_id):
+        try:
+            home_member = Group.get_home_member(user_id)
+            return home_member
+        except Exception as e:
+            raise e
+
     @classmethod
     def get_invitation(cls, **kwargs):
         return Invitation.objects.get_or_none(**kwargs)

@@ -88,15 +88,15 @@ class MomentService(BaseService):
     @classmethod
     def get_user_moments(cls, user_id):
         from apps.group.services import GroupService
-        #friend_ids = UserService.get_user_friend_ids(user_id)
+        # friend_ids = UserService.get_user_friend_ids(user_id)
         group_ids = GroupService.get_user_group_ids(user_id)
-        moments = Moment.objects.filter(
-            #Q(Q(user_id__in=friend_ids) & Q(visible__in=['public', 'friends'])) |
-            Q(Q(visible__in=['public', 'friends'])) |
-            Q(visible__in=group_ids) |
-            Q(user_id=user_id),
-            deleted=False).order_by('post_date')
-        return moments
+        home_members = GroupService.get_home_member(user_id)
+
+        condition = Q(Q(user_id__in=home_members) & Q(visible__in=['public', 'friends']))
+      #  condition = Q(user_id__in=home_members)
+        moment = Moment.objects.filter(condition).filter(deleted=False).order_by('post_date')
+
+        return moment
 
     @classmethod
     def filter_public_moments(cls, moments):
@@ -276,7 +276,7 @@ class BaseCommentService(object):
         '''
         return
 
-    def cancle(self, moment_id, user_id, body=None):
+    def cancle(self, mid, user_id, body=None):
         '''
         Cancle a moment or mark.
             if the sender of the moment_id is the same as argument,
@@ -285,10 +285,13 @@ class BaseCommentService(object):
             ReferenceError:
                 when cannot find a moment_id's user_id is arg's user_id
         '''
-        target = self.get_or_none(moment_id=moment_id, sneder_id=user_id)
+
+        target = BaseCommentService.factory_model.get_or_none(
+             id=mid, sender_id=user_id)
+
         if target:
-            self.deleted = False
-            self.save()
+            target.deleted = False
+            target.save()
         else:
             raise ReferenceError
 
@@ -325,6 +328,7 @@ class MarkService(BaseCommentService):
             return model_target
         except Exception as e:
             raise e
+
 
 '''
 Comment Service

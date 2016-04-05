@@ -14,6 +14,7 @@ from .serializers import MomentSerializer
 from apps.book.services import AuthorService
 from itertools import chain
 from customs.utility import get_image_from_maili_by_img_list
+from .services import CommentService, MarkService
 
 
 class MomentViewSet(ListModelMixin,
@@ -206,7 +207,7 @@ class MomentViewSet(ListModelMixin,
 
     @login_required
     @detail_route(methods=['post'])
-    def comment(self, request, moment_id):
+    def comment(self, request, mid):
         '''
         Add comment to the moment
 
@@ -232,11 +233,9 @@ class MomentViewSet(ListModelMixin,
 
         ##2. Type == 'comment', Action == cancle
 
-        Request:
+        URL: moments/{mid}/comment?action=comment&action=cancle
 
-            {
-                'comment_id': {String}
-            }
+        *Notice*: 此时的mid， 为要删除的comment，评论的id
 
         Response:
 
@@ -246,18 +245,22 @@ class MomentViewSet(ListModelMixin,
 
         ##3. Type == 'mark', action == 'add'
 
-        Just Send: moments/comment/{moment_id}
+        Just Send: URL: moments/{moment_id}/comment?action=comment&action=add
 
             {
                 'mark': 'like' | 'argry' // etc, like facebook
             }
 
-            Type == 'mark' and action == 'cancle'
+        ##4. Type == 'mark' and action == 'cancle'
 
-        Request:
+        URL: moments/{mid}/comment?action=mark&action=cancle
+
+        *Notice*: 此时的mid， 为要删除的mark，点赞的id
+
+        Response:
 
             {
-                'comment_id': {String}
+                'success': {Boolean},
             }
 
         action -- action , 'add' | 'cancle',  ('add' for none)
@@ -278,17 +281,21 @@ class MomentViewSet(ListModelMixin,
         action_type = request.query_params.get(TYPE, None)
         action = request.query_params.get(ACTINO, None)
 
-        _cancle_or_add_by_action_type = functools.partial(_cancle_or_add)(action_type)
+        service = self._get_service(action_type)
 
-        if action == CANCLE:
-            COMMENT_ID = 'comment_id'
-            _get_cancle_action(action_type).cancle(request.body.get(COMMENT_ID, None))
-        if action == ADD:
-            _get_cancle_action(action_type).add(moment_id, request.user.id, request.body)
+        func = self._get_cancle_or_add_func(action, service)
 
+        func(mid, request.user.id, request.body)
 
-        def _get_cancle_action(action_type):
+        def _get_service(self, action_type):
             if action_type == COMMENT:
                 return CommentService
             elif action_type == MARK:
                 return MarkService
+
+        def _get_cancle_or_add_func(self, action,  service):
+            CANCLE, ADD = 'cancle', 'add'
+            if action == CANCLE:
+                return service.cancle
+            elif action == ADD:
+                return service.add

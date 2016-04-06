@@ -7,6 +7,7 @@ from customs.permissions import AllowPostPermission
 from customs.response import SimpleResponse
 from customs.viewsets import ListModelMixin
 from apps.user.permissions import login_required
+from apps.user.permissions import user_is_same_as_logined_user
 from .services import MomentService
 from . import services
 from rest_framework.decorators import list_route, detail_route
@@ -134,6 +135,7 @@ class MomentViewSet(ListModelMixin,
         return moment
 
     @login_required
+    @user_is_same_as_logined_user
     def create(self, request):
         '''
         Create Moment.
@@ -158,9 +160,6 @@ class MomentViewSet(ListModelMixin,
         content_type = request.data.get('content_type')
         content = request.data.get('content')
         visible = request.data.get('visible')
-
-        if user_id != str(request.user.id):
-            return SimpleResponse(status=status.HTTP_401_UNAUTHORIZED)
 
         moment = MomentService.create_moment(
             user_id=user_id,
@@ -206,6 +205,7 @@ class MomentViewSet(ListModelMixin,
             return SimpleResponse(status=status.HTTP_401_UNAUTHORIZED)
 
     @login_required
+    @user_is_same_as_logined_user
     @detail_route(methods=['post'])
     def mark(self, request, id=None):
         '''
@@ -254,14 +254,13 @@ class MomentViewSet(ListModelMixin,
             - name: body
               paramType: body
         '''
-        if str(request.user.id) != str(request.data.get('user_id', None)):
-            return SimpleResponse(success=False, errros='unvlid user')
-        else:
-            ACTION = 'action'
-            action = request.query_params.get(ACTION, None)
-            return self._comment_moment(request, id, MarkService, action)
+
+        ACTION = 'action'
+        action = request.query_params.get(ACTION, None)
+        return self._comment_moment(request, id, MarkService, action)
 
     @login_required
+    @user_is_same_as_logined_user
     @detail_route(methods=['post'])
     def comment(self, request, id=None):
         '''
@@ -318,12 +317,9 @@ class MomentViewSet(ListModelMixin,
               paramType: body
         '''
 
-        if str(request.user.id) != str(request.data.get('user_id', None)):
-            return SimpleResponse(success=False, errros='unvlid user')
-        else:
-            ACTION = 'action'
-            action = request.query_params.get(ACTION, None)
-            return self._comment_moment(request, id, CommentService, action)
+        ACTION = 'action'
+        action = request.query_params.get(ACTION, None)
+        return self._comment_moment(request, id, CommentService, action)
 
     def _comment_moment(self, request, moment_id, service, action):
             func = self._get_cancle_or_add_func(action, service)

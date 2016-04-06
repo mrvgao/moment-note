@@ -207,64 +207,108 @@ class MomentViewSet(ListModelMixin,
 
     @login_required
     @detail_route(methods=['post'])
-    def comment(self, request, mid):
+    def mark(self, request, id=None):
+        '''
+        Operations with moments's mark
+
+        ###Example Data:
+
+        ## 1. action == add
+
+        URL: moments/{id}/mark?action=add
+
+        Requset:
+
+            {
+                'mark': 'like' | 'argry' // etc, like facebook
+                'user_id': {UID}
+            }
+
+        Response:
+
+            {
+                'success': true | false
+            }
+
+        ## 2. aciton == delete
+
+        URL: moments/{id}/mark?action=delete
+
+            {
+                'mark': 'like' | 'argry' // etc, like facebook
+                'user_id': {UID}
+            }
+
+        Response:
+
+            {
+                'success': true | false
+            }
+
+        action -- action , 'add' | 'delete',  ('add' for none)
+        ---
+        omit_serializer: true
+        omit_parameters:
+            - form
+        parameters:
+            - name: body
+              paramType: body
+        '''
+        if str(request.user.id) != str(request.data.get('user_id', None)):
+            return SimpleResponse(success=False, errros='unvlid user')
+        else:
+            ACTION = 'action'
+            action = request.query_params.get(ACTION, None)
+            return self._comment_moment(request, id, MarkService, action)
+
+    @login_required
+    @detail_route(methods=['post'])
+    def comment(self, request, id=None):
         '''
         Add comment to the moment
 
         ###Example Data:
 
-        ##1. Type == 'comment', Action == add
+        ##1. action == add
 
         Request:
 
             {
-                'msg': {String},
-                'at': {UID} | None // if you want mention someone, you need write this clause. 
+                "msg": {String},
+                "at": {UID} | None // if you want mention someone, you need write this clause. 
+                "user_id": {UID}
             }
+
+        Explaination: Add a comment to moment that id is **id**
 
         Response:
 
-            {
-                'success': {Boolean},
-                'data':{
-                    'comment_id': {String}
+                {
+                  "data": {
+                    "comment_id": "546bd26cf6fa4f57842125b542210a9f",
+                    "moment_id": "09366f07f5754bd5af77da4a144d7f07"
+                  },
+                  "request": "success"
                 }
+
+        ##2. action == cancle
+
+        URL: moments/{id}/comment?action=delete
+
+        Request:
+
+            {
+                "comment_id": {String}, //the comment you want to delete
+                "user_id": {UID}
             }
-
-        ##2. Type == 'comment', Action == cancle
-
-        URL: moments/{mid}/comment?action=comment&action=cancle
-
-        *Notice*: 此时的mid， 为要删除的comment，评论的id
 
         Response:
 
             {
-                'success': {Boolean},
+                'request': succuss | fail,
             }
 
-        ##3. Type == 'mark', action == 'add'
-
-        Just Send: URL: moments/{moment_id}/comment?action=comment&action=add
-
-            {
-                'mark': 'like' | 'argry' // etc, like facebook
-            }
-
-        ##4. Type == 'mark' and action == 'cancle'
-
-        URL: moments/{mid}/comment?action=mark&action=cancle
-
-        *Notice*: 此时的mid， 为要删除的mark，点赞的id
-
-        Response:
-
-            {
-                'success': {Boolean},
-            }
-
-        action -- action , 'add' | 'cancle',  ('add' for none)
-        type -- type, 'comment'(评论)* |'mark'(点赞), ('mark' for none)
+        action -- action , 'add' | 'delete',  ('add' for none)
         ---
         omit_serializer: true
         omit_parameters:
@@ -274,28 +318,36 @@ class MomentViewSet(ListModelMixin,
               paramType: body
         '''
 
-        COMMENT, MARK = 'comment', 'mark'
+        if str(request.user.id) != str(request.data.get('user_id', None)):
+            return SimpleResponse(success=False, errros='unvlid user')
+        else:
+            ACTION = 'action'
+            action = request.query_params.get(ACTION, None)
+            return self._comment_moment(request, id, CommentService, action)
 
-        TYPE, ACTINO = 'type', 'action'
+    def _comment_moment(self, request, moment_id, service, action):
+            func = self._get_cancle_or_add_func(action, service)
+            try:
+                comment_id = func(moment_id, request.user.id, request.data)
+                return SimpleResponse(
+                    success=True,
+                    data={
+                        'moment_id': moment_id,
+                        'comment_id': comment_id
+                    })
+            except ReferenceError:
+                return SimpleResponse(
+                    success=False,
+                    errors="this user cannot operated with this moment"
+                )
+            except TypeError:
+                return SimpleResponse(success=False, errors='unvalid action')
+            except Exception as e:
+                return SimpleResponse(success=False, errors=str(e))
 
-        action_type = request.query_params.get(TYPE, None)
-        action = request.query_params.get(ACTINO, None)
-
-        service = self._get_service(action_type)
-
-        func = self._get_cancle_or_add_func(action, service)
-
-        func(mid, request.user.id, request.body)
-
-        def _get_service(self, action_type):
-            if action_type == COMMENT:
-                return CommentService
-            elif action_type == MARK:
-                return MarkService
-
-        def _get_cancle_or_add_func(self, action,  service):
-            CANCLE, ADD = 'cancle', 'add'
-            if action == CANCLE:
+    def _get_cancle_or_add_func(self, action,  service):
+            DELETE, ADD = 'delete', 'add'
+            if action == DELETE:
                 return service.cancle
             elif action == ADD:
                 return service.add

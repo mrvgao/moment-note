@@ -230,19 +230,6 @@ def is_visible(moment_owver, message_sender, message_receiver):
     return True
 
 
-def create_comment_or_mark(Statement, moment_id, sender_id, receiver_id=None):
-    new_statement = Statement()
-    if receiver_id is not None:
-        new_statement.if_to_specific_person = True
-        new_statement.receiver_id = receiver_id
-    new_statement.moment_id = moment_id
-    new_statement.sender_id = sender_id
-    new_statement.save()
-
-
-def cancle_comment_or_mark(Statement, moment_id):
-    pass
-
 '''
 Commemt Service Functions
 Author: Minchiuan Gao 2016-4-26
@@ -250,33 +237,34 @@ Author: Minchiuan Gao 2016-4-26
 
 
 class BaseCommentService(object):
-    __metaclass__ = abc.ABCMeta
 
     factory_model = None
 
-    def add(self, moment_id, sender_id, body):
-        if self.is_visible(moment_id, sender_id):
-            target = self.set_moment_and_sender(moment_id, sender_id)
-            target = self.set_target_content(target, body)
+    @classmethod
+    def add(cls, moment_id, sender_id, body):
+        if cls.is_visible(moment_id, sender_id):
+            target = cls.set_moment_and_sender(moment_id, sender_id)
+            target = cls.set_target_content(target, body)
             return target
         else:
             raise ReferenceError
 
-    def set_moment_and_sender(self, moment_id, sender_id, body):
-        target = BaseCommentService.factory_model()
+    @classmethod
+    def set_moment_and_sender(cls, moment_id, sender_id):
+        target = cls.factory_model()
         target.moment_id = moment_id
         target.sender_id = sender_id
-        target.save()
         return target
 
-    @abc.abstractmethod
-    def set_target_content(self, model_target, body):
+    @classmethod
+    def set_target_content(cls, model_target, body):
         '''
         Set model target content by request body.
         '''
         return
 
-    def cancle(self, mid, user_id, body=None):
+    @classmethod
+    def cancle(cls, mid, user_id, body=None):
         '''
         Cancle a moment or mark.
             if the sender of the moment_id is the same as argument,
@@ -285,23 +273,23 @@ class BaseCommentService(object):
             ReferenceError:
                 when cannot find a moment_id's user_id is arg's user_id
         '''
-
-        target = BaseCommentService.factory_model.get_or_none(
-             id=mid, sender_id=user_id)
-
+        target = cls.factory_model.objects.filter(
+             moment_id=mid, sender_id=user_id, deleted=False).first()
         if target:
-            target.deleted = False
+            target.deleted = True
             target.save()
         else:
             raise ReferenceError
 
-    def is_visible(self, user_id, moment_id):
+    @classmethod
+    def is_visible(cls, user_id, moment_id):
         '''
         Test if this moment is visible to this user.
         '''
         return True
 
-    def get_comment_info(moment_id, user_id):
+    @classmethod
+    def get_comment_info(cls, moment_id, user_id):
         '''
         Gets mark info, marks total number and mark's person.
         Returns:
@@ -319,13 +307,17 @@ class MarkService(BaseCommentService):
 
     factory_model = Mark
 
-    def set_target_content(self, model_target, body):
+    @classmethod
+    def set_target_content(cls, model_target, body):
         MARK = 'mark'
         mark_type = body.get(MARK, None)
         try:
             model_target.mark_type = mark_type
-            model_target.save()
-            return model_target
+            success = model_target.save()
+            if success:
+                return model_target.id
+            else:
+                return 'already marked'
         except Exception as e:
             raise e
 
@@ -340,7 +332,8 @@ class CommentService(BaseCommentService):
 
     factory_model = Comment
 
-    def set_target_content(self, model_target, body):
+    @classmethod
+    def set_target_content(cls, model_target, body):
         MSG = 'msg'
         AT = 'at'
 
@@ -350,4 +343,4 @@ class CommentService(BaseCommentService):
         model_target.specific_person = at
         model_target.content = msg
         model_target.save()
-        return model_target
+        return model_target.id

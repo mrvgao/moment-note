@@ -42,7 +42,7 @@ class ImageService(BaseService):
     def save_image_by_ratio(image, ratio=1.0):
         SMALLE_DIR = 'small/'
         LARGE_DIR = 'large/'
-        MIDDLE_DIR = 'middle/'
+        MIDDLE_DIR = 'medium/'
         TEMP = 'temp/'
 
         SMALL_BASE_WIDTH = 100

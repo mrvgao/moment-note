@@ -42,10 +42,15 @@ class ImageService(BaseService):
     def save_image_by_ratio(image, ratio=1.0):
         SMALLE_DIR = 'small/'
         LARGE_DIR = 'large/'
+        MIDDLE_DIR = 'middle/'
         TEMP = 'temp/'
 
         SMALL_BASE_WIDTH = 100
-        LARGE_BASE_WIDTH = 300
+        MIDDLE_BASE_WIDTH = 300
+        LARGE_BASE_WIDTH = 600
+
+        DIRS = [SMALLE_DIR, MIDDLE_DIR, LARGE_DIR]
+        WIDTHS = [SMALL_BASE_WIDTH, MIDDLE_BASE_WIDTH, LARGE_BASE_WIDTH]
 
         image_origin_data = ContentFile(image.read())
 
@@ -55,27 +60,19 @@ class ImageService(BaseService):
         tmp_file = os.path.join(settings.MEDIA_ROOT, path)
         image = PIL.Image.open(tmp_file)
 
-        small_image_route = os.path.join(
-            settings.MEDIA_ROOT,
-            SMALLE_DIR + original_file_name
-        )
-
-        ImageService.change_image_base_on_width(
-            image=image,
-            _WIDTH=SMALL_BASE_WIDTH,
-            _NEW_ROUTE=small_image_route
+        for new_dir, new_width in zip(DIRS, WIDTHS):
+            small_image_route = os.path.join(
+                settings.MEDIA_ROOT,
+                new_dir + original_file_name
             )
 
-        large_image_route = os.path.join(
-            settings.MEDIA_ROOT,
-            LARGE_DIR + original_file_name
-        )
+            ImageService.change_image_base_on_width(
+                image=image,
+                _WIDTH=new_width,
+                _NEW_ROUTE=small_image_route
+            )
 
-        ImageService.change_image_base_on_width(
-            image=image,
-            _WIDTH=LARGE_BASE_WIDTH,
-            _NEW_ROUTE=large_image_route
-        )
+        os.remove(tmp_file)
 
     @staticmethod
     def change_image_base_on_width(image, _WIDTH, _NEW_ROUTE):

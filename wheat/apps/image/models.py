@@ -16,7 +16,7 @@ class Image(CommonUpdateAble, models.Model, EnhancedModel):
         height_field='height',
         width_field='width',
         processors=[Transpose()],  # ResizeToFit(640)
-        format='JPEG',
+        format='PNG',
         options={'quality': 100})
     image_url = models.URLField(max_length=300, blank=True)
     # description = models.CharField(max_length=200, blank=True)

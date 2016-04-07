@@ -75,7 +75,7 @@ class Common(Configuration):
         'rest_framework',
         'rest_framework_swagger',
         # 'django_rq',
-        # 'imagekit',
+        'imagekit',
         # 'django_gravatar',
         # 'rest_framework_mongoengine',
         # 'haystack',

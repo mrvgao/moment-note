@@ -170,6 +170,36 @@ class UserService(BaseService):
         else:
             return {'user_id': user_id, 'avatar': avatar}
 
+    @staticmethod
+    def is_friend(user_a, user_b):
+        friend = True
+        if user_a is None or user_b is None:
+            friend = True
+        elif str(user_a) == str(user_b):
+            friend = True
+        elif not UserService.exist_friendship(user_a, user_b):
+            friend = False
+
+        return friend
+
+    @staticmethod
+    def exist_friendship(user1, user2):
+        exist = True
+        if len(FriendShip.objects.filter(user_a=user1, user_b=user2)) == 0:
+            if len(FriendShip.objects.filter(user_a=user2, user_b=user1)) == 0:
+                exist = False
+        return exist
+
+    @staticmethod
+    def all_is_friend(user_list):
+        for u1 in user_list:
+            for u2 in user_list:
+                if not UserService.is_friend(u1, u2):
+                    return False
+        return True
+
+
+
 
 class AuthService(object):
     @staticmethod

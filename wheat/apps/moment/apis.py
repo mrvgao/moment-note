@@ -220,14 +220,14 @@ class MomentViewSet(ListModelMixin,
         Requset:
 
             {
-                'mark': 'like' | 'argry' // etc, like facebook
-                'user_id': {UID}
+                "mark": "like" | "argry" // etc, like facebook
+                "user_id": {UID}
             }
 
         Response:
 
             {
-                'success': true | false
+                "success": true | false
             }
 
         ## 2. aciton == delete
@@ -235,14 +235,14 @@ class MomentViewSet(ListModelMixin,
         URL: moments/{id}/mark?action=delete
 
             {
-                'mark': 'like' | 'argry' // etc, like facebook
-                'user_id': {UID}
+                "mark": "like" | "argry" // etc, like facebook
+                "user_id": {UID}
             }
 
         Response:
 
             {
-                'success': true | false
+                "success": true | false
             }
 
         action -- action , 'add' | 'delete',  ('add' for none)
@@ -347,3 +347,90 @@ class MomentViewSet(ListModelMixin,
                 return service.cancle
             elif action == ADD:
                 return service.add
+
+    @login_required
+    @user_is_same_as_logined_user
+    @list_route(methods=['post'])
+    def activity(self, request):
+        '''
+        获得该条状态的活动信息（点赞情况和评论情况）
+        Gets the activities information of momend by id
+
+        Activities include:
+
+            1. moment mark number;
+            2. moment mark person list;
+            3. moment comment number;
+            4. moment comment details information.
+
+        ### Request Example
+
+        >1. Get moment activities by moment id list.
+
+            URL: /moment/activity/
+
+            Request:
+
+            {
+                "moment_id_list": [{UID}],
+                "user_id": {UID}
+            }
+
+        ### Response Example:
+
+            {
+              "data": {
+                "comment": {
+                  "total": 3, // comment total number
+                  "detail": [
+                    {
+                      "@": null, // @ person
+                      "sender": "b35024e4280b4a7ba9baf9c1a80a1c05"
+                    },
+                    {
+                      "@": "4560cbcf0d4c47378f45fb6c4bb1e4f8",
+                      "sender": "b35024e4280b4a7ba9baf9c1a80a1c05"
+                    },
+                    {
+                      "@": "4560cbcf0d4c47378f45fb6c4bb1e4f8",
+                      "sender": "b35024e4280b4a7ba9baf9c1a80a1c05"
+                    }
+                  ]
+                },
+                "mark": {
+                  "like": {
+                    "total": 1,
+                    "detail": [
+                      "b35024e4280b4a7ba9baf9c1a80a1c05"
+                    ]
+                  }
+                }
+              },
+              "request": "success"
+            }
+        ---
+        omit_serializer: true
+        omit_parameters:
+            - form
+        parameters:
+            - name: body
+              paramType: body
+        '''
+
+        moment_ids = request.data.get('moment_id_list', [])
+        user_id = request.user.id
+        moment_id = moment_ids[0]
+        try:
+            mark_activities = MarkService.get_content(moment_id, user_id)
+            comment_activities = CommentService.get_content(moment_id, user_id)
+            activities = self._get_acticities(mark_activities, comment_activities)
+            return SimpleResponse(data=activities)
+        except Exception as e:
+            return SimpleResponse(success=False, errors=str(e))
+
+    def _get_acticities(self, mark_activities, comment_activities):
+        COMMENT, MARK = 'comment', 'mark'
+        info = {COMMENT: None, MARK: None}
+        info[COMMENT] = comment_activities
+        info[MARK] = mark_activities
+        return info

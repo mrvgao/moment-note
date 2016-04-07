@@ -249,7 +249,6 @@ class GroupService(BaseService):
             group_ids.append(str(id))
         return group_ids
 
-
 def _get_all_friend_home_id(user_id):
     A_H_M = 'all_home_member'
     group = GroupService.get_group(creator_id=user_id, group_type=A_H_M)

@@ -8,6 +8,7 @@ from customs.permissions import AllowPostPermission
 from customs.response import SimpleResponse
 from .services import ImageService
 import datetime
+import threading
 
 
 class ImageViewSet(viewsets.GenericViewSet):
@@ -31,6 +32,7 @@ class ImageViewSet(viewsets.GenericViewSet):
               type: file
         """
         IMAGE = 'image'
+        start_time = datetime.datetime.now()
         if IMAGE not in request.data or not isinstance(request.data[IMAGE], InMemoryUploadedFile):
             return SimpleResponse(status=status.HTTP_400_BAD_REQUEST)
         request.data[IMAGE].name = \
@@ -39,8 +41,12 @@ class ImageViewSet(viewsets.GenericViewSet):
 
         serializer = self.serializer_class(data=request.data, context={'request': request})
         if serializer.is_valid():
-            ImageService.save_image_by_ratio(request.data[IMAGE])
+            t = threading.Thread(target=ImageService.save_image_by_ratio, args=[request.data[IMAGE]])
+            t.setDaemon(False)
+            t.start()
             serializer.save()
+            end_time = datetime.datetime.now()
+            print(end_time - start_time)
             return SimpleResponse(serializer.data, status=status.HTTP_201_CREATED)
         return SimpleResponse(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 

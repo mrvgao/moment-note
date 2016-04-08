@@ -98,6 +98,11 @@ INVALID_INVITATION_MSG = "无效的邀请"
 INVITATION_ALREADY_USED = 41019
 INVITATION_ALREADY_USED_MSG = "邀请已失效"
 
+LACK_USER_ID_MSG = 'request信息未包含user_id字段'
+LACK_USER_ID = 41020
+
+UNVALID_USER_ID_MSG= '该user_id与系统正在登录的user_id不符'
+UNVALID_USER_ID = 41021
 ########################################################
 # 群组相关
 ########################################################

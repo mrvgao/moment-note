@@ -19,6 +19,24 @@ def login_required(func):
     return func_wrapper
 
 
+def user_is_same_as_logined_user(func):
+    @functools.wraps(func)
+    def check(self, request, *args, **kwargs):
+        USER_ID = 'user_id'
+        if USER_ID not in request.data:
+            raise exceptions.APIError(
+                code=codes.LACK_USER_ID_MSG,
+                status=status.HTTP_403_FORBIDDEN
+            )
+        if str(request.data[USER_ID]) != str(request.user.id):
+            raise exceptions.APIError(
+                code=codes.UNVALID_USER_ID_MSG,
+                status=status.HTTP_401_UNAUTHORIZED)
+        else:
+            return func(self, request, *args, **kwargs)
+    return check
+
+
 def admin_required(func):
     @functools.wraps(func)
     def func_wrapper(self, request, *args, **kwargs):

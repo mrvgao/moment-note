@@ -75,7 +75,7 @@ class Common(Configuration):
         'rest_framework',
         'rest_framework_swagger',
         # 'django_rq',
-        # 'imagekit',
+        'imagekit',
         # 'django_gravatar',
         # 'rest_framework_mongoengine',
         # 'haystack',
@@ -298,7 +298,7 @@ class Common(Configuration):
         'handlers': {
             'null': {
                 'level': 'DEBUG',
-                'class': 'django.utils.log.NullHandler',
+                'class': 'logging.NullHandler',
             },
             'console': {
                 'level': 'DEBUG',
@@ -407,6 +407,23 @@ class Common(Configuration):
     # See: https://docs.djangoproject.com/en/dev/ref/settings/#databases
     DATABASES = {
         'default': {
+            # Add 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or
+            # 'oracle'.
+            'ENGINE': 'django.db.backends.mysql',
+            # Or path to database file if using sqlite3.
+            'NAME': 'wheat',
+            'USER': 'root',                      # Not used with sqlite3.
+            'PASSWORD': '',                  # Not used with sqlite3.
+            # Set to empty string for localhost. Not used with sqlite3.
+            'HOST': '127.0.0.1',
+            # Set to empty string for default. Not used with sqlite3.
+            'PORT': '3306',
+            # 'TEST_CHARSET': 'utf8',
+            # 'TEST_COLLATION': 'utf8_general_ci',
+            'OPTIONS': {'charset': 'utf8mb4'},
+        },
+
+        'test':{
             # Add 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or
             # 'oracle'.
             'ENGINE': 'django.db.backends.mysql',

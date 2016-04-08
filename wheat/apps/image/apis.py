@@ -7,6 +7,8 @@ from django.core.files.uploadedfile import InMemoryUploadedFile
 from customs.permissions import AllowPostPermission
 from customs.response import SimpleResponse
 from .services import ImageService
+import datetime
+import threading
 
 
 class ImageViewSet(viewsets.GenericViewSet):
@@ -29,11 +31,22 @@ class ImageViewSet(viewsets.GenericViewSet):
             - name: image
               type: file
         """
-        if 'image' not in request.data or not isinstance(request.data['image'], InMemoryUploadedFile):
+        IMAGE = 'image'
+        start_time = datetime.datetime.now()
+        if IMAGE not in request.data or not isinstance(request.data[IMAGE], InMemoryUploadedFile):
             return SimpleResponse(status=status.HTTP_400_BAD_REQUEST)
+        request.data[IMAGE].name = \
+            str(datetime.datetime.now().microsecond) \
+            + str(request.data[IMAGE].name)
+
         serializer = self.serializer_class(data=request.data, context={'request': request})
         if serializer.is_valid():
+            t = threading.Thread(target=ImageService.save_image_by_ratio, args=[request.data[IMAGE]])
+            t.setDaemon(False)
+            t.start()
             serializer.save()
+            end_time = datetime.datetime.now()
+            print(end_time - start_time)
             return SimpleResponse(serializer.data, status=status.HTTP_201_CREATED)
         return SimpleResponse(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 

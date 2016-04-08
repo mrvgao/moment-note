@@ -16,6 +16,7 @@ from utils.redis_utils import publish_redis_message
 from .models import Comment
 from .models import Mark
 import abc
+import functools
 
 
 class MomentService(BaseService):
@@ -106,7 +107,7 @@ class MomentService(BaseService):
     def get_moments_from_user(cls, user_id):
         moments = Moment.objects.filter(
             user_id=user_id,
-            deleted=False).order_by('post_date')
+            deleted=False).order_by('post_date').filter(deleted=False)
         return moments
 
     @staticmethod
@@ -231,19 +232,6 @@ def is_visible(moment_owver, message_sender, message_receiver):
     return True
 
 
-def create_comment_or_mark(Statement, moment_id, sender_id, receiver_id=None):
-    new_statement = Statement()
-    if receiver_id is not None:
-        new_statement.if_to_specific_person = True
-        new_statement.receiver_id = receiver_id
-    new_statement.moment_id = moment_id
-    new_statement.sender_id = sender_id
-    new_statement.save()
-
-
-def cancle_comment_or_mark(Statement, moment_id):
-    pass
-
 '''
 Commemt Service Functions
 Author: Minchiuan Gao 2016-4-26
@@ -251,33 +239,34 @@ Author: Minchiuan Gao 2016-4-26
 
 
 class BaseCommentService(object):
-    __metaclass__ = abc.ABCMeta
 
     factory_model = None
 
-    def add(self, moment_id, sender_id, body):
-        if self.is_visible(moment_id, sender_id):
-            target = self.set_moment_and_sender(moment_id, sender_id)
-            target = self.set_target_content(target, body)
+    @classmethod
+    def add(cls, moment_id, sender_id, body):
+        if cls.is_visible(moment_id, sender_id):
+            target = cls.set_moment_and_sender(moment_id, sender_id)
+            target = cls.set_target_content(target, body)
             return target
         else:
             raise ReferenceError
 
-    def set_moment_and_sender(self, moment_id, sender_id, body):
-        target = BaseCommentService.factory_model()
+    @classmethod
+    def set_moment_and_sender(cls, moment_id, sender_id):
+        target = cls.factory_model()
         target.moment_id = moment_id
         target.sender_id = sender_id
-        target.save()
         return target
 
-    @abc.abstractmethod
-    def set_target_content(self, model_target, body):
+    @classmethod
+    def set_target_content(cls, model_target, body):
         '''
         Set model target content by request body.
         '''
         return
 
-    def cancle(self, mid, user_id, body=None):
+    @classmethod
+    def cancle(cls, mid, user_id, body=None):
         '''
         Cancle a moment or mark.
             if the sender of the moment_id is the same as argument,
@@ -286,29 +275,59 @@ class BaseCommentService(object):
             ReferenceError:
                 when cannot find a moment_id's user_id is arg's user_id
         '''
-
-        target = BaseCommentService.factory_model.get_or_none(
-             id=mid, sender_id=user_id)
-
+        target = cls.factory_model.objects.filter(
+             moment_id=mid, sender_id=user_id, deleted=False).first()
         if target:
-            target.deleted = False
+            target.deleted = True
             target.save()
         else:
             raise ReferenceError
 
-    def is_visible(self, user_id, moment_id):
+    @classmethod
+    def is_visible(cls, user_id, moment_id):
         '''
         Test if this moment is visible to this user.
         '''
         return True
 
-    def get_comment_info(moment_id, user_id):
+    @classmethod
+    def get_visible_models(cls, moment_id, user_id, friends_visible_func):
         '''
-        Gets mark info, marks total number and mark's person.
-        Returns:
-            (total_number, marked_person_id_list)
+        Gets mark, comment infomation.
         '''
+        targets = cls.factory_model.objects \
+            .filter(moment_id=moment_id) \
+            .filter(deleted=False).order_by('created_at')
 
+        targets = filter(friends_visible_func, targets)
+
+        return targets
+
+    @classmethod
+    def get_content(cls, moment_id, user_id):
+        '''
+        Gets one person's moment activity info
+        '''
+        test_friends = cls.friends_visible_func(user_id)
+        targets = cls.get_visible_models(
+            moment_id, user_id, test_friends
+        )
+
+        return cls.produce_content(targets)
+
+    @classmethod
+    def friends_visible_func(cls, *args):
+        '''
+        Recognize if person is friends.
+        '''
+        return
+
+    @classmethod
+    def produce_content(cls, target_models):
+        '''
+        Take the target model and give the right information format.
+        '''
+        return
 
 '''
 Mark Service
@@ -320,16 +339,41 @@ class MarkService(BaseCommentService):
 
     factory_model = Mark
 
-    def set_target_content(self, model_target, body):
+    @classmethod
+    def set_target_content(cls, model_target, body):
         MARK = 'mark'
         mark_type = body.get(MARK, None)
         try:
             model_target.mark_type = mark_type
-            model_target.save()
-            return model_target
+            success = model_target.save()
+            if success:
+                return model_target.id
+            else:
+                return 'already marked'
         except Exception as e:
             raise e
 
+    @classmethod
+    def friends_visible_func(cls, user_id):  # m is a moment
+        return lambda m: UserService.all_is_friend([user_id, m.sender_id])
+
+    @classmethod
+    def produce_content(cls, target_models):
+        info = {}
+
+        TOTAL, DETAIL = 'total', 'detail'
+
+        for emotion, _ in Mark.TYPES:
+            info[emotion] = {}
+            this_emotion = filter(
+                lambda m: m.mark_type == emotion, target_models)
+            total_num = len(this_emotion)
+            info[emotion][TOTAL] = total_num
+            info[emotion][DETAIL] = []
+            map(lambda m: info[emotion][DETAIL].append(str(m.sender_id)),
+                this_emotion)
+
+        return info
 
 '''
 Comment Service
@@ -341,7 +385,8 @@ class CommentService(BaseCommentService):
 
     factory_model = Comment
 
-    def set_target_content(self, model_target, body):
+    @classmethod
+    def set_target_content(cls, model_target, body):
         MSG = 'msg'
         AT = 'at'
 
@@ -351,4 +396,29 @@ class CommentService(BaseCommentService):
         model_target.specific_person = at
         model_target.content = msg
         model_target.save()
-        return model_target
+        return model_target.id
+
+    @classmethod
+    def friends_visible_func(cls, user_id):
+        return lambda m: UserService.all_is_friend([
+            user_id,
+            m.sender_id,
+            m.specific_person
+        ])
+
+    @classmethod
+    def produce_content(cls, target_models):
+        info = {}
+
+        TOTAL, DETAIL = 'total', 'detail'
+
+        SENDER, AT = 'sender', '@'
+        info[TOTAL] = len(target_models)
+        info[DETAIL] = []
+        for m in target_models:
+            info[DETAIL].append({
+                SENDER: str(m.sender_id),
+                AT: m.specific_person
+            })
+
+        return info

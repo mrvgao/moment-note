@@ -57,15 +57,14 @@ class Moment(CommonUpdateAble, models.Model, EnhancedModel):
 class Comment(CommonUpdateAble, models.Model, EnhancedModel):
     id = UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     moment_id = UUIDField(default=None)
-    specific_person = UUIDField(default=None)
+    specific_person = UUIDField(null=True)
     sender_id = UUIDField(default=None)
     content = models.CharField(max_length=140, default=None)
-    create_at = models.DateTimeField(
+    created_at = models.DateTimeField(
         auto_now_add=True,
         db_index=True,
-        default=datetime.now()
     )
-    deleted = models.BooleanField(default=False)
+    deleted = models.BooleanField(default=False, blank=True)
 
 
 class Mark(CommonUpdateAble, models.Model, EnhancedModel):
@@ -77,12 +76,26 @@ class Mark(CommonUpdateAble, models.Model, EnhancedModel):
     moment_id = UUIDField(default=None)
     sender_id = UUIDField(default=None)
     mark_type = models.CharField(max_length=10, choices=TYPES, default=None)
-    create_at = models.DateTimeField(
+    created_at = models.DateTimeField(
         auto_now_add=True,
         db_index=True,
-        default=datetime.now()
     )
-    deleted = models.BooleanField(default=False)
+    deleted = models.BooleanField(default=False, blank=True)
+
+    # override save()
+    def save(self, *arg, **kwargs):
+        if len(Mark.objects.filter(moment_id=self.moment_id)
+                .filter(sender_id=self.sender_id)
+                .filter(mark_type=self.mark_type)
+                .filter(deleted=False)) > 0 and not self.deleted:
+            # if have a mark have the same sender and the same moment,
+            # and this mark not delelte, and this new mark is not a delete
+            # mark, so dont save this new mark.
+            print('mark existed')
+            return False
+        else:
+            super(Mark, self).save(*arg, **kwargs)
+            return True
 
 
 class MomentStat(CommonUpdateAble, models.Model, EnhancedModel):

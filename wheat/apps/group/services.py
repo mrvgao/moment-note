@@ -254,7 +254,6 @@ class GroupService(BaseService):
             group_ids.append(str(id))
         return group_ids
 
-
 def _get_all_friend_home_id(user_id):
     group_ids = list(GroupMember.objects.filter(member_id=user_id, deleted=False).values_list('group_id', flat=True))
     return group_ids

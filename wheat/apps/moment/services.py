@@ -107,7 +107,7 @@ class MomentService(BaseService):
     def get_moments_from_user(cls, user_id):
         moments = Moment.objects.filter(
             user_id=user_id,
-            deleted=False).order_by('post_date')
+            deleted=False).order_by('post_date').filter(deleted=False)
         return moments
 
     @staticmethod

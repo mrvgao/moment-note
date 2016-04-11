@@ -11,4 +11,4 @@ class MomentSerializer(XModelSerializer):
     class Meta:
         model = Moment
         fields = ('id', 'user_id', 'content_type', 'content',
-                  'post_date', 'moment_date', 'visible', 'deleted')
+                  'post_date', 'moment_date', 'visible', 'deleted', 'tags')

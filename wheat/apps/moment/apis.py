@@ -16,6 +16,7 @@ from apps.book.services import AuthorService
 from itertools import chain
 from customs.utility import get_image_from_maili_by_img_list
 from .services import CommentService, MarkService
+import json
 
 
 class MomentViewSet(ListModelMixin,
@@ -78,7 +79,7 @@ class MomentViewSet(ListModelMixin,
         begin-id -- 起始信息的id，可以为空，为空则返回系统中该用户可见的最新的信息（该信息有可能意见阅读或尚未阅读过）
         compare -- 在begin－id之前发送的（previous）还是之后发送的（after），可以为空，为空时，既获得历史消息
         group -- 当该值为1的时候，所传送的id为查询某个“作者组”的和家状态, 如果该参数为空，默认为0，既查询的是关于个人的和家状态
-
+        tags -- tags list, defalut is None, means all tags. Example: tags=育儿,家庭， 注意，每个元素之间不需要引号，以逗号隔开
 
         ---
         omit_serializer: true
@@ -86,7 +87,7 @@ class MomentViewSet(ListModelMixin,
 
         RECEIVER, SENDER, STEP = 'receiver', 'sender', 'number'
         BEGIN_ID, COMPARE = 'begin-id', 'compare'
-        GROUP = 'group'
+        GROUP, TAGS = 'group', 'tags'
 
         receiver_id = request.query_params.get(RECEIVER, None)
         sender_id = request.query_params.get(SENDER, None)
@@ -94,11 +95,20 @@ class MomentViewSet(ListModelMixin,
         begin_id = request.query_params.get(BEGIN_ID, None)
         compare = request.query_params.get(COMPARE, None)
         group = request.query_params.get(GROUP, False)
+        tags = request.query_params.get(TAGS, None)
+
+        if tags:
+            tags = tags.split(',')
+        else:
+            tags = []
+
+
 
         if receiver_id == str(request.user.id):
             moments = self._get_moment_by_condition(
                 receiver_id,
-                sender_id, step, begin_id, compare, group
+                sender_id, step, begin_id,
+                compare, group, tags
             )
             moments_json_data = MomentService.serialize_objs(moments)
             return SimpleResponse(moments_json_data)
@@ -108,7 +118,7 @@ class MomentViewSet(ListModelMixin,
                 errors='need receiver_id the same as the id of login use'
             )
 
-    def _get_moment_by_condition(self, receiver, sender, step, begin_id, compare, group):
+    def _get_moment_by_condition(self, receiver, sender, step, begin_id, compare, group, tags):
         if str(group) == '1':
             # moments = AuthorService.get_author_list_by_author_group(sender)
             moments = services.get_moment_from_author_list(receiver, sender)
@@ -123,6 +133,8 @@ class MomentViewSet(ListModelMixin,
             moments = map(self._get_moment_img_size, moments)
         except IOError:
             print('Cannot find this picture')
+
+        moments = services.get_moment_by_tags(moments, tags)
 
         return moments
 
@@ -145,7 +157,9 @@ class MomentViewSet(ListModelMixin,
                 "user_id": "xxx",
                 "content_type": "text/pics/pics-text",
                 "content": {"text": "xxx", "pics": "xxx"},
-                "visible": "private/public/friends/group_id"
+                "visible": "private/public/friends/group_id",
+                "tags": [{String}]  // if no , put [], if one tag, put
+                // emaple: ['育儿'， '亲子']
             }
         ---
         omit_serializer: true
@@ -156,16 +170,21 @@ class MomentViewSet(ListModelMixin,
               paramType: body
         '''
 
-        user_id = request.data.get('user_id')
-        content_type = request.data.get('content_type')
-        content = request.data.get('content')
-        visible = request.data.get('visible')
+        USER_ID, CONTENT_TYPE = 'user_id', 'content_type'
+        CONTENT, VISIBLE, TAGS = 'content', 'visible', 'tags'
+
+        user_id = request.data.get(USER_ID)
+        content_type = request.data.get(CONTENT_TYPE)
+        content = request.data.get(CONTENT)
+        visible = request.data.get(VISIBLE)
+        tags = request.data.get(TAGS)
 
         moment = MomentService.create_moment(
             user_id=user_id,
             content_type=content_type,
             content=content,
-            visible=visible)
+            visible=visible,
+            tags=tags)
         if not moment:
             return SimpleResponse(
                 status=status.HTTP_400_BAD_REQUEST,

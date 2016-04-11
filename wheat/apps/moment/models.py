@@ -7,6 +7,7 @@ from jsonfield import JSONField
 
 from customs.models import EnhancedModel, CommonUpdateAble, CacheableManager
 from datetime import datetime
+import json
 
 
 class Moment(CommonUpdateAble, models.Model, EnhancedModel):
@@ -28,8 +29,21 @@ class Moment(CommonUpdateAble, models.Model, EnhancedModel):
     moment_date = models.DateTimeField(auto_now_add=True, db_index=True)
     visible = models.CharField(max_length=32, db_index=True, default='private')  # private, public, friends, group_id
     deleted = models.BooleanField(default=False)
+    _tags = models.CharField(max_length=200, default='[]')
 
     objects = CacheableManager()
+
+    @property
+    def tags(self):
+        try:
+            return json.loads(self._tags)
+        except Exception as e:
+            print e
+            return []
+
+    @tags.setter
+    def tags(self, value):
+        self._tags = json.dumps(value)
 
     class Meta:
         db_table = "moment"

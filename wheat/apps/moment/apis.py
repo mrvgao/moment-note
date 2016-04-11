@@ -79,7 +79,7 @@ class MomentViewSet(ListModelMixin,
         begin-id -- 起始信息的id，可以为空，为空则返回系统中该用户可见的最新的信息（该信息有可能意见阅读或尚未阅读过）
         compare -- 在begin－id之前发送的（previous）还是之后发送的（after），可以为空，为空时，既获得历史消息
         group -- 当该值为1的时候，所传送的id为查询某个“作者组”的和家状态, 如果该参数为空，默认为0，既查询的是关于个人的和家状态
-        tags -- tags list, defalut is None, means all tags. Example: tags=育儿,家庭， 注意，每个元素之间不需要引号，以逗号隔开
+        tags -- tags list, defalut is None, means all tags. Example:  tags=育儿,家庭， 注意，每个元素之间不需要引号，以英文逗号隔开
 
         ---
         omit_serializer: true

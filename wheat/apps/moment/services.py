@@ -61,6 +61,7 @@ class MomentService(BaseService):
         content = kwargs.get('content')
         moment_date = kwargs.get('moment_date', datetime.now())
         visible = kwargs.get('visible')
+        tags = kwargs.get('tags')
 
         if user_id and Moment.valid_content_type(content_type, content) \
                 and Moment.valid_visible_field(visible):
@@ -71,7 +72,8 @@ class MomentService(BaseService):
                 content_type=content_type,
                 content=content,
                 moment_date=moment_date,
-                visible=visible)
+                visible=visible,
+                tags=tags)
 
             _notify_moment_to_firends(visible, user_id, moment.id)
             return moment
@@ -216,6 +218,20 @@ def get_moment_by_receiver_and_sender_id(receiver_id, sender_id):
         moments = MomentService.filter_public_moments(sender_all_moment)
 
     return moments
+
+
+def have_same_elements(list_1):
+    def contains(list_2):
+        return len(filter(lambda e: e in list_1, list_2)) > 0
+    return contains
+
+
+def get_moment_by_tags(moments, _TAGS):
+    if len(_TAGS) > 0:
+        contain_user_ask_tags = have_same_elements(_TAGS)
+        return filter(lambda m: contain_user_ask_tags(m.tags), moments)
+    else:
+        return moments
 
 '''
 Visible Service

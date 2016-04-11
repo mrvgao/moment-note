@@ -58,11 +58,12 @@ class Group(CommonUpdateAble, models.Model, EnhancedModel):
             group_type='all_home_member'
         )
 
-        for m in group.members:
-            members.append(m)
-
-        return members
-
+        if group:
+            for m in group.members:
+                members.append(m)
+            return members
+        else:
+            return [user_id]
 
 # class GroupProfile(models.Model):
 #     ''' 更多的关于群的信息，包括一些个性化的东西，比如皮肤啊 '''

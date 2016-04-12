@@ -5,9 +5,9 @@ from django.db.models import Q
 import uuid
 
 from customs.services import BaseService
-from apps.group.services import GroupService
 from .models import Message, GroupMessage
 from .serializers import MessageSerializer, GroupMessageSerializer
+from .models import MessageBackup
 
 
 class MessageService(BaseService):
@@ -93,9 +93,15 @@ class MessageService(BaseService):
                 sender_id, receiver_id)
         return messages
 
+    @staticmethod
+    def backup(message, uid):
+        backup = MessageBackup()
+        backup.message_id = uid
+        backup.content = message
+        backup.save()
+
 
 class GroupMessageService(BaseService):
-
     @classmethod
     def _get_model(cls, name='GroupMessage'):
         if name == 'GroupMessage':
@@ -123,6 +129,7 @@ class GroupMessageService(BaseService):
     @transaction.atomic
     def create_messages(cls, message_dict):
         ''' group里面除sender之外的所有成员都会创建一条新消息 '''
+        from apps.group.services import GroupService
         sender_id = message_dict.get('sender_id')
         group_id = message_dict.get('group_id')
         content_type = message_dict.get('content_type')

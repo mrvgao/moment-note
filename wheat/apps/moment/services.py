@@ -237,7 +237,7 @@ def get_moment_by_tags(moments, _TAGS):
         return moments
 
 
-def get_user_all_tags(user_id):
+def get_user_all_personal_tags(user_id):
     from collections import Counter
 
     tags = []
@@ -250,6 +250,17 @@ def get_user_all_tags(user_id):
     tags = Counter(tags).keys()
 
     return tags
+
+
+def get_user_recommend_tags(user_id):
+    return ['美食', '旅行', '悄悄话', '只对你说', '难忘的一天']
+
+
+def get_user_all_tags(user_id):
+    personsal = get_user_all_personal_tags(user_id)
+    recommend = get_user_recommend_tags(user_id)
+
+    return personsal, recommend
 
 '''
 Visible Service

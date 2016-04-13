@@ -288,21 +288,25 @@ class MomentViewSet(ListModelMixin,
 
             {
                 "data": {
-                    "tags": [],
+                    "personal": [],
+                    "recommend": [],
                     "user_id": {UID}
                 }
             }
-
         ---
         omit_serializer: true
         omit_parameters:
             - form
         '''
 
-        USER_ID = 'user_id'
+        PERSONAl, RECOMMEND, USER_ID = 'personal', 'recommend', 'user_id'
+
         try:
-            tags = services.get_user_all_tags(user_id=request.user.id)
-            return SimpleResponse(data={'tags': tags, USER_ID: request.user.id})
+            personal_tags, recommend_tags = services.get_user_all_tags(user_id=request.user.id)
+            return SimpleResponse(data={
+                PERSONAl: personal_tags,
+                RECOMMEND: recommend_tags,
+                USER_ID: request.user.id})
         except Exception as e:
             return SimpleResponse(errors=str(e))
 

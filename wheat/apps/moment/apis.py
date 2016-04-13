@@ -264,7 +264,7 @@ class MomentViewSet(ListModelMixin,
                 "success": true | false
             }
 
-        action -- action , 'add' | 'delete',  ('add' for none)
+        action -- action , 'add' | 'delete' ,  ('add' for none)
         ---
         omit_serializer: true
         omit_parameters:
@@ -277,6 +277,40 @@ class MomentViewSet(ListModelMixin,
         ACTION = 'action'
         action = request.query_params.get(ACTION, None)
         return self._comment_moment(request, id, MarkService, action)
+
+    @login_required
+    @list_route(methods=['get'])
+    def tags(self, request):
+        '''
+        Get marks list of a user
+
+        ### Example Data:
+
+        ## Request:
+
+        http://127.0.0.1:8000/api/0.1/moments/tags/
+
+        ## Response:
+
+            {
+                "data": {
+                    "tags": [],
+                    "user_id": {UID}
+                }
+            }
+
+        ---
+        omit_serializer: true
+        omit_parameters:
+            - form
+        '''
+
+        USER_ID = 'user_id'
+        try:
+            tags = services.get_user_all_tags(user_id=request.user.id)
+            return SimpleResponse(data={'tags': tags, USER_ID: request.user.id})
+        except Exception as e:
+            return SimpleResponse(errors=str(e))
 
     @login_required
     @user_is_same_as_logined_user

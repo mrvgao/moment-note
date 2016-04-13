@@ -29,21 +29,21 @@ class Moment(CommonUpdateAble, models.Model, EnhancedModel):
     moment_date = models.DateTimeField(auto_now_add=True, db_index=True)
     visible = models.CharField(max_length=32, db_index=True, default='private')  # private, public, friends, group_id
     deleted = models.BooleanField(default=False)
-    _tags = models.CharField(max_length=200, default='[]')
+    tag = models.CharField(max_length=200, default='[]')
 
     objects = CacheableManager()
 
     @property
     def tags(self):
         try:
-            return json.loads(self._tags)
+            return json.loads(self.tag)
         except Exception as e:
             print e
             return []
 
     @tags.setter
     def tags(self, value):
-        self._tags = json.dumps(value)
+        self.tag = json.dumps(value)
 
     class Meta:
         db_table = "moment"
@@ -54,7 +54,7 @@ class Moment(CommonUpdateAble, models.Model, EnhancedModel):
         if not isinstance(content, dict):
             return False
         if content_type == TEXT:
-            return TEXT in content.keys() 
+            return TEXT in content.keys()
         elif content_type == PICS:
             return PICS in content.keys() and isinstance(content['pics'], list)
         elif content_type == 'pics-text':

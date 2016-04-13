@@ -8,6 +8,16 @@ from jsonfield import JSONField
 from customs.models import EnhancedModel, CommonUpdateAble, CacheableManager
 
 
+class MessageBackup(CommonUpdateAble, models.Model, EnhancedModel):
+    id = UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    message_id = models.CharField(max_length=50)
+    content = JSONField(default={})
+    created_data = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'message_backup'
+
+
 class Message(CommonUpdateAble, models.Model, EnhancedModel):
     CONTENT_TYPES = (
         ('text', u'文字'),

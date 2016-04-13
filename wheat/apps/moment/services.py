@@ -233,6 +233,21 @@ def get_moment_by_tags(moments, _TAGS):
     else:
         return moments
 
+
+def get_user_all_tags(user_id):
+    from collections import Counter
+
+    tags = []
+    moments = Moment.objects.filter(user_id=user_id)
+
+    for m in moments:
+        if m.tags and len(m.tags) > 0:
+            tags += m.tags
+
+    tags = Counter(tags).keys()
+
+    return tags
+
 '''
 Visible Service
 Caculate if a person could see the momment or mark.

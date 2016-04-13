@@ -11,12 +11,8 @@ from apps.user.permissions import user_is_same_as_logined_user
 from .services import MomentService
 from . import services
 from rest_framework.decorators import list_route, detail_route
-from .serializers import MomentSerializer
-from apps.book.services import AuthorService
-from itertools import chain
 from customs.utility import get_image_from_maili_by_img_list
 from .services import CommentService, MarkService
-import json
 
 
 class MomentViewSet(ListModelMixin,
@@ -102,8 +98,6 @@ class MomentViewSet(ListModelMixin,
         else:
             tags = []
 
-
-
         if receiver_id == str(request.user.id):
             moments = self._get_moment_by_condition(
                 receiver_id,
@@ -177,7 +171,7 @@ class MomentViewSet(ListModelMixin,
         content_type = request.data.get(CONTENT_TYPE)
         content = request.data.get(CONTENT)
         visible = request.data.get(VISIBLE)
-        tags = request.data.get(TAGS)
+        tags = request.data.get(TAGS, [])
 
         moment = MomentService.create_moment(
             user_id=user_id,
@@ -327,7 +321,7 @@ class MomentViewSet(ListModelMixin,
 
             {
                 "msg": {String},
-                "at": {UID} | None // if you want mention someone, you need write this clause. 
+                "at": {UID} | None // if you want mention someone, you need write this clause.
                 "user_id": {UID}
             }
 

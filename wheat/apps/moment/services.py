@@ -221,7 +221,10 @@ def get_moment_by_receiver_and_sender_id(receiver_id, sender_id):
 
 def have_same_elements(list_1):
     def contains(list_2):
-        return len(filter(lambda e: e in list_1, list_2)) > 0
+        if list_2:
+            return len(filter(lambda e: e in list_1, list_2)) > 0
+        else:
+            return False
     return contains
 
 

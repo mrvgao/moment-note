@@ -34,7 +34,6 @@ class GroupService(BaseService):
         elif model == 'Invitation':
             return InvitationSerializer
 
-
     @staticmethod
     def serialize_list(obj_list):
         if len(obj_list) > 0 and isinstance(obj_list[0], Group):
@@ -76,7 +75,7 @@ class GroupService(BaseService):
 
     @classmethod
     def get_group(cls, **kwargs):
-        result =  Group.objects.get_or_none(**kwargs)
+        result = Group.objects.get_or_none(**kwargs)
         return result
 
     @classmethod
@@ -146,7 +145,7 @@ class GroupService(BaseService):
                 'receiver_id': invitee.id,
                 'message': message
             }
-            publish_redis_message(REDIS_PUBSUB_DB, 'invitation->', message)
+            publish_redis_message('invitation', message)
 
         maili_url = 'http://www.mailicn.com'
 
@@ -219,7 +218,7 @@ class GroupService(BaseService):
     @transaction.atomic
     def accept_group_invitation(cls, invitee, invitation):
         '''
-        If invitee is already is his gorup member. 
+        If invitee is already is his gorup member.
         Raises:
             ReferenceError When invitation.invitee value is not same as invitee.phone, which means this use not login.
         '''
@@ -237,7 +236,7 @@ class GroupService(BaseService):
                 'receiver_id': invitation.inviter,
                 'invitee': str(invitee.id)
             }
-            publish_redis_message(REDIS_PUBSUB_DB, 'invitation->', message)
+            publish_redis_message('invitation', message)
             return True
         return False
 

@@ -13,6 +13,8 @@ class MessageBackup(CommonUpdateAble, models.Model, EnhancedModel):
     message_id = models.CharField(max_length=50)
     content = JSONField(default={})
     created_data = models.DateTimeField(auto_now_add=True)
+    event = models.CharField(max_length=50, null=False)
+    sub_event = models.CharField(max_length=50, default=None, null=True)
 
     class Meta:
         db_table = 'message_backup'

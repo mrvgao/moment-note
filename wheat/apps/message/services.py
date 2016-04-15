@@ -94,10 +94,12 @@ class MessageService(BaseService):
         return messages
 
     @staticmethod
-    def backup(message, uid):
+    def backup(message, uid, event, sub_event):
         backup = MessageBackup()
         backup.message_id = uid
         backup.content = message
+        backup.event = event
+        backup.sub_event = sub_event
         backup.save()
 
 

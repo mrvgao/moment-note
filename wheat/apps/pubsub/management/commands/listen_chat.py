@@ -8,56 +8,29 @@ from django.db import connection
 from settings import REDIS_PUBSUB_DB, REDIS_PUBSUB_TAG
 
 from apps.message.services import MessageService, GroupMessageService
+from utils import redis_utils
 
 
 def listen_on_redis_pubsub():
     r = redis.StrictRedis(db=REDIS_PUBSUB_DB)
     p = r.pubsub(ignore_subscribe_messages=True)
-    p.subscribe(REDIS_PUBSUB_TAG + ":->chat")
+    CHAT = 'chat'
+
+    p.subscribe(REDIS_PUBSUB_TAG + ":->" + CHAT)
     for m in p.listen():
         print 'receive message:', m
-        message_dict = JSONDecoder().decode(m['data'])
-        if message_dict['event'] == 'chat':
-            if message_dict['sub_event'] == 'p2p':
-                message = MessageService.create_message(message_dict)
-                if message:
-                    print 'push message:', message.id
-                    message = MessageService.serialize(message)
-                    message['event'] = 'chat'
-                    message['sub_event'] = 'p2p'
-                    r.publish(REDIS_PUBSUB_TAG + ':chat->', JSONEncoder().encode(message))
-            elif message_dict['sub_event'] == 'p2g':
-                messages = GroupMessageService.create_messages(message_dict)
-                if messages:
-                    for message in messages:
-                        print 'push message:', message.id
-                        message = GroupMessageService.serialize(message)
-                        message['event'] = 'chat'
-                        message['sub_event'] = 'p2g'
-                        r.publish(REDIS_PUBSUB_TAG + ':chat->', JSONEncoder().encode(message))
-        elif message_dict['event'] == 'receive_messages':
-            p2p_message_ids = message_dict.get('p2p_message_ids')
-            if p2p_message_ids:
-                MessageService.update_messages_as_received(p2p_message_ids)
-            p2g_message_ids = message_dict.get('p2g_message_ids')
-            if p2g_message_ids:
-                GroupMessageService.update_messages_as_received(p2g_message_ids)
-        elif message_dict['event'] == 'get_unreceived_messages':
-            receiver_id = message_dict['receiver_id']
-            p2p_messages = MessageService.get_user_unreceived_messages(receiver_id)
-            p2p_messages = MessageService.serialize_objs(p2p_messages)
-            p2g_messages = GroupMessageService.get_user_unreceived_messages(receiver_id)
-            p2g_messages = GroupMessageService.serialize_objs(p2g_messages)
-            message_dict = {
-                'event': message_dict['event'],
-                'p2p_messages': p2p_messages,
-                'p2g_messages': p2g_messages,
-                'receiver_id': receiver_id
-            }
-            print 'get unreceived p2p messages of', receiver_id, ':', p2p_messages
-            print 'get unreceived p2g messages of', receiver_id, ':', p2g_messages
-            r.publish(REDIS_PUBSUB_TAG + ':chat->', JSONEncoder().encode(message_dict))
+        message = JSONDecoder().decode(m['data'])
+        if _message_valid(message):
+            redis_utils.publish_redis_message(CHAT, message)
+
         connection.close()
+
+
+def _message_valid(messaege):
+    if messaege['event'] == 'chat' and messaege['sub_event'] in ['p2p', 'p2g']:
+        return True
+    else:
+        return False
 
 
 class Command(BaseCommand):

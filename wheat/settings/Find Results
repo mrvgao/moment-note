@@ -1,0 +1,66 @@
+Searching 178 files for "publish_redis_message"
+
+/Users/develop/Workspace/wheat-api/wheat/.ropeproject/globalnames:
+    <binary>
+
+/Users/develop/Workspace/wheat-api/wheat/apps/book/apis.py:
+   16  from .services import send_create_book_request_to_wxbook
+   17  from .services import delete_book_list_some_field
+   18: from utils.redis_utils import publish_redis_message
+   19  from settings import REDIS_PUBSUB_DB
+   20  from rest_framework.decorators import list_route
+   ..
+  267                  'data': new_book_data
+  268              }
+  269:             publish_redis_message(REDIS_PUBSUB_DB, 'book->', msg)
+  270              return SimpleResponse(new_book_data)
+  271          else:
+
+/Users/develop/Workspace/wheat-api/wheat/apps/group/services.py:
+    4  from django.db import transaction
+    5  from settings import REDIS_PUBSUB_DB
+    6: from utils.redis_utils import publish_redis_message
+    7  
+    8  from customs.services import BaseService
+    .
+  147                  'message': message
+  148              }
+  149:             publish_redis_message(REDIS_PUBSUB_DB, 'invitation->', message)
+  150  
+  151          maili_url = 'http://www.mailicn.com'
+  ...
+  238                  'invitee': str(invitee.id)
+  239              }
+  240:             publish_redis_message(REDIS_PUBSUB_DB, 'invitation->', message)
+  241              return True
+  242          return False
+
+/Users/develop/Workspace/wheat-api/wheat/apps/moment/services.py:
+   13  from itertools import chain
+   14  from settings import REDIS_PUBSUB_DB
+   15: from utils.redis_utils import publish_redis_message
+   16  from .models import Comment
+   17  from .models import Mark
+   ..
+  132          }
+  133  
+  134:         publish_redis_message(REDIS_PUBSUB_DB, 'moment->', message)
+  135          print('send msg to ' + receiver_id)
+  136  
+
+/Users/develop/Workspace/wheat-api/wheat/logs/error.log:
+ 10294      map(_send_msg(user_id, moment_id), friend_list)
+ 10295    File "/Users/develop/Workspace/wheat-api/wheat/apps/moment/services.py", line 126, in send_redis
+ 10296:     publish_redis_message((REDIS_PUBSUB_DB, 'moment->', message))
+ 10297: TypeError: publish_redis_message() takes exactly 3 arguments (1 given)
+ 10298  ERROR 2016-03-16 10:16:04,029 base 17105 4525670400 Internal Server Error: /api/0.1/book/48c6a37aed854cbf84fc3e3baa2517dd/
+ 10299  Traceback (most recent call last):
+
+/Users/develop/Workspace/wheat-api/wheat/utils/redis_utils.py:
+    6  
+    7  
+    8: def publish_redis_message(redis_db, channel, message):
+    9      r = redis.StrictRedis(db=redis_db)
+   10      r.publish(REDIS_PUBSUB_TAG + ':' + channel, JSONEncoder().encode(message))
+
+11 matches across 6 files

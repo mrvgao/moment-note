@@ -11,7 +11,6 @@ from .serializers import MomentSerializer
 from django.db.models import Min
 from apps.book.services import AuthorService
 from itertools import chain
-from settings import REDIS_PUBSUB_DB
 from utils.redis_utils import publish_redis_message
 from .models import Comment
 from .models import Mark
@@ -131,7 +130,7 @@ def _send_msg(sender_id, moment_id):
             'event': 'moment'
         }
 
-        publish_redis_message(REDIS_PUBSUB_DB, 'moment->', message)
+        publish_redis_message('moment', message)
         print('send msg to ' + receiver_id)
 
     return send_redis

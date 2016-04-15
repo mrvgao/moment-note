@@ -16,7 +16,6 @@ from .utility import login_wxbook
 from .services import send_create_book_request_to_wxbook
 from .services import delete_book_list_some_field
 from utils.redis_utils import publish_redis_message
-from settings import REDIS_PUBSUB_DB
 from rest_framework.decorators import list_route
 
 
@@ -266,7 +265,7 @@ class BookViewSet(ListModelMixin, viewsets.GenericViewSet):
                 'event': 'book',
                 'data': new_book_data
             }
-            publish_redis_message(REDIS_PUBSUB_DB, 'book->', msg)
+            publish_redis_message('book', msg)
             return SimpleResponse(new_book_data)
         else:
             return SimpleResponse(success=False, errors='this book not exist')

@@ -28,3 +28,4 @@ class AuthTokenSerializer(XModelSerializer):
 
     class Meta:
         model = AuthToken
+        fields = ('key', 'user_id', 'created_at', 'expired_at')

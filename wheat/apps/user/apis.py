@@ -283,7 +283,7 @@ class UserViewSet(ListModelMixin,
                 token = UserService.get_auth_token(key=key)
                 if token:
                     token = UserService.refresh_auth_token(token)
-                    return SimpleResponse(token)
+                    return SimpleResponse(token.token)
                 else:
                     return SimpleResponse(code=codes.INVALID_TOKEN)
         elif request.method == 'GET':

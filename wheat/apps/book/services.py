@@ -16,6 +16,7 @@ import requests
 
 
 class AuthorService:
+
     @staticmethod
     def get_serializer():
         return MultiAuthorGroupSerializer
@@ -76,6 +77,7 @@ class AuthorService:
 
 
 class BookService:
+
     @staticmethod
     def get_serializer():
         return BookSerializer
@@ -146,7 +148,8 @@ def _update_valid_fileds_by_dic(FIELDS, obj, DIC):
     obj.save()
     return obj
 
-BOOK_FIELDS = ('avatar', 'book_name', 'author', 'page_format', 'preview_url', 'cover')
+BOOK_FIELDS = ('avatar', 'book_name', 'author', 'page_format', 'preview_url',
+               'cover', 'page_num', 'from_date', 'to_date', 'status')
 update_book_field = partial(_update_valid_fileds_by_dic, BOOK_FIELDS)
 
 ORDER_FIELDS = ('price', 'status', 'info')
@@ -154,6 +157,7 @@ update_order_field = partial(_update_valid_fileds_by_dic, ORDER_FIELDS)
 
 
 class OrderService:
+
     @staticmethod
     def get_serializer():
         return OrderSerializer
@@ -208,6 +212,7 @@ def _delete_one_fields(book):
     map(lambda f: delete_book_one_field(f), fields)
 
     return book
+
 
 def delete_book_list_some_field(books):
     new_books = map(_delete_one_fields, books)

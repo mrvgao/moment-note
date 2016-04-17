@@ -239,11 +239,14 @@ class BookViewSet(ListModelMixin, viewsets.GenericViewSet):
 
         ### Example Request:
             {
-                "cover": String,
+                "cover": json String,
                 "book_name": String,
                 "author": String,
                 "page_format": String,
-                "preview_url": String
+                "preview_url": String,
+                "page_num": int,
+                "from_date": "2015-03-01 00:00:00",
+                "to_date": "2016-03-01 00:00:00"
             }
         ---
         omit_serializer: true
@@ -258,12 +261,13 @@ class BookViewSet(ListModelMixin, viewsets.GenericViewSet):
         book = BookService.get_book(id=id)
         if book:
             new_book = services.update_book_field(book, request.data)
+            new_book = BookService.get_book(id=id)  # hot fix
             new_book_data = BookViewSet.serializer_class(new_book).data
             msg = {
                 'book_id': new_book.id,
                 'receiver_id': new_book.creator_id,
                 'event': 'book',
-                'data': new_book_data
+                'book': new_book_data
             }
             publish_redis_message('book', msg)
             return SimpleResponse(new_book_data)
@@ -297,7 +301,6 @@ class OrderViewSet(ListModelMixin, viewsets.GenericViewSet):
             return SimpleResponse(order_data)
         else:
             return SimpleResponse(success=False, errors='this order not exist')
-
 
     def create(self, request):
         '''

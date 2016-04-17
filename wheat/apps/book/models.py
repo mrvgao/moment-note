@@ -38,8 +38,13 @@ class Book(CommonUpdateAble, models.Model, EnhancedModel):
     book_name = models.CharField(max_length=50, default="")
     author = models.CharField(max_length=50)  # wroten name
     page_format = models.CharField(max_length=50, default="")
+    page_num = models.IntegerField(default=0)
+    from_date = models.DateTimeField(default=None, null=True, blank=True)
+    to_date = models.DateTimeField(default=None, null=True, blank=True)
+    more_info = JSONCharField(max_length=1000, default={})  # for extension
     preview_url = models.CharField(max_length=100, default="")
     created_at = models.DateTimeField(auto_now_add=True)
+    status = models.SmallIntegerField(default=0)  # 0: making 1: finished
     deleted = models.BooleanField(default=False)
 
     objects = CacheableManager()

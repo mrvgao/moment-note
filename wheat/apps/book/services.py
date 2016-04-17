@@ -76,7 +76,7 @@ class AuthorService:
         return author_list
 
 
-class BookService:
+class BookService(BaseService):
 
     @staticmethod
     def get_serializer():
@@ -85,6 +85,10 @@ class BookService:
     @staticmethod
     def get_model():
         return Book
+
+    @classmethod
+    def serialize(cls, obj, context={}):
+        return BookSerializer(obj, context=context).data
 
     @staticmethod
     def create_book(**kwargs):
@@ -123,6 +127,10 @@ class BookService:
     @staticmethod
     def get_book(**kwagrs):
         return Book.objects.get_or_none(**kwagrs)
+
+    @staticmethod
+    def get_books(**kwagrs):
+        return Book.objects.filter(**kwagrs)
 
     @staticmethod
     def delete_book(USER_ID, BOOK_ID):

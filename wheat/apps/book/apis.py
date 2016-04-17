@@ -122,22 +122,28 @@ class BookViewSet(ListModelMixin, viewsets.GenericViewSet):
         '''
         CREATOR_ID = 'creator_id'
         _CREATOR_ID = request.query_params.get(CREATOR_ID, None)
-
-        books = super(BookViewSet, self).list(request)
-        book_data = books.data
+        # TODO: page
         if _CREATOR_ID:
-            book_data = filter(
-                lambda b: b[CREATOR_ID] == _CREATOR_ID, book_data
-            )
+            books = BookService.get_books(creator_id=_CREATOR_ID, deleted=False)
+        else:
+            books = BookService.get_books(deleted=False)
+        return SimpleResponse(BookService.serialize_objs(books))
 
-            DELETED = 'deleted'
-            book_data = filter(
-                lambda b: b[DELETED] is False, book_data
-            )
+        # books = super(BookViewSet, self).list(request)
+        # book_data = books.data
+        # if _CREATOR_ID:
+        #     book_data = filter(
+        #         lambda b: b[CREATOR_ID] == _CREATOR_ID, book_data
+        #     )
 
-            book_data = delete_book_list_some_field(book_data)
+        #     DELETED = 'deleted'
+        #     book_data = filter(
+        #         lambda b: b[DELETED] is False, book_data
+        #     )
 
-        return SimpleResponse(book_data)
+        #     book_data = delete_book_list_some_field(book_data)
+
+        # return SimpleResponse(book_data)
 #        CREATOR = 'creator'
 #        creator_id = request.query_params.get(CREATOR, None)
 #        if book:

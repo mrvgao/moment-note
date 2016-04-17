@@ -31,7 +31,9 @@ def publish_redis_message(channel, message):
     message['mid'] = code
 
     pub_t = threading.Thread(target=_pub_to_redis, args=[channel, message])
-    save_t = threading.Thread(target=MessageService.backup, args=[message, code, message['event'], message['sub_event']])
+    save_t = threading.Thread(
+        target=MessageService.backup,
+        args=[message, code, message['event'], message.get('sub_event', "")])
 
     pub_t.setDaemon(True)
     save_t.setDaemon(True)

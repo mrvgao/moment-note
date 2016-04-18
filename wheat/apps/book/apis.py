@@ -16,7 +16,6 @@ from .utility import login_wxbook
 from .services import send_create_book_request_to_wxbook
 from .services import delete_book_list_some_field
 from utils.redis_utils import publish_redis_message
-from settings import REDIS_PUBSUB_DB
 from rest_framework.decorators import list_route
 
 
@@ -123,22 +122,28 @@ class BookViewSet(ListModelMixin, viewsets.GenericViewSet):
         '''
         CREATOR_ID = 'creator_id'
         _CREATOR_ID = request.query_params.get(CREATOR_ID, None)
-
-        books = super(BookViewSet, self).list(request)
-        book_data = books.data
+        # TODO: page
         if _CREATOR_ID:
-            book_data = filter(
-                lambda b: b[CREATOR_ID] == _CREATOR_ID, book_data
-            )
+            books = BookService.get_books(creator_id=_CREATOR_ID, deleted=False)
+        else:
+            books = BookService.get_books(deleted=False)
+        return SimpleResponse(BookService.serialize_objs(books))
 
-            DELETED = 'deleted'
-            book_data = filter(
-                lambda b: b[DELETED] is False, book_data
-            )
+        # books = super(BookViewSet, self).list(request)
+        # book_data = books.data
+        # if _CREATOR_ID:
+        #     book_data = filter(
+        #         lambda b: b[CREATOR_ID] == _CREATOR_ID, book_data
+        #     )
 
-            book_data = delete_book_list_some_field(book_data)
+        #     DELETED = 'deleted'
+        #     book_data = filter(
+        #         lambda b: b[DELETED] is False, book_data
+        #     )
 
-        return SimpleResponse(book_data)
+        #     book_data = delete_book_list_some_field(book_data)
+
+        # return SimpleResponse(book_data)
 #        CREATOR = 'creator'
 #        creator_id = request.query_params.get(CREATOR, None)
 #        if book:
@@ -262,7 +267,7 @@ class BookViewSet(ListModelMixin, viewsets.GenericViewSet):
         book = BookService.get_book(id=id)
         if book:
             new_book = services.update_book_field(book, request.data)
-            new_book = BookService.get_book(id=id) # hot fix
+            new_book = BookService.get_book(id=id)  # hot fix
             new_book_data = BookViewSet.serializer_class(new_book).data
             msg = {
                 'book_id': new_book.id,
@@ -270,8 +275,7 @@ class BookViewSet(ListModelMixin, viewsets.GenericViewSet):
                 'event': 'book',
                 'book': new_book_data
             }
-            print 'push redis message:', msg
-            publish_redis_message(REDIS_PUBSUB_DB, 'book->', msg)
+            publish_redis_message('book', msg)
             return SimpleResponse(new_book_data)
         else:
             return SimpleResponse(success=False, errors='this book not exist')
@@ -303,7 +307,6 @@ class OrderViewSet(ListModelMixin, viewsets.GenericViewSet):
             return SimpleResponse(order_data)
         else:
             return SimpleResponse(success=False, errors='this order not exist')
-
 
     def create(self, request):
         '''

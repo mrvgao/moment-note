@@ -83,3 +83,4 @@ exec gunicorn ${DJANGO_WSGI_MODULE}:application \
   --access-logfile=$GUNICORN_ACCESS_LOG \
   --error-logfile=$GUNICORN_ERROR_LOG \
   --log-level=error \
+  --worker-class eventlet

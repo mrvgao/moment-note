@@ -2,7 +2,6 @@
 
 from datetime import datetime
 from django.db import transaction
-from settings import REDIS_PUBSUB_DB
 from utils.redis_utils import publish_redis_message
 
 from customs.services import BaseService
@@ -33,7 +32,6 @@ class GroupService(BaseService):
             return GroupMemberSerializer
         elif model == 'Invitation':
             return InvitationSerializer
-
 
     @staticmethod
     def serialize_list(obj_list):
@@ -76,7 +74,7 @@ class GroupService(BaseService):
 
     @classmethod
     def get_group(cls, **kwargs):
-        result =  Group.objects.get_or_none(**kwargs)
+        result = Group.objects.get_or_none(**kwargs)
         return result
 
     @classmethod
@@ -146,7 +144,7 @@ class GroupService(BaseService):
                 'receiver_id': invitee.id,
                 'message': message
             }
-            publish_redis_message(REDIS_PUBSUB_DB, 'invitation->', message)
+            publish_redis_message('invitation', message)
 
         maili_url = 'http://www.mailicn.com'
 
@@ -242,7 +240,7 @@ class GroupService(BaseService):
                     'receiver_id': invitation.inviter,
                     'invitee': str(invitee.id)
                 }
-                publish_redis_message(REDIS_PUBSUB_DB, 'invitation->', message)
+                publish_redis_message('invitation->', message)
                 return True
         return False
 
@@ -253,6 +251,7 @@ class GroupService(BaseService):
         for id in ids:
             group_ids.append(str(id))
         return group_ids
+
 
 def _get_all_friend_home_id(user_id):
     group_ids = list(GroupMember.objects.filter(member_id=user_id, deleted=False).values_list('group_id', flat=True))
@@ -322,6 +321,7 @@ def get_group_member_avatar(groups):
 
 def get_group_member_activity(groups):
     return add_group_info(groups,  _set_activity)
+
 
 def _valid_role(r):
     if r.startswith('r-'):

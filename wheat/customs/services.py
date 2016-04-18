@@ -6,10 +6,10 @@ import hashlib
 import requests
 
 role_map = {
-	'p-grandfather': u'外公',
-	'p-grandmother': u'外婆',
-	'm-grandfather': u'爷爷',
-	'm-grandmother': u'奶奶',
+	'm-grandfather': u'外公',
+	'm-grandmother': u'外婆',
+	'f-grandfather': u'爷爷',
+	'f-grandmother': u'奶奶',
 	'father': u'爸爸',
 	'mother': u'妈妈',
 	'child': u'孩子',

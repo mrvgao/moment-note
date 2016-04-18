@@ -168,13 +168,15 @@ class GroupService(BaseService):
     @classmethod
     @transaction.atomic
     def add_group_member(cls, group, user, role):
-        if not _valid_role(role) \
-                or user.id in group.members \
-                or len(group.members) >= group.max_members:
-            return False
-        for member_id, member in group.members.items():
-            if member['role'] == role and role != 'child':
-                return False
+        if not _valid_role(role):
+            raise NameError(role)
+        elif user.id in group.members and user.id != group.creator_id:
+            raise ReferenceError(user.id)
+        elif len(group.members) >= group.max_members:
+            raise IndexError('reach the max member number of group')
+        elif _role_duplicate(group, role):
+            raise KeyError(role)
+
         member_ids = group.members.keys()
         group.members[str(user.id)] = {
             'name': user.nickname,
@@ -192,6 +194,7 @@ class GroupService(BaseService):
         # group里所有成员建立“好友关系”
         if not role.startswith('r-'):
             UserService.create_friendships(str(user.id), member_ids)
+
         return True
 
     @staticmethod
@@ -209,40 +212,47 @@ class GroupService(BaseService):
     @classmethod
     @transaction.atomic
     def delete_invitation(cls, invitee, invitation):
-        if str(invitee.id) != invitation.invitee:
+        if str(invitee.phone) != invitation.invitee:
             return False
         invitation.update(deleted=True)
         return True
 
     @classmethod
     @transaction.atomic
-    def accept_group_invitation(cls, invitee, invitation):
+    def add_person_to_user_group(cls, host_id, new_member_id, role, group_type='all_home_member'):
+        host_group_id = GroupService.get_group_if_without_create(host_id, group_type)
+        host_group = GroupService.get_group(id=host_group_id)
+        new_member_obj = UserService.get_user(id=new_member_id)
+        GroupService.add_group_member(host_group, new_member_obj, role)
+
+    @staticmethod
+    @transaction.atomic
+    def accept_group_invitation(invitee, invitation):
         '''
         If invitee is already is his gorup member.
         Raises:
             ReferenceError When invitation.invitee value is not same as invitee.phone, which means this use not login.
         '''
-        if str(invitee.phone) != invitation.invitee:
-            raise ReferenceError
+        GroupService.add_person_to_user_group(
+                    host_id=invitee.id,
+                    new_member_id=invitation.inviter,
+                    role=invitation.role
+        )
 
-        group = GroupService.get_group(id=invitation.group_id)
-        if GroupService.add_group_member(group, invitee, invitation.role):
-            # inviter and invitee will both enter each other's `all_home_member` group
-            invitee_group = GroupService.get_group(creator_id=invitee.id, group_type="all_home_member")
-            inviter = UserService.get_user(id=invitation.inviter)
-            if GroupService.add_group_member(invitee_group, inviter, 'r-' + invitation.role):
-                invitation.update(accepted=True, accept_time=datetime.now())
-                # send invitation
-                message = {
+        GroupService.add_person_to_user_group(
+                    host_id=invitation.inviter,
+                    new_member_id=invitee.id,
+                    role='r-'+invitation.role
+        )
+        invitation.update(accepted=True, accept_time=datetime.now())
+        message = {
                     'event': 'invitation',
                     'sub_event': 'acc_inv_ntf',  # accept_invitation_notify
                     'invitation_id': invitation.id,
                     'receiver_id': invitation.inviter,
                     'invitee': str(invitee.id)
-                }
-                publish_redis_message('invitation->', message)
-                return True
-        return False
+        }
+        publish_redis_message('invitation', message)
 
     @classmethod
     def get_user_group_ids(cls, user_id):
@@ -327,3 +337,14 @@ def _valid_role(r):
     if r.startswith('r-'):
         return r[2:] in role_map
     return r in role_map
+
+
+def _role_duplicate(group, role):
+    could_deplicate_roles = ['son', 'daughter', 'slibe', 'sister']
+    if role in could_deplicate_roles or role.startswith('r-'):
+        return False
+    else:
+        for _, info in group.members.iteritems():
+            if info['role'] == role:
+                return True
+        return False

@@ -233,11 +233,15 @@ class InvitationViewSet(viewsets.GenericViewSet):
         role = request.data.get(ROLE)
         message = request.data.get(MESSAGE)
         if not group_id or not invitee or not role or not message:
-            return SimpleResponse(status=status.HTTP_400_BAD_REQUEST)
+            return SimpleResponse(
+                status=status.HTTP_400_BAD_REQUEST,
+                errors='role should be valid and invitee and message cannot be null')
 
         group = GroupService.get_group(id=group_id)
         if not group:
             return SimpleResponse(status=status.HTTP_400_BAD_REQUEST, errors="this group not found")
+        elif str(invitee)==str(request.user.phone):
+            return SimpleResponse(status=403, errors='cannot invitee your self')
 
         invitation_dict = {
             INVITEE: invitee,
@@ -253,9 +257,9 @@ class InvitationViewSet(viewsets.GenericViewSet):
         try:
             return self._create_invitation_by_group_and_user_id(user_id, group, invitation_dict)
         except SyntaxError as e:
-            return SimpleResponse(status=status.HTTP_400_BAD_REQUEST, errors="invitation is unvalid")
+            return SimpleResponse(status=status.HTTP_400_BAD_REQUEST, errors=e.message)
         except ReferenceError as e:
-            return SimpleResponse(status=status.HTTP_400_BAD_REQUEST, errors="You haven't login before giving invitation")
+            return SimpleResponse(status=status.HTTP_400_BAD_REQUEST, errors=e.message)
 
     def _create_invitation_by_group_and_user_id(self, user_id, group, invitation_dict):
         '''
@@ -277,9 +281,10 @@ class InvitationViewSet(viewsets.GenericViewSet):
             if invitation:
                 return SimpleResponse(GroupService.serialize(invitation))
             else:
-                raise SyntaxError('invitation initial message is error')
+                raise SyntaxError('role should be valid and invitee and message cannot be null')
         else:
             raise ReferenceError('user id is error, no this user') # not login
+
 
     @login_required
     @check_request('invitation')
@@ -296,6 +301,15 @@ class InvitationViewSet(viewsets.GenericViewSet):
             {
                 "accepted": true/false
             }
+
+        ### Response:
+
+        + 403 : this role is duplicate in target person's group.
+        + 406 : role is unacceptable
+        + 409 : this person is alreay in target person's group
+        + 413 : group member overflowed.
+        + {success: true}
+
         ---
         omit_serializer: true
         omit_parameters:
@@ -305,23 +319,46 @@ class InvitationViewSet(viewsets.GenericViewSet):
               paramType: body
         '''
         ACCEPTED = 'accepted'
-        accepted = request.data.get(ACCEPTED)
+        accepted = request.data.get(ACCEPTED, False)
 
         user_id = request.user.id
 
         if user_id:
-            user = UserService.get_user(id=user_id)
+            invitee = UserService.get_user(id=user_id)
 
-        if user is None:
-            return SimpleResponse(status=status.HTTP_400_BAD_REQUEST, erros=codes.LOGIN_REQUIRED_MSG)
+        success = True
         if accepted is False:
-            success = GroupService.delete_invitation(user, request.invitation)
-            return SimpleResponse(success=success)
-        elif accepted is True:
-            try:
-                success = GroupService.accept_group_invitation(user, request.invitation)
-                return SimpleResponse(success=True)
-            except ReferenceError as e:
-                return SimpleResponse(success=False, errors=codes.LOGIN_REQUIRED_MSG)
+            success = GroupService.delete_invitation(
+                invitee,
+                request.invitation
+            )
         else:
-            return SimpleResponse(status=status.HTTP_400_BAD_REQUEST)
+            try:
+               GroupService.accept_group_invitation(invitee, request.invitation)
+            except NameError as e:
+                return SimpleResponse(
+                    status=406,
+                    errors='role ' + e.message + ' unacceptable'
+                )
+            except ReferenceError as e:
+                return SimpleResponse(
+                    status=409,
+                    errors=e.message + ' already in target person group'
+                )
+            except IndexError:
+                return SimpleResponse(
+                    status=413,
+                    errors='group member number overflow'
+                )
+            except KeyError as e:
+                return SimpleResponse(
+                    status=403,
+                    errors=e.message + ' already in target person group'
+                )
+            except Exception as e:
+                return SimpleResponse(
+                    status=status.HTTP_400_BAD_REQUEST,
+                    errors=e.message
+                )
+
+        return SimpleResponse(success=success)

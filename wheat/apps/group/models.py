@@ -107,7 +107,7 @@ class Invitation(CommonUpdateAble, models.Model, EnhancedModel):
     inviter = UUIDField(db_index=True)  # 邀请者
     invitee = models.CharField(max_length=100, db_index=True)  # 被邀请者，可能是id,phone,email
     group_id = UUIDField()  # 被邀请到哪个group
-    role = models.CharField(max_length=15, choices=GroupMember.ROLES)  # 被邀请的角色
+    role = models.CharField(max_length=15)  # 被邀请的角色
     message = JSONCharField(max_length=512, default={})  # 邀请的信息
     invite_time = models.DateTimeField(auto_now_add=True)
     accepted = models.BooleanField(default=False)

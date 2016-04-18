@@ -84,17 +84,6 @@ class GroupMember(CommonUpdateAble, models.Model, EnhancedModel):
         ("admin", u"管理员"),
     )
 
-    ROLES = (
-        ("p-grandfather", u"爷爷"),
-        ("p-grandmother", u"奶奶"),
-        ("m-grandfather", u"外公"),
-        ("m-grandmother", u"外婆"),
-        ("father", u"父亲"),
-        ("mother", u"母亲"),
-        ("child", u"孩子"),
-        ("self", "self")
-    )
-
     member_id = UUIDField(db_index=True)
     group_id = UUIDField(db_index=True)
     authority = models.CharField(max_length=10, choices=AUTHORITIES, default="common")
@@ -110,14 +99,7 @@ class GroupMember(CommonUpdateAble, models.Model, EnhancedModel):
     class Meta:
         db_table = "group_member"
 
-    '''
-    @classmethod
-    def valid_role(cls, role):
-        for t, d in GroupMember.ROLES:
-            if t == role:
-                return True
-        return False
-    '''
+
 
 
 class Invitation(CommonUpdateAble, models.Model, EnhancedModel):

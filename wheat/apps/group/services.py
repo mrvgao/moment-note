@@ -267,6 +267,13 @@ class GroupService(BaseService):
         GroupService.delete_from_host(host_id=host_id, member_id=member_id)
         GroupService.delete_from_host(host_id=member_id, member_id=host_id)
         UserService.delete_friendship(host_id, member_id)
+        message = {
+            'event': 'delete',
+            'sub_event': 'friend',
+            'receiver_id': member_id,
+            'friend_id': host_id
+        }
+        publish_redis_message('test', message)
 
     @staticmethod
     def delete_from_host(host_id, member_id):

@@ -12,6 +12,7 @@ from apps.user.services import UserService
 from .validators import check_request
 from errors import codes
 from . import services
+from rest_framework.decorators import detail_route
 
 
 class GroupViewSet(ListModelMixin,
@@ -154,14 +155,47 @@ class GroupViewSet(ListModelMixin,
             return SimpleResponse(GroupService.serialize(group))
         return SimpleResponse(status=status.HTTP_400_BAD_REQUEST)
 
-    @admin_required
+    
+class FriendViewSet(ListModelMixin, viewsets.GenericViewSet):
+    """
+    Friend View
+    ### Resource Description
+    """
+    model = GroupService._get_model()
+    queryset = model.get_queryset()
+    serializer_class = GroupService.get_serializer()
+    lookup_field = 'id'
+    permission_classes = [
+        Or(permissions.IsAuthenticatedOrReadOnly, AllowPostPermission,)]
+
+    def list(self, request):
+        pass
+    
+    def create(self, request):
+        pass
+
+    def update(self, request, id):
+        pass
+
+    def retrieve(self, request, id):
+        pass
+    
+    @login_required
     def destroy(self, request, id):
         '''
-        Delete group, requiring admin permission
+        Delete person which uid is *id* from requset.user's home group.
         ---
         omit_serializer: true
         '''
-        return SimpleResponse(status=status.HTTP_403_FORBIDDEN)
+        try:
+            GroupService.delete_person_from_each_group(
+                host_id=request.user.id, member_id=id)
+            return SimpleResponse(success=True)
+        except Exception as e:
+            return SimpleResponse(
+                status=status.HTTP_403_FORBIDDEN,
+                errors=e.message
+            )
 
 
 class InvitationViewSet(viewsets.GenericViewSet):
@@ -240,7 +274,7 @@ class InvitationViewSet(viewsets.GenericViewSet):
         group = GroupService.get_group(id=group_id)
         if not group:
             return SimpleResponse(status=status.HTTP_400_BAD_REQUEST, errors="this group not found")
-        elif str(invitee)==str(request.user.phone):
+        elif str(invitee) == str(request.user.phone):
             return SimpleResponse(status=403, errors='cannot invitee your self')
 
         invitation_dict = {
@@ -250,9 +284,6 @@ class InvitationViewSet(viewsets.GenericViewSet):
         }
 
         user_id = request.user.id
-
-        user_okay = False
-        invitation_okay = False
 
         try:
             return self._create_invitation_by_group_and_user_id(user_id, group, invitation_dict)
@@ -334,7 +365,7 @@ class InvitationViewSet(viewsets.GenericViewSet):
             )
         else:
             try:
-               GroupService.accept_group_invitation(invitee, request.invitation)
+                GroupService.accept_group_invitation(invitee, request.invitation)
             except NameError as e:
                 return SimpleResponse(
                     status=406,

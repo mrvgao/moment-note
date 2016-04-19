@@ -9,6 +9,7 @@ from errors import codes
 from .models import User, AuthToken, FriendShip
 from .serializers import UserSerializer, AuthTokenSerializer
 import datetime
+from django.db.models import Q
 
 
 UserUpdateFields = ('phone', 'marital_status', 'nickname', 'first_name', 'last_name', 'avatar',
@@ -142,6 +143,17 @@ class UserService(BaseService):
         if friendships:
             FriendShip.objects.bulk_create(friendships)
         return friendships
+
+    @staticmethod
+    @transaction.atomic
+    def delete_friendship(user_id, user_2_id):
+        user_a_b = Q(user_a=user_id, user_b=user_2_id)
+        user_b_a = Q(user_a=user_2_id, user_b=user_id)
+        condition = user_a_b | user_b_a
+        friends = FriendShip.objects.filter(condition)
+        for f in friends:
+            f.delete()
+        return True
 
     @classmethod
     def get_user_friend_ids(cls, user_id):

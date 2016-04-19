@@ -65,6 +65,10 @@ class Group(CommonUpdateAble, models.Model, EnhancedModel):
         else:
             return [user_id]
 
+    def delete_home_member(self, member_id):
+        self.members.pop(str(member_id), None)
+        self.save()
+
 # class GroupProfile(models.Model):
 #     ''' 更多的关于群的信息，包括一些个性化的东西，比如皮肤啊 '''
 #     group_id = UUIDField(primary_key=True)
@@ -98,8 +102,6 @@ class GroupMember(CommonUpdateAble, models.Model, EnhancedModel):
 
     class Meta:
         db_table = "group_member"
-
-
 
 
 class Invitation(CommonUpdateAble, models.Model, EnhancedModel):

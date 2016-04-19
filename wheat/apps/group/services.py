@@ -262,6 +262,29 @@ class GroupService(BaseService):
             group_ids.append(str(id))
         return group_ids
 
+    @staticmethod
+    def delete_person_from_each_group(host_id, member_id):
+        GroupService.delete_from_host(host_id=host_id, member_id=member_id)
+        GroupService.delete_from_host(host_id=member_id, member_id=host_id)
+        UserService.delete_friendship(host_id, member_id)
+
+    @staticmethod
+    def delete_from_host(host_id, member_id):
+        host_group = GroupService.get_group(creator_id=host_id)
+        host_group.delete_home_member(member_id)
+        GroupService.delete_from_group_member(host_group.id, member_id)
+        return host_group.id
+
+    @staticmethod
+    def delete_from_group_member(group_id, member):
+        try:
+            group_m = GroupMember.objects.get(group_id=group_id, member_id=member)
+            if group_m:
+                return group_m.delete()
+        except Exception as e:
+            print e
+            return False
+
 
 def _get_all_friend_home_id(user_id):
     group_ids = list(GroupMember.objects.filter(member_id=user_id, deleted=False).values_list('group_id', flat=True))

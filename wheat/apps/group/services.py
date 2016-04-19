@@ -177,7 +177,7 @@ class GroupService(BaseService):
         elif _role_duplicate(group, role):
             raise KeyError(role)
 
-        member_ids = group.members.keys()
+        # member_ids = group.members.keys()
         group.members[str(user.id)] = {
             'name': user.nickname,
             'joined_at': datetime.now(),
@@ -192,8 +192,8 @@ class GroupService(BaseService):
             nickname=user.nickname,
             role=role)
         # group里所有成员建立“好友关系”
-        if not role.startswith('r-'):
-            UserService.create_friendships(str(user.id), member_ids)
+        # if not role.startswith('r-'):
+        # UserService.create_friendships(str(user.id), [])
 
         return True
 
@@ -223,7 +223,12 @@ class GroupService(BaseService):
         host_group_id = GroupService.get_group_if_without_create(host_id, group_type)
         host_group = GroupService.get_group(id=host_group_id)
         new_member_obj = UserService.get_user(id=new_member_id)
-        GroupService.add_group_member(host_group, new_member_obj, role)
+        try:
+            GroupService.add_group_member(host_group, new_member_obj, role)
+        except Exception as e:
+            print e
+        else:
+            print('add ' + new_member_id + ' to ' + host_id)
 
     @staticmethod
     @transaction.atomic
@@ -234,17 +239,18 @@ class GroupService(BaseService):
             ReferenceError When invitation.invitee value is not same as invitee.phone, which means this use not login.
         '''
         GroupService.add_person_to_user_group(
-                    host_id=invitee.id,
-                    new_member_id=invitation.inviter,
+                    host_id=str(invitee.id),
+                    new_member_id=str(invitation.inviter),
                     role=invitation.role
         )
 
         GroupService.add_person_to_user_group(
-                    host_id=invitation.inviter,
-                    new_member_id=invitee.id,
+                    host_id=str(invitation.inviter),
+                    new_member_id=str(invitee.id),
                     role='r-'+invitation.role
         )
         invitation.update(accepted=True, accept_time=datetime.now())
+        UserService.create_friendship(str(invitee.id), str(invitation.inviter))
         message = {
                     'event': 'invitation',
                     'sub_event': 'acc_inv_ntf',  # accept_invitation_notify

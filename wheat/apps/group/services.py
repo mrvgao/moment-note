@@ -223,12 +223,7 @@ class GroupService(BaseService):
         host_group_id = GroupService.get_group_if_without_create(host_id, group_type)
         host_group = GroupService.get_group(id=host_group_id)
         new_member_obj = UserService.get_user(id=new_member_id)
-        try:
-            GroupService.add_group_member(host_group, new_member_obj, role)
-        except Exception as e:
-            print e
-        else:
-            print('add ' + new_member_id + ' to ' + host_id)
+        GroupService.add_group_member(host_group, new_member_obj, role)
 
     @staticmethod
     @transaction.atomic

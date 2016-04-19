@@ -241,13 +241,13 @@ class GroupService(BaseService):
         GroupService.add_person_to_user_group(
                     host_id=str(invitee.id),
                     new_member_id=str(invitation.inviter),
-                    role=invitation.role
+                    role='r-'+invitation.role
         )
 
         GroupService.add_person_to_user_group(
                     host_id=str(invitation.inviter),
                     new_member_id=str(invitee.id),
-                    role='r-'+invitation.role
+                    role=invitation.role
         )
         invitation.update(accepted=True, accept_time=datetime.now())
         UserService.create_friendship(str(invitee.id), str(invitation.inviter))

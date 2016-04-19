@@ -63,7 +63,6 @@ class UserViewSet(ListModelMixin,
         else:
             return SimpleResponse(errors='query_params not support')
 
-
     def _check_if_registed(self, phone):
         user = UserService.get_users(phone=phone)
 

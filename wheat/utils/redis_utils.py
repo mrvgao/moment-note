@@ -4,6 +4,7 @@ import redis
 from json import JSONEncoder
 from settings import REDIS_PUBSUB_TAG
 from settings import REDIS_PUBSUB_DB
+from settings import REDIS_PUBSUB_CHANNEL
 import random
 import datetime
 import threading
@@ -23,7 +24,7 @@ def get_ramdon_code(message):
 
 def _pub_to_redis(channel, message):
     r = redis.StrictRedis(db=REDIS_PUBSUB_DB)
-    r.publish(REDIS_PUBSUB_TAG + ':' + channel + '->', JSONEncoder().encode(message))
+    r.publish(REDIS_PUBSUB_TAG + ':' + REDIS_PUBSUB_CHANNEL + '->', JSONEncoder().encode(message))
 
 
 def publish_redis_message(channel, message):

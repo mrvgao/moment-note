@@ -543,4 +543,5 @@ class Common(Configuration):
     # REDIS DB
     REDIS_PUBSUB_DB = 2
     REDIS_PUBSUB_TAG = 'dev'
+    REDIS_PUBSUB_CHANNEL = 'as12afzxjk@askfl'
     # END REDIS DB

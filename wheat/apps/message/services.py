@@ -102,6 +102,15 @@ class MessageService(BaseService):
         backup.sub_event = sub_event
         backup.save()
 
+    @staticmethod
+    def get_back_up(message_id):
+        try:
+            backup = MessageBackup.objects.get(message_id=message_id)
+            return backup
+        except Exception as e:
+            print e
+            return None
+
 
 class GroupMessageService(BaseService):
     @classmethod

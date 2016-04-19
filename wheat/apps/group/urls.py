@@ -17,6 +17,9 @@ group_router.register(r'groups', apis.GroupViewSet)
 invitation_router = DefaultRouter()
 invitation_router.register(r'invitations', apis.InvitationViewSet)
 
+friend_router = DefaultRouter()
+friend_router.register(r'friend', apis.FriendViewSet)
+
 # The API URLs are now determined automatically by the router.
 # Additionally, we include the login URLs for the browseable API.
 urlpatterns = []
@@ -25,6 +28,8 @@ urlpattern_dict = OrderedDict({
                      include(group_router.urls), name='group-api'),
     'invitation-api': url(r'^api/%s/' % API_VERSION,
                           include(invitation_router.urls), name='invitation-api'),
+    'friend-api': url(r'^api/%s/' % API_VERSION,
+                          include(friend_router.urls), name='friend-api'),
 
 })
 

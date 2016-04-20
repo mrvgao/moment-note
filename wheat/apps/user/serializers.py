@@ -2,6 +2,7 @@
 
 from customs.serializers import XModelSerializer
 from customs.fields import XImageField
+from rest_framework.serializers import BooleanField
 from .models import User, AuthToken
 
 
@@ -12,6 +13,8 @@ class UserSerializer(XModelSerializer):
         required=False,
         use_url=True,
         style={'input_type': 'file'})
+
+    activated = BooleanField(write_only=True)
 
     class Meta:
         model = User

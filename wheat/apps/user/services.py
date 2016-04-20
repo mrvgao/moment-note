@@ -206,8 +206,6 @@ class UserService(BaseService):
         return True
 
 
-
-
 class AuthService(object):
     @staticmethod
     def check_if_token_valid(token):
@@ -224,3 +222,8 @@ class AuthService(object):
         token = AuthToken.objects.get_or_none(user_id=user_id)
         token = AuthToken.objects.refresh_token(token)
         return token
+
+    @staticmethod
+    def get_token(user_id):
+        token = AuthToken.objects.get_or_none(user_id=user_id)
+        return token.key

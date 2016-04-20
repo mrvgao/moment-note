@@ -14,8 +14,15 @@ from .permissions import admin_required, is_userself, login_required
 from .validators import check_request
 from .services import UserService, AuthService
 from customs.services import MessageService
+from .models import User
+from .serializers import UserSerializer
 
 
+class NewUserViewSet(ListModelMixin, viewsets.ModelViewSet):
+    serializer_class = UserSerializer
+    queryset = User.get_queryset()
+
+    
 class UserViewSet(ListModelMixin,
                   viewsets.GenericViewSet):
 
@@ -23,25 +30,33 @@ class UserViewSet(ListModelMixin,
     麦粒用户系统相关API.
     ### Resource Description
     """
-    model = UserService._get_model()
+    model = User
     queryset = model.get_queryset()
-    serializer_class = UserService.get_serializer()
+    serializer_class = UserSerializer
     lookup_field = 'id'
+    filter_fields = ['phone']
     permission_classes = [
         Or(permissions.IsAuthenticatedOrReadOnly, AllowPostPermission,)]
-    filter_fields = ['phone']
+    '''
+    model = UserService._get_model()
 
+    serializer_class = UserService.get_serializer()
+
+
+    '''
+    '''
     @admin_required
     def list(self, request):
-        '''
+
         List all users by pages. Admin Required.
         page -- page
         ---
         omit_serializer: true
-        '''
+
 
         response = super(UserViewSet, self).list(request)
         return SimpleResponse(response.data)
+    '''
 
     @list_route(methods=['get'])
     def register(self, request):
@@ -139,7 +154,9 @@ class UserViewSet(ListModelMixin,
             return SimpleResponse(status=status.HTTP_409_CONFLICT)
         user = UserService.create_user(phone=phone, password=password, **request.data)
         data = UserService.serialize(user)
+
         UserService.login_user(request, phone, password)
+        data['token']['token'] = AuthService.get_token(user.id)
         return SimpleResponse(data)
 
     @check_request('user')

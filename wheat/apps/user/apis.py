@@ -1,11 +1,9 @@
 # -*- coding:utf-8 -*-
 
 from django.contrib.auth.models import AnonymousUser
-from rest_framework import permissions, viewsets, status
-from rest_condition import Or
+from rest_framework import viewsets, status
 from rest_framework.decorators import list_route
 
-from customs.permissions import AllowPostPermission
 from customs.response import SimpleResponse
 from customs.viewsets import ListModelMixin
 from errors import codes
@@ -14,15 +12,11 @@ from .permissions import admin_required, is_userself, login_required
 from .validators import check_request
 from .services import UserService, AuthService
 from customs.services import MessageService
-from .models import User
-from .serializers import UserSerializer
-
-
-class NewUserViewSet(ListModelMixin, viewsets.ModelViewSet):
-    serializer_class = UserSerializer
-    queryset = User.get_queryset()
+from customs import class_tools
 
     
+@class_tools.set_filter(['phone'])
+@class_tools.default_view_set
 class UserViewSet(ListModelMixin,
                   viewsets.GenericViewSet):
 
@@ -30,33 +24,17 @@ class UserViewSet(ListModelMixin,
     麦粒用户系统相关API.
     ### Resource Description
     """
-    model = User
-    queryset = model.get_queryset()
-    serializer_class = UserSerializer
-    lookup_field = 'id'
-    filter_fields = ['phone']
-    permission_classes = [
-        Or(permissions.IsAuthenticatedOrReadOnly, AllowPostPermission,)]
-    '''
-    model = UserService._get_model()
-
-    serializer_class = UserService.get_serializer()
-
-
-    '''
-    '''
     @admin_required
     def list(self, request):
-
+        '''
         List all users by pages. Admin Required.
         page -- page
         ---
         omit_serializer: true
-
+        '''
 
         response = super(UserViewSet, self).list(request)
         return SimpleResponse(response.data)
-    '''
 
     @list_route(methods=['get'])
     def register(self, request):

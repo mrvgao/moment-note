@@ -4,6 +4,5 @@ from customs.urls import get_urlpattern
 import apis
 
 urlpatterns = get_urlpattern({
-    'user': apis.UserViewSet,
-    'new-user': apis.UserViewSet,
+    'users': apis.UserViewSet,
 }, api_name='user-api')

@@ -2,16 +2,16 @@
 
 from customs.serializers import XModelSerializer
 from customs.fields import XImageField, DictStrField
-from .models import MultiAuthorGroup, Book, Order
+from .models import Author, Book, Order
 from rest_framework import serializers
 
 
-class MultiAuthorGroupSerializer(XModelSerializer):
+class AuthorSerializer(XModelSerializer):
 
     members = DictStrField(required=False, allow_blank=True)
 
     class Meta:
-        model = MultiAuthorGroup
+        model = Author
         fields = ('id', 'creator_id', 'created_at', 'members')
 
 

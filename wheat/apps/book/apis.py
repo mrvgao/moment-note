@@ -17,16 +17,11 @@ from .services import send_create_book_request_to_wxbook
 from .services import delete_book_list_some_field
 from utils.redis_utils import publish_redis_message
 from rest_framework.decorators import list_route
+from customs import class_tools
 
 
+@class_tools.default_view_set
 class AuthorViewSet(ListModelMixin, viewsets.GenericViewSet):
-    model = AuthorService.get_model()
-    queryset = model.get_queryset()
-    serializer_class = AuthorService.get_serializer()
-    lookup_field = 'id'
-    permission_classes = [
-        Or(permissions.IsAuthenticatedOrReadOnly, AllowPostPermission,)]
-
     def list(self, request):
         '''
         获得关于作者的信息，根据参数的不同可以获得单个user的和user_group的信息

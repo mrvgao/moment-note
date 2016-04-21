@@ -22,9 +22,17 @@ def default_view_set(cls):
         Or(permissions.IsAuthenticatedOrReadOnly, AllowPostPermission,)]
     '''
     cls_name = get_class_prefix_name(cls.__name__)  # get Class from ClassViewSet from class
-    cls.model = get_class_model(cls_name)
-    cls.queryset = cls.model.get_queryset()
-    cls.serializer_class = get_class_serializer(cls_name)
+
+    try:
+        cls.model = get_class_model(cls_name)
+        cls.serializer_class = get_class_serializer(cls_name)
+    except NameError as e:
+        print e.message
+        print 'Keep your model name, serializer name and class name same'
+        print 'If not same, set model and serializer mannually'
+    else:
+        cls.queryset = cls.model.get_queryset()
+
     cls.lookup_field = 'id'
     cls.permission_classes = [Or(permissions.IsAuthenticatedOrReadOnly, AllowPostPermission,)]
 
@@ -87,12 +95,12 @@ def get_class_from_module(module_type, class_name):
 
     try:
         class_name = module_type_func[module_type](class_name)
-    except KeyError:
-        raise NameError('unsupport module type')
-    else:
         import_code = 'from %s .%s import %s' % (module_name, module_type, class_name)
-        assign = 'kls = ' + class_name
         exec(import_code)
+    except KeyError:
+        raise NameError('unsupport ' + module_type + 'or cannot find ' + class_name)
+    else:
+        assign = 'kls = ' + class_name
         exec(assign)
         return kls
 

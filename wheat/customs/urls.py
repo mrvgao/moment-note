@@ -1,3 +1,16 @@
+'''
+Build API Automatically
+
+For example, if you want to add a api named 'new-test'
+
+You just need import the module and set 
+    urlpatterns = get_urlpattern({'new-test': NewTestViewSet}, api_name='new-test-api')
+
+Above operations has simplified the url create.
+
+@Author Minchiuan Gao (2016-4-20)
+'''
+
 from django.conf.urls import url, include
 from settings import API_VERSION
 from rest_framework.routers import DefaultRouter

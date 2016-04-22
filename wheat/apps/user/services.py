@@ -17,21 +17,6 @@ UserUpdateFields = ('phone', 'marital_status', 'nickname', 'first_name', 'last_n
 
 
 class UserService(BaseService):
-
-    @classmethod
-    def _get_model(cls, name='User'):
-        if name == 'User':
-            return User
-        elif name == 'AuthToken':
-            return AuthToken
-
-    @classmethod
-    def get_serializer(cls, model='User'):
-        if model == 'User':
-            return UserSerializer
-        elif model == 'AuthToken':
-            return AuthTokenSerializer
-
     @classmethod
     def serialize(cls, obj, context={}):
         if isinstance(obj, User):

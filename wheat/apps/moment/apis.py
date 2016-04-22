@@ -15,7 +15,7 @@ from customs.utility import get_image_from_maili_by_img_list
 from .services import CommentService, MarkService
 from customs import class_tools
 
-    
+
 @class_tools.default_view_set
 class MomentViewSet(ListModelMixin,
                     viewsets.GenericViewSet):
@@ -480,3 +480,9 @@ class MomentViewSet(ListModelMixin,
         info[COMMENT] = comment_activities
         info[MARK] = mark_activities
         return info
+
+
+    def weichat(self, request):
+        '''
+        Receiver the wechat post moment
+        '''

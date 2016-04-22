@@ -84,7 +84,12 @@ class User(AbstractBaseUser, EnhancedModel, CommonUpdateAble):
     GENDERS = (
         ('M', u'男'),
         ('F', u'女'),
-        ('N', u'未知'),
+        ('U', u'未知'),
+    )
+    MARITAL_STATUS = (
+        ('F', u'未婚'),
+        ('T', u'已婚'),
+        ('U', u'未知'),
     )
     ROLES = (
         ('normal', u'普通用户'),
@@ -104,8 +109,8 @@ class User(AbstractBaseUser, EnhancedModel, CommonUpdateAble):
         format='JPEG',
         options={'quality': 85})
     tagline = models.CharField(max_length=100, blank=True)  # 个人的签名档
-    gender = models.CharField(max_length=1, default='N', choices=GENDERS)
-    marital_status = models.BooleanField(default=None, blank=True)  # 婚否
+    gender = models.CharField(max_length=1, default='U', choices=GENDERS)
+    marital_status = models.CharField(max_length=1, default='U', choices=MARITAL_STATUS)
     birthday = models.DateField(null=True, blank=True, default=None)
     country = models.CharField(max_length=30, blank=True)
     province = models.CharField(max_length=30, blank=True)

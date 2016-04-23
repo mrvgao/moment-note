@@ -6,13 +6,13 @@ from rest_condition import Or
 from customs.permissions import AllowPostPermission
 from customs.response import SimpleResponse
 from customs.viewsets import ListModelMixin
-from apps.user.permissions import admin_required, login_required
+from apps.user.permissions import login_required
 from .services import GroupService
 from apps.user.services import UserService
 from .validators import check_request
 from errors import codes
 from . import services
-from rest_framework.decorators import detail_route
+from rest_framework.decorators import list_route
 
 
 class GroupViewSet(ListModelMixin,
@@ -155,7 +155,7 @@ class GroupViewSet(ListModelMixin,
             return SimpleResponse(GroupService.serialize(group))
         return SimpleResponse(status=status.HTTP_400_BAD_REQUEST)
 
-    
+
 class FriendViewSet(ListModelMixin, viewsets.GenericViewSet):
     """
     Friend View
@@ -170,7 +170,7 @@ class FriendViewSet(ListModelMixin, viewsets.GenericViewSet):
 
     def list(self, request):
         pass
-    
+
     def create(self, request):
         pass
 
@@ -179,7 +179,7 @@ class FriendViewSet(ListModelMixin, viewsets.GenericViewSet):
 
     def retrieve(self, request, id):
         pass
-    
+
     @login_required
     def destroy(self, request, id):
         '''
@@ -260,8 +260,7 @@ class InvitationViewSet(viewsets.GenericViewSet):
               paramType: body
         '''
 
-        GROUP_ID, INVITEE = 'group_id', 'invitee'
-        ROLE, MESSAGE = 'role', 'message'
+        GROUP_ID, INVITEE, ROLE, MESSAGE = 'group_id', 'invitee', 'role', 'message'
         group_id = request.data.get(GROUP_ID)
         invitee = request.data.get(INVITEE)
         role = request.data.get(ROLE)
@@ -271,20 +270,22 @@ class InvitationViewSet(viewsets.GenericViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
                 errors='role should be valid and invitee and message cannot be null')
 
+        code = GroupService.check_if_valid_invitation(request.user, invitee, role)
+        if code != codes.OK:
+            return SimpleResponse(status=status.HTTP_400_BAD_REQUEST, errors=codes.errors(code))
+
         group = GroupService.get_group(id=group_id)
-        if not group:
+        if not group or group.creator_id != str(request.user.id):
             return SimpleResponse(status=status.HTTP_400_BAD_REQUEST, errors="this group not found")
-        elif str(invitee) == str(request.user.phone):
-            return SimpleResponse(status=403, errors='cannot invitee your self')
+        elif invitee == request.user.phone:
+            return SimpleResponse(status=status.HTTP_403_FORBIDDEN, errors='cannot invitee your self')
 
         invitation_dict = {
             INVITEE: invitee,
             ROLE: role,
             MESSAGE: message
         }
-
         user_id = request.user.id
-
         try:
             return self._create_invitation_by_group_and_user_id(user_id, group, invitation_dict)
         except SyntaxError as e:
@@ -297,7 +298,8 @@ class InvitationViewSet(viewsets.GenericViewSet):
         Creates invitation message by group and user_id
 
         Raises:
-            SyntaxError: if invitation initial informaiton is error, e.g, wrong user, wrong group, wrong dict, will raise this error
+            SyntaxError: if invitation initial informaiton is error, e.g,
+            wrong user, wrong group, wrong dict, will raise this error
             ReferenceError: if give wrong user_id, raise this error
 
         Returns:
@@ -314,8 +316,7 @@ class InvitationViewSet(viewsets.GenericViewSet):
             else:
                 raise SyntaxError('role should be valid and invitee and message cannot be null')
         else:
-            raise ReferenceError('user id is error, no this user') # not login
-
+            raise ReferenceError('user id is error, no this user')  # not login
 
     @login_required
     @check_request('invitation')
@@ -393,3 +394,25 @@ class InvitationViewSet(viewsets.GenericViewSet):
                 )
 
         return SimpleResponse(success=success)
+
+    @list_route(methods=['get'])
+    def check(self, request):
+        '''
+        检查邀请是否valid
+
+        inviter -- inviter's id
+        invitee -- invitee's phone
+        role -- invitee's role for inviter
+        ---
+        omit_serializer: true
+        '''
+        inviter_id = request.query_params.get('inviter')
+        invitee_phone = request.query_params.get('invitee')
+        role = request.query_params.get('role')
+        inviter = UserService.get_user(id=inviter_id)
+        if not inviter:
+            return SimpleResponse(status=status.HTTP_404_NOT_FOUND, errors='no this inviter')
+        code = GroupService.check_if_valid_invitation(inviter, invitee_phone, role)
+        if code != codes.OK:
+            return SimpleResponse(status=status.HTTP_400_BAD_REQUEST, errors=codes.errors(code))
+        return SimpleResponse(success=True)

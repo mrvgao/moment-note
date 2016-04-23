@@ -101,8 +101,33 @@ INVITATION_ALREADY_USED_MSG = "邀请已失效"
 LACK_USER_ID_MSG = 'request信息未包含user_id字段'
 LACK_USER_ID = 41020
 
-UNVALID_USER_ID_MSG= '该user_id与系统正在登录的user_id不符'
+UNVALID_USER_ID_MSG = '该user_id与系统正在登录的user_id不符'
 UNVALID_USER_ID = 41021
+
+########################################################
+# 邀请相关
+########################################################
+INVITATION_UNKNOWN_GENDER = 43001
+INVITATION_UNKNOWN_GENDER_MSG = "邀请者和被邀请者的性别必须可知"
+
+INVITATION_NO_INVITEE_ROLE = 43002
+INVITATION_NO_INVITEE_ROLE_MSG = "被邀请者的角色不合法"
+
+INVITATION_NO_INVITER_ROLE = 43003
+INVITATION_NO_INVITER_ROLE_MSG = "邀请者的角色不合法"
+
+INVITATION_DUPLICATE_INVITEE = 43004
+INVITATION_DUPLICATE_INVITEE_MSG = "被邀请者已存在"
+
+INVITATION_DUPLICATE_INVITER = 43005
+INVITATION_DUPLICATE_INVITER_MSG = "邀请者已存在"
+
+INVITATION_DUPLICATE_INVITEE_ROLE = 43006
+INVITATION_DUPLICATE_INVITEE_ROLE_MSG = "被邀请者的角色已存在"
+
+INVITATION_DUPLICATE_INVITER_ROLE = 43007
+INVITATION_DUPLICATE_INVITER_ROLE_MSG = "邀请者的角色已存在"
+
 ########################################################
 # 群组相关
 ########################################################

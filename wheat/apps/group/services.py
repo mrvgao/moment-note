@@ -9,8 +9,9 @@ from apps.user.services import UserService
 from .models import Group, GroupMember, Invitation
 from .serializers import GroupSerializer, GroupMemberSerializer, InvitationSerializer
 from customs.services import MessageService
-from customs.services import role_map
 from apps.moment.services import MomentService
+from errors import codes
+from roles import role_map
 
 
 class GroupService(BaseService):
@@ -109,6 +110,45 @@ class GroupService(BaseService):
         return group
 
     @classmethod
+    def check_if_valid_invitation(cls, inviter, invitee_phone, invitee_role):
+        invitee = UserService.get_user(phone=invitee_phone)
+        if inviter.gender == 'U':
+            return codes.INVITATION_UNKNOWN_GENDER
+        if invitee and invitee.gender == 'U':
+            return codes.INVITATION_UNKNOWN_GENDER
+        # 检查邀请者和被邀请者的角色是否都存在，且对应
+        if invitee_role not in role_map:
+            return codes.INVITATION_NO_INVITEE_ROLE
+        reverse_role_field = 'ctm' if inviter.gender == 'M' else 'ctf'
+        if reverse_role_field not in role_map[invitee_role]:
+            return codes.INVITATION_NO_INVITER_ROLE
+        inviter_role = role_map[invitee_role][reverse_role_field]
+        # 检查被邀请者是否已存在，角色是否允许重复，不允许重复的话，是否已存在
+        invitee_role_multiple = role_map[invitee_role]['multiple']
+        inviter_group = GroupService.get_group(creator_id=inviter.id, group_type='all_home_member')
+        if not inviter_group:
+            return codes.UNKNOWN_GROUP
+        if invitee and str(invitee.id) in inviter_group.members:
+            return codes.INVITATION_DUPLICATE_INVITEE
+        if not invitee_role_multiple:
+            for member_id, info in inviter_group.members.iteritems():
+                if info['role'] == invitee_role:
+                    return codes.INVITATION_DUPLICATE_INVITEE_ROLE
+        # 检查邀请者是否已存在，角色是否允许重复，不允许重复的话，是否已存在
+        if invitee:
+            inviter_role_multiple = role_map[inviter_role]['multiple']
+            invitee_group = GroupService.get_group(creator_id=invitee.id, group_type='all_home_member')
+            if not invitee_group:
+                return codes.UNKNOWN_GROUP
+            if str(inviter.id) in invitee_group.members:
+                return codes.INVITATION_DUPLICATE_INVITER
+            if not inviter_role_multiple:
+                for member_id, info in invitee_group.members.iteritems():
+                    if info['role'] == inviter_role:
+                        return codes.INVITATION_DUPLICATE_INVITER_ROLE
+        return codes.OK
+
+    @classmethod
     @transaction.atomic
     def create_group_invitation(cls, group, inviter, invitation_dict):
         if not _valid_role(invitation_dict['role']) \
@@ -152,7 +192,9 @@ class GroupService(BaseService):
         if msg == "":
             msg = 'hi'
 
-        chinese_role = role_map.get(invitation_dict['role'], 'hi')
+        chinese_role = 'hi'
+        if invitation_dict['role'] in role_map:
+            chinese_role = role_map[invitation_dict['role']]['chinese']
         msg_string = chinese_role + '， ' + msg
         nickname = '(%s)%s' % (inviter.phone, inviter.nickname)
         send_message_param = '%s,%s,%s' % (msg_string, nickname, maili_url)
@@ -174,8 +216,6 @@ class GroupService(BaseService):
             raise ReferenceError(user.id)
         elif len(group.members) >= group.max_members:
             raise IndexError('reach the max member number of group')
-        elif _role_duplicate(group, role):
-            raise KeyError(role)
 
         # member_ids = group.members.keys()
         group.members[str(user.id)] = {
@@ -191,10 +231,6 @@ class GroupService(BaseService):
             avatar=user.avatar,
             nickname=user.nickname,
             role=role)
-        # group里所有成员建立“好友关系”
-        # if not role.startswith('r-'):
-        # UserService.create_friendships(str(user.id), [])
-
         return True
 
     @staticmethod
@@ -233,27 +269,33 @@ class GroupService(BaseService):
         Raises:
             ReferenceError When invitation.invitee value is not same as invitee.phone, which means this use not login.
         '''
+        inviter = GroupService.get_user(id=invitation.inviter)
+        if GroupService.check_if_valid_invitation(inviter, invitee.phone, invitation.role) != codes.OK:
+            return False
+        reverse_role_field = 'ctm' if inviter.gender == 'M' else 'ctf'
+        inviter_role = role_map[invitation.role][reverse_role_field]
         GroupService.add_person_to_user_group(
-                    host_id=str(invitee.id),
-                    new_member_id=str(invitation.inviter),
-                    role='r-'+invitation.role
+            host_id=str(invitee.id),
+            new_member_id=str(invitation.inviter),
+            role=inviter_role
         )
 
         GroupService.add_person_to_user_group(
-                    host_id=str(invitation.inviter),
-                    new_member_id=str(invitee.id),
-                    role=invitation.role
+            host_id=str(invitation.inviter),
+            new_member_id=str(invitee.id),
+            role=invitation.role
         )
         invitation.update(accepted=True, accept_time=datetime.now())
         UserService.create_friendship(str(invitee.id), str(invitation.inviter))
         message = {
-                    'event': 'invitation',
-                    'sub_event': 'acc_inv_ntf',  # accept_invitation_notify
-                    'invitation_id': invitation.id,
-                    'receiver_id': invitation.inviter,
-                    'invitee': str(invitee.id)
+            'event': 'invitation',
+            'sub_event': 'acc_inv_ntf',  # accept_invitation_notify
+            'invitation_id': invitation.id,
+            'receiver_id': invitation.inviter,
+            'invitee': str(invitee.id)
         }
         publish_redis_message('invitation', message)
+        return True
 
     @classmethod
     def get_user_group_ids(cls, user_id):
@@ -357,25 +399,12 @@ def add_group_info(groups, func):
 
 
 def get_group_member_avatar(groups):
-    return add_group_info(groups,  _set_avatar)
+    return add_group_info(groups, _set_avatar)
 
 
 def get_group_member_activity(groups):
-    return add_group_info(groups,  _set_activity)
+    return add_group_info(groups, _set_activity)
 
 
 def _valid_role(r):
-    if r.startswith('r-'):
-        return r[2:] in role_map
     return r in role_map
-
-
-def _role_duplicate(group, role):
-    could_deplicate_roles = ['son', 'daughter', 'slibe', 'sister']
-    if role in could_deplicate_roles or role.startswith('r-'):
-        return False
-    else:
-        for _, info in group.members.iteritems():
-            if info['role'] == role:
-                return True
-        return False

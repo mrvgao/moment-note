@@ -91,10 +91,10 @@ class GroupMember(CommonUpdateAble, models.Model, EnhancedModel):
     member_id = UUIDField(db_index=True)
     group_id = UUIDField(db_index=True)
     authority = models.CharField(max_length=10, choices=AUTHORITIES, default="common")
-    group_remark_name = models.CharField(max_length=50)  # 个人对群的备注名称
     role = models.CharField(max_length=15)
-    nickname = models.CharField(max_length=30)  # 个人在群里的名称
-    avatar = models.CharField(max_length=100)  # 个人在群里的头像
+    # group_remark_name = models.CharField(max_length=50)  # 个人对群的备注名称
+    # nickname = models.CharField(max_length=30)  # 个人在群里的名称
+    # avatar = models.CharField(max_length=100)  # 个人在群里的头像
     joined_at = models.DateTimeField(auto_now_add=True)
     deleted = models.BooleanField(default=False)
 

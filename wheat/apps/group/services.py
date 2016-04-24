@@ -89,11 +89,9 @@ class GroupService(BaseService):
             group_type=group_type,
             name=name,
             admins={str(creator.id): {
-                'name': creator.nickname,
                 'joined_at': datetime.now()
             }},
             members={str(creator.id): {
-                'name': creator.nickname,
                 'joined_at': datetime.now(),
                 'role': creator_role
             }})
@@ -103,9 +101,6 @@ class GroupService(BaseService):
                 member_id=creator.id,
                 group_id=group.id,
                 authority='admin',
-                group_remark_name=name,
-                avatar=creator.avatar,
-                nickname=creator.nickname,
                 role=creator_role)
         return group
 
@@ -219,7 +214,6 @@ class GroupService(BaseService):
 
         # member_ids = group.members.keys()
         group.members[str(user.id)] = {
-            'name': user.nickname,
             'joined_at': datetime.now(),
             'role': role
         }
@@ -227,9 +221,6 @@ class GroupService(BaseService):
         GroupMember.objects.create(
             member_id=user.id,
             group_id=group.id,
-            group_remark_name=group.name,
-            avatar=user.avatar,
-            nickname=user.nickname,
             role=role)
         return True
 

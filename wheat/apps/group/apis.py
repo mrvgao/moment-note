@@ -55,7 +55,7 @@ class GroupViewSet(ListModelMixin,
 
         if owner_id:
             if group_type == ALL_FRIENDS:
-                result = GroupService.get_group_if_without_create(
+                result = GroupService.get_or_create_group(
                     owner_id,
                     ALL_FRIENDS
                 )
@@ -64,7 +64,7 @@ class GroupViewSet(ListModelMixin,
             else:
                 result = GroupService.filter_group(creator_id=owner_id, group_type=group_type)
 
-            result = GroupViewSet._get_group_member_info(result)
+            GroupViewSet._get_group_member_info(result)
             result = GroupService.serialize_list(result)
             return SimpleResponse(result)
         else:
@@ -72,12 +72,9 @@ class GroupViewSet(ListModelMixin,
             return SimpleResponse(response.data)
 
     @staticmethod
-    def _get_group_member_info(result):
-        result = services.get_group_member_avatar(result)
-
-        result = services.get_group_member_activity(result)
-
-        return result
+    def _get_group_member_info(groups):
+        GroupService.add_member_avatar_of_groups(groups)
+        GroupService.add_member_activity_of_groups(groups)
 
     def _get_specific_group(owner_id, group_type):
         '''
@@ -126,6 +123,8 @@ class GroupViewSet(ListModelMixin,
         group = GroupService.get_group(id=id)
         if not group:
             return SimpleResponse(status=status.HTTP_404_NOT_FOUND)
+        GroupService.add_member_avatar_of_group(group)
+        GroupService.add_member_activity_of_group(group)
         return SimpleResponse(GroupService.serialize(group))
 
     def update(self, request, id):

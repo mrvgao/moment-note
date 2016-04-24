@@ -49,7 +49,7 @@ class GroupService(BaseService):
             return InvitationSerializer(obj, context=context).data
 
     @staticmethod
-    def get_group_if_without_create(owner_id, KEYWORD):
+    def get_or_create_group(owner_id, KEYWORD):
         user = UserService.get_user(id=owner_id)
         result = Group.objects.filter(creator_id=owner_id, group_type=KEYWORD)
 
@@ -247,7 +247,7 @@ class GroupService(BaseService):
     @classmethod
     @transaction.atomic
     def add_person_to_user_group(cls, host_id, new_member_id, role, group_type='all_home_member'):
-        host_group_id = GroupService.get_group_if_without_create(host_id, group_type)
+        host_group_id = GroupService.get_or_create_group(host_id, group_type)
         host_group = GroupService.get_group(id=host_group_id)
         new_member_obj = UserService.get_user(id=new_member_id)
         GroupService.add_group_member(host_group, new_member_obj, role)
@@ -326,6 +326,22 @@ class GroupService(BaseService):
             print e
             return False
 
+    @classmethod
+    def add_member_avatar_of_group(cls, group):
+        map(_set_avatar(group), group.members)
+
+    @classmethod
+    def add_member_avatar_of_groups(cls, groups):
+        map(lambda group: cls.add_member_avatar_of_group(group), groups)
+
+    @classmethod
+    def add_member_activity_of_group(cls, group):
+        map(_set_activity(group), group.members)
+
+    @classmethod
+    def add_member_activity_of_groups(cls, groups):
+        map(lambda group: cls.add_member_activity_of_group(group), groups)
+
 
 def _get_all_friend_home_id(user_id):
     group_ids = list(GroupMember.objects.filter(member_id=user_id, deleted=False).values_list('group_id', flat=True))
@@ -362,7 +378,6 @@ def __get_avatar(user_id):
     try:
         return str(UserService.get_user(id=user_id).avatar)
     except Exception as e:
-        print e
         return None
 
 
@@ -382,19 +397,6 @@ def _set_activity(group):
 def _action_on_group_member(group, func):
     map(func(group), group.members)
     return group
-
-
-def add_group_info(groups, func):
-    map(lambda g: _action_on_group_member(g, func), groups)
-    return groups
-
-
-def get_group_member_avatar(groups):
-    return add_group_info(groups, _set_avatar)
-
-
-def get_group_member_activity(groups):
-    return add_group_info(groups, _set_activity)
 
 
 def _valid_role(r):

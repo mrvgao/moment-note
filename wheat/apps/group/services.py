@@ -317,6 +317,14 @@ class GroupService(BaseService):
             return False
 
     @classmethod
+    def add_member_nickname_of_group(cls, group):
+        map(_set_nickname(group), group.members)
+
+    @classmethod
+    def add_member_nickname_of_groups(cls, groups):
+        map(lambda group: cls.add_member_nickname_of_group(group), groups)
+
+    @classmethod
     def add_member_avatar_of_group(cls, group):
         map(_set_avatar(group), group.members)
 
@@ -364,6 +372,13 @@ def get_all_home_member_list(user_id):
     return get_friend_from_group_id(all_home_group_ids, user_id)
 
 
+def __get_nickname(user_id):
+    try:
+        return str(UserService.get_user(id=user_id).nickname)
+    except Exception as e:
+        return None
+
+
 def __get_avatar(user_id):
     try:
         return str(UserService.get_user(id=user_id).avatar)
@@ -374,6 +389,10 @@ def __get_avatar(user_id):
 def __get_activity(u):
     m_id, date = MomentService.get_recent_moment(u)
     return {'moment_id': m_id, 'date': date}
+
+
+def _set_nickname(group):
+    return lambda u: group.members[u].setdefault('nickname', __get_nickname(u))
 
 
 def _set_avatar(group):

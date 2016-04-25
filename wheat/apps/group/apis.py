@@ -73,6 +73,7 @@ class GroupViewSet(ListModelMixin,
 
     @staticmethod
     def _get_group_member_info(groups):
+        GroupService.add_member_nickname_of_groups(groups)
         GroupService.add_member_avatar_of_groups(groups)
         GroupService.add_member_activity_of_groups(groups)
 
@@ -123,6 +124,7 @@ class GroupViewSet(ListModelMixin,
         group = GroupService.get_group(id=id)
         if not group:
             return SimpleResponse(status=status.HTTP_404_NOT_FOUND)
+        GroupService.add_member_nickname_of_group(group)
         GroupService.add_member_avatar_of_group(group)
         GroupService.add_member_activity_of_group(group)
         return SimpleResponse(GroupService.serialize(group))
@@ -274,7 +276,7 @@ class InvitationViewSet(viewsets.GenericViewSet):
             return SimpleResponse(status=status.HTTP_400_BAD_REQUEST, errors=codes.errors(code))
 
         group = GroupService.get_group(id=group_id)
-        if not group or group.creator_id != str(request.user.id):
+        if not group or group.creator_id != request.user.id:
             return SimpleResponse(status=status.HTTP_400_BAD_REQUEST, errors="this group not found")
         elif invitee == request.user.phone:
             return SimpleResponse(status=status.HTTP_403_FORBIDDEN, errors='cannot invitee your self')

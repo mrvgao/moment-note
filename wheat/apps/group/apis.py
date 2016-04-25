@@ -3,6 +3,7 @@
 from rest_framework import permissions, viewsets, status
 from rest_condition import Or
 
+from settings import NULL
 from customs.permissions import AllowPostPermission
 from customs.response import SimpleResponse
 from customs.viewsets import ListModelMixin
@@ -46,30 +47,17 @@ class GroupViewSet(ListModelMixin,
         omit_serializer: true
         '''
 
-        OWNER_ID = 'owner-id'
-        TYPE = 'type'
-        owner_id = request.query_params.get(OWNER_ID, None)
-        group_type = request.query_params.get(TYPE, None)
-
-        ALL_FRIENDS = 'all_home_member'
-
-        if owner_id:
-            if group_type == ALL_FRIENDS:
-                result = GroupService.get_or_create_group(
-                    owner_id,
-                    ALL_FRIENDS
-                )
-            elif group_type is None:
-                result = GroupService.filter_group(creator_id=owner_id)
-            else:
-                result = GroupService.filter_group(creator_id=owner_id, group_type=group_type)
-
-            GroupViewSet._get_group_member_info(result)
-            result = GroupService.serialize_list(result)
-            return SimpleResponse(result)
+        OWNER_ID, TYPE, PAGE, ALL_FRIENDS = 'owner-id', 'type', 'page', 'all_home_member'
+        owner_id = request.query_params.get(OWNER_ID, NULL)
+        group_type = request.query_params.get(TYPE, NULL)
+        page = request.query_params.get(PAGE, NULL)
+        if owner_id and group_type == ALL_FRIENDS:
+            groups = [GroupService.get_or_create_group(owner_id, ALL_FRIENDS)]
         else:
-            response = super(GroupViewSet, self).list(request)
-            return SimpleResponse(response.data)
+            groups = GroupService.filter_group(creator_id=owner_id, group_type=group_type, _page=page)
+        GroupViewSet._get_group_member_info(groups)
+        data = GroupService.serialize_list(groups)
+        return SimpleResponse(data)
 
     @staticmethod
     def _get_group_member_info(groups):

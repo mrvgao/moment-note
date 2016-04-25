@@ -545,3 +545,10 @@ class Common(Configuration):
     REDIS_PUBSUB_TAG = 'dev'
     REDIS_PUBSUB_CHANNEL = 'as12afzxjk@askfl'
     # END REDIS DB
+
+    class NoneParameter:
+
+        def __nonzero__(self):
+            return False
+
+    NULL = NoneParameter()

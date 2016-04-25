@@ -27,6 +27,7 @@ def query2str(*args, **kwargs):
 class CommonUpdateAble(models.Model):
 
     def update(self, **kwargs):
+        _delete_null_params(kwargs)
         fields = {}
         changed = False
         for f in self._meta.fields:
@@ -63,11 +64,17 @@ class CacheableQuerySet(QuerySet):
         # for obj in self.iterator():
         #    invalidate_obj(obj)
         # update must behind invalidate obj
+        _delete_null_params(kwargs)
         n = super(CacheableQuerySet, self).update(**kwargs)
         if self.is_cacheable():
             from cacheops import invalidate_model
             invalidate_model(self.model)
         return n
+
+
+def _delete_null_params(params):
+    keys = filter(lambda k: params[k] == settings.NULL, params.keys())
+    map(lambda k: params.pop(k, None), keys)
 
 
 class CacheableManager(models.Manager):
@@ -95,6 +102,7 @@ class CacheableManager(models.Manager):
         return objs
 
     def filter(self, *args, **kwargs):
+        _delete_null_params(kwargs)
         queryset = self.get_queryset()
         if self.is_cacheable():
             objs = queryset.filter(*args, **kwargs).cache(timeout=self.get_cache_timeout())
@@ -103,6 +111,7 @@ class CacheableManager(models.Manager):
         return objs
 
     def query(self, *args, **kwargs):
+        _delete_null_params(kwargs)
         order_by = kwargs.pop('_order_by', None)
         page = kwargs.pop('_page', None)
         last_limit = kwargs.pop('_last_limit', None)
@@ -110,7 +119,7 @@ class CacheableManager(models.Manager):
         if order_by:
             objs = objs.order_by(order_by)
         if page:
-            begin_i = settings.PAGE_SIZE * (page - 1)
+            begin_i = settings.PAGE_SIZE * (int(page) - 1)
             end_i = begin_i + settings.PAGE_SIZE
             return objs[begin_i:end_i]
         elif last_limit:
@@ -118,12 +127,14 @@ class CacheableManager(models.Manager):
         return objs
 
     def find(self, *args, **kwargs):
+        _delete_null_params(kwargs)
         queryset = self.get_queryset()
         objs = queryset.filter(*args, **kwargs)
         return objs
 
     def get(self, *args, **kwargs):
         # queryset = super(CacheableManager, self).get_queryset()
+        _delete_null_params(kwargs)
         queryset = self.get_queryset()
         if self.is_cacheable():
             objs = queryset.filter(*args, **kwargs).cache(timeout=self.get_cache_timeout())
@@ -141,6 +152,7 @@ class CacheableManager(models.Manager):
             return objs[0]
 
     def get_or_404(self, *args, **kwargs):
+        _delete_null_params(kwargs)
         queryset = self.get_queryset()
         if self.is_cacheable():
             objs = queryset.filter(*args, **kwargs).cache(timeout=self.get_cache_timeout())
@@ -158,6 +170,7 @@ class CacheableManager(models.Manager):
             return objs[0]
 
     def get_or_none(self, *args, **kwargs):
+        _delete_null_params(kwargs)
         try:
             obj = self.get(*args, **kwargs)
             return obj
@@ -167,6 +180,7 @@ class CacheableManager(models.Manager):
 
     def this(self, *args, **kwargs):
         # queryset = super(CacheableManager, self).get_queryset()
+        _delete_null_params(kwargs)
         queryset = self.get_queryset()
         objs = queryset.filter(*args, **kwargs)
         if not objs:
@@ -183,6 +197,7 @@ class CacheableManager(models.Manager):
             return objs[0]
 
     def update_or_create(self, defaults=None, **kwargs):
+        _delete_null_params(kwargs)
         try:
             obj = self.get(**kwargs)
             if defaults:
@@ -196,11 +211,13 @@ class CacheableManager(models.Manager):
             return obj, True
 
     def defer(self, *args, **kwargs):
+        _delete_null_params(kwargs)
         cm = CacheableManager()
         cm.queryset = self.get_queryset().defer(*args, **kwargs)
         return cm
 
     def only(self, *args, **kwargs):
+        _delete_null_params(kwargs)
         cm = CacheableManager()
         cm.queryset = self.get_queryset().only(*args, **kwargs)
         return cm

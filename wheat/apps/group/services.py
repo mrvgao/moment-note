@@ -51,27 +51,18 @@ class GroupService(BaseService):
     @staticmethod
     def get_or_create_group(owner_id, KEYWORD):
         user = UserService.get_user(id=owner_id)
-        result = Group.objects.filter(creator_id=owner_id, group_type=KEYWORD)
-
-        if user and len(result) == 0:
-            # if this person no initial all friend group
-
+        group = GroupService.get_group(creator_id=owner_id, group_type=KEYWORD)
+        if user and not group:
             SELF = 'self'
-            GroupService.create_group(
+            group = GroupService.create_group(
                 creator=user, group_type=KEYWORD,
                 name=KEYWORD, creator_role=SELF
             )
-
-            result = Group.objects.filter(
-                creator_id=owner_id,
-                group_type=KEYWORD
-            )
-
-        return result
+        return group
 
     @staticmethod
     def filter_group(**kwargs):
-        return Group.objects.filter(**kwargs)
+        return Group.objects.query(**kwargs)
 
     @classmethod
     def get_group(cls, **kwargs):
@@ -238,8 +229,7 @@ class GroupService(BaseService):
     @classmethod
     @transaction.atomic
     def add_person_to_user_group(cls, host_id, new_member_id, role, group_type='all_home_member'):
-        host_group_id = GroupService.get_or_create_group(host_id, group_type)
-        host_group = GroupService.get_group(id=host_group_id)
+        host_group = GroupService.get_or_create_group(host_id, group_type)
         new_member_obj = UserService.get_user(id=new_member_id)
         GroupService.add_group_member(host_group, new_member_obj, role)
 

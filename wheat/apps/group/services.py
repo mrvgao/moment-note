@@ -116,10 +116,9 @@ class GroupService(BaseService):
             return codes.INVITATION_NO_INVITEE_ROLE
         if invitee and role_map[invitee_role]['gender'] != invitee.gender:
             return codes.INVITATION_INVITEE_GENDER_UNMATCH
-        reverse_role_field = 'ctm' if inviter.gender == 'M' else 'ctf'
-        if reverse_role_field not in role_map[invitee_role]:
+        inviter_role = _get_reverse_role(invitee_role, inviter.gender)
+        if not inviter_role:
             return codes.INVITATION_NO_INVITER_ROLE
-        inviter_role = role_map[invitee_role][reverse_role_field]
         # 检查被邀请者是否已存在，角色是否允许重复，不允许重复的话，是否已存在
         invitee_role_multiple = role_map[invitee_role]['multiple']
         inviter_group = GroupService.get_group(creator_id=inviter.id, group_type='all_home_member')
@@ -207,14 +206,6 @@ class GroupService(BaseService):
     @classmethod
     @transaction.atomic
     def add_group_member(cls, group, user, role):
-        if not _valid_role(role):
-            raise NameError(role)
-        elif user.id in group.members and user.id != group.creator_id:
-            raise ReferenceError(user.id)
-        elif len(group.members) >= group.max_members:
-            raise IndexError('reach the max member number of group')
-
-        # member_ids = group.members.keys()
         group.members[str(user.id)] = {
             'joined_at': datetime.now(),
             'role': role
@@ -263,16 +254,15 @@ class GroupService(BaseService):
             ReferenceError When invitation.invitee value is not same as invitee.phone, which means this use not login.
         '''
         inviter = UserService.get_user(id=invitation.inviter)
-        if GroupService.check_if_valid_invitation(inviter, invitee.phone, invitation.role) != codes.OK:
-            return False
-        reverse_role_field = 'ctm' if inviter.gender == 'M' else 'ctf'
-        inviter_role = role_map[invitation.role][reverse_role_field]
+        code = GroupService.check_if_valid_invitation(inviter, invitee.phone, invitation.role)
+        if code != codes.OK:
+            return code
+        inviter_role = _get_reverse_role(invitation.role, inviter.gender)
         GroupService.add_person_to_user_group(
             host_id=str(invitee.id),
             new_member_id=str(invitation.inviter),
             role=inviter_role
         )
-
         GroupService.add_person_to_user_group(
             host_id=str(invitation.inviter),
             new_member_id=str(invitee.id),
@@ -288,7 +278,7 @@ class GroupService(BaseService):
             'invitee': str(invitee.id)
         }
         publish_redis_message('invitation', message)
-        return True
+        return codes.OK
 
     @classmethod
     def get_user_group_ids(cls, user_id):
@@ -403,3 +393,8 @@ def _action_on_group_member(group, func):
 
 def _valid_role(r):
     return r in role_map
+
+
+def _get_reverse_role(role, gender):
+    reverse_role_field = 'ctm' if gender == 'M' else 'ctf'
+    return role_map[role].get(reverse_role_field)

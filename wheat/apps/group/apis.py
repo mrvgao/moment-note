@@ -335,10 +335,7 @@ class InvitationViewSet(viewsets.GenericViewSet):
 
         ### Response:
 
-        + 403 : this role is duplicate in target person's group.
-        + 406 : role is unacceptable
-        + 409 : this person is alreay in target person's group
-        + 413 : group member overflowed.
+        + 400 : fail, the error message will have more info
         + {success: true}
 
         ---
@@ -349,50 +346,16 @@ class InvitationViewSet(viewsets.GenericViewSet):
             - name: body
               paramType: body
         '''
-        ACCEPTED = 'accepted'
-        accepted = request.data.get(ACCEPTED, False)
-
-        user_id = request.user.id
-
-        if user_id:
-            invitee = UserService.get_user(id=user_id)
-
-        success = True
-        if accepted is False:
-            success = GroupService.delete_invitation(
-                invitee,
-                request.invitation
-            )
+        accepted = request.data.get('accepted', False)
+        if not accepted:
+            success = GroupService.delete_invitation(request.user, request.invitation)
+            if not success:
+                return SimpleResponse(status=status.HTTP_400_BAD_REQUEST)
         else:
-            try:
-                GroupService.accept_group_invitation(invitee, request.invitation)
-            except NameError as e:
-                return SimpleResponse(
-                    status=406,
-                    errors='role ' + e.message + ' unacceptable'
-                )
-            except ReferenceError as e:
-                return SimpleResponse(
-                    status=409,
-                    errors=e.message + ' already in target person group'
-                )
-            except IndexError:
-                return SimpleResponse(
-                    status=413,
-                    errors='group member number overflow'
-                )
-            except KeyError as e:
-                return SimpleResponse(
-                    status=403,
-                    errors=e.message + ' already in target person group'
-                )
-            except Exception as e:
-                return SimpleResponse(
-                    status=status.HTTP_400_BAD_REQUEST,
-                    errors=e.message
-                )
-
-        return SimpleResponse(success=success)
+            code = GroupService.accept_group_invitation(request.user, request.invitation)
+            if code != codes.OK:
+                return SimpleResponse(status=status.HTTP_400_BAD_REQUEST, errors=codes.errors(code))
+        return SimpleResponse(success=True)
 
     @list_route(methods=['get'])
     def check(self, request):

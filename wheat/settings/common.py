@@ -422,8 +422,7 @@ class Common(Configuration):
             # 'TEST_COLLATION': 'utf8_general_ci',
             'OPTIONS': {'charset': 'utf8mb4'},
         },
-
-        'test':{
+        'test': {
             # Add 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or
             # 'oracle'.
             'ENGINE': 'django.db.backends.mysql',
@@ -440,6 +439,7 @@ class Common(Configuration):
             'OPTIONS': {'charset': 'utf8mb4'},
         },
     }
+    PAGE_SIZE = REST_FRAMEWORK['PAGE_SIZE']
     # END DATABASE CONFIGURATION
 
     # CACHING

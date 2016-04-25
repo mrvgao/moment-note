@@ -102,6 +102,21 @@ class CacheableManager(models.Manager):
             objs = queryset.filter(*args, **kwargs)
         return objs
 
+    def query(self, *args, **kwargs):
+        order_by = kwargs.pop('_order_by', None)
+        page = kwargs.pop('_page', None)
+        last_limit = kwargs.pop('_last_limit', None)
+        objs = self.filter(*args, **kwargs)
+        if order_by:
+            objs = objs.order_by(order_by)
+        if page:
+            begin_i = settings.PAGE_SIZE * (page - 1)
+            end_i = begin_i + settings.PAGE_SIZE
+            return objs[begin_i:end_i]
+        elif last_limit:
+            return objs.reverse()[:int(last_limit):-1]
+        return objs
+
     def find(self, *args, **kwargs):
         queryset = self.get_queryset()
         objs = queryset.filter(*args, **kwargs)

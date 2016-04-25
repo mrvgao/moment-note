@@ -105,6 +105,20 @@ class GroupService(BaseService):
         return group
 
     @classmethod
+    def check_new_member_of_group(cls, group_owner, member, role):
+        role_multiple = role_map[role]['multiple']
+        group = GroupService.get_group(creator_id=group_owner.id, group_type='all_home_member')
+        if not group:
+            return codes.UNKNOWN_GROUP
+        if str(member.id) in group.members:
+            return codes.INVITATION_DUPLICATE_INVITER
+        if not role_multiple:
+            for member_id, info in group.members.iteritems():
+                if info['role'] == role:
+                    return codes.INVITATION_DUPLICATE_INVITER_ROLE
+        return codes.OK
+
+    @classmethod
     def check_if_valid_invitation(cls, inviter, invitee_phone, invitee_role):
         invitee = UserService.get_user(phone=invitee_phone)
         if inviter.gender == 'U':
@@ -120,29 +134,13 @@ class GroupService(BaseService):
         if not inviter_role:
             return codes.INVITATION_NO_INVITER_ROLE
         # 检查被邀请者是否已存在，角色是否允许重复，不允许重复的话，是否已存在
-        invitee_role_multiple = role_map[invitee_role]['multiple']
-        inviter_group = GroupService.get_group(creator_id=inviter.id, group_type='all_home_member')
-        if not inviter_group:
-            return codes.UNKNOWN_GROUP
-        if invitee and str(invitee.id) in inviter_group.members:
-            return codes.INVITATION_DUPLICATE_INVITEE
-        if not invitee_role_multiple:
-            for member_id, info in inviter_group.members.iteritems():
-                if info['role'] == invitee_role:
-                    return codes.INVITATION_DUPLICATE_INVITEE_ROLE
+        code = GroupService.check_new_member_of_group(inviter, invitee, invitee_role)
+        if code != codes.OK:
+            return code
         # 检查邀请者是否已存在，角色是否允许重复，不允许重复的话，是否已存在
         if invitee:
-            inviter_role_multiple = role_map[inviter_role]['multiple']
-            invitee_group = GroupService.get_group(creator_id=invitee.id, group_type='all_home_member')
-            if not invitee_group:
-                return codes.UNKNOWN_GROUP
-            if str(inviter.id) in invitee_group.members:
-                return codes.INVITATION_DUPLICATE_INVITER
-            if not inviter_role_multiple:
-                for member_id, info in invitee_group.members.iteritems():
-                    if info['role'] == inviter_role:
-                        return codes.INVITATION_DUPLICATE_INVITER_ROLE
-        return codes.OK
+            code = GroupService.check_new_member_of_group(invitee, inviter, inviter_role)
+        return code
 
     @classmethod
     @transaction.atomic

@@ -114,6 +114,8 @@ class GroupService(BaseService):
         # 检查邀请者和被邀请者的角色是否都存在，且对应
         if invitee_role not in role_map:
             return codes.INVITATION_NO_INVITEE_ROLE
+        if invitee and role_map[invitee_role]['gender'] != invitee.gender:
+            return codes.INVITATION_INVITEE_GENDER_UNMATCH
         reverse_role_field = 'ctm' if inviter.gender == 'M' else 'ctf'
         if reverse_role_field not in role_map[invitee_role]:
             return codes.INVITATION_NO_INVITER_ROLE

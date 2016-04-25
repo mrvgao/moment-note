@@ -128,6 +128,9 @@ INVITATION_DUPLICATE_INVITEE_ROLE_MSG = "被邀请者的角色已存在"
 INVITATION_DUPLICATE_INVITER_ROLE = 43007
 INVITATION_DUPLICATE_INVITER_ROLE_MSG = "邀请者的角色已存在"
 
+INVITATION_INVITEE_GENDER_UNMATCH = 43008
+INVITATION_INVITEE_GENDER_UNMATCH_MSG = "被邀请者和被邀请的角色的性别不匹配"
+
 ########################################################
 # 群组相关
 ########################################################

@@ -4,6 +4,7 @@ from customs.serializers import XModelSerializer
 from customs.fields import XImageField
 from rest_framework.serializers import BooleanField
 from .models import User, AuthToken
+from rest_framework import serializers
 
 
 class UserSerializer(XModelSerializer):
@@ -14,8 +15,6 @@ class UserSerializer(XModelSerializer):
         use_url=True,
         style={'input_type': 'file'})
 
-    activated = BooleanField(write_only=True)
-
     class Meta:
         model = User
         fields = ('id', 'phone', 'nickname', 'token',
@@ -23,8 +22,9 @@ class UserSerializer(XModelSerializer):
                   'avatar', 'tagline', 'marital_status',
                   'gender', 'birthday', 'city',
                   'province', 'country', 'role',
-                  'is_admin', 'activated', 'activated_at',
-                  'created_at', 'updated_at', 'last_login')
+                  'activated', 'updated_at', 'last_login')
+
+        read_only_fields = ('activated', 'updated_at', 'last_login', 'password')
 
 
 class AuthTokenSerializer(XModelSerializer):

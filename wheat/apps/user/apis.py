@@ -12,6 +12,7 @@ from .services import AuthService
 from customs import class_tools
 from apps.user.services import user_service
 from apps.user.services import captcha_service
+from apps.user.services import auth_service
 
 
 @class_tools.set_filter(['phone'])
@@ -194,7 +195,8 @@ class UserViewSet(ListModelMixin,
         return SimpleResponse(online)
 
 
-class CaptchaViewSet(viewsets.GenericViewSet):
+@class_tools.set_service(captcha_service)
+class CaptchaViewSet(viewsets.ViewSet):
     @login_required
     @list_route(methods=['post'])
     def check(self, request):
@@ -272,11 +274,11 @@ class CaptchaViewSet(viewsets.GenericViewSet):
             return SimpleResponse(success=False)
 
 
-class TokenViewSet(viewsets.GenericViewSet):
-
-    @list_route(methods=['put'])
+@class_tools.set_service(auth_service)
+class TokenViewSet(viewsets.ViewSet):
     @user_is_same_as_logined_user
     @login_required
+    @list_route(methods=['put'])
     def refresh(self, request):
         '''
         ### Example Request

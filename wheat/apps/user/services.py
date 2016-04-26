@@ -6,8 +6,8 @@ from django.contrib.auth import authenticate, login
 from customs.services import BaseService
 from customs.response import Result
 from errors import codes
-from .models import User, AuthToken, FriendShip
-from .serializers import UserSerializer, AuthTokenSerializer
+from .models import User, AuthToken, FriendShip, Captcha
+from .serializers import UserSerializer, AuthTokenSerializer, CaptchaSerializer
 import datetime
 from django.db.models import Q
 from utils import utils
@@ -184,7 +184,10 @@ class UserService(BaseService):
         return True
 
 
-class CapthchaService(object):
+class CapthchaService(BaseService):
+    model = Captcha
+    serializer = CaptchaSerializer
+
     def send_captcha(self, phone, send=True):
         send_succeed, code = MessageService.send_message(phone=phone, send=send)
         return send_succeed, code
@@ -194,7 +197,10 @@ class CapthchaService(object):
         return match
 
 
-class AuthService(object):
+class AuthService(BaseService):
+    model = AuthToken
+    serializer = AuthTokenSerializer
+
     @staticmethod
     def check_if_token_valid(token):
         auth_token = AuthToken.objects.get_or_none(key=token)
@@ -223,3 +229,4 @@ class AuthService(object):
 
 user_service = UserService()
 captcha_service = CapthchaService()
+auth_service = AuthService()

@@ -3,7 +3,7 @@
 from customs.serializers import XModelSerializer
 from customs.fields import XImageField
 from rest_framework.serializers import BooleanField
-from .models import User, AuthToken
+from .models import User, AuthToken, Captcha
 from rest_framework import serializers
 
 
@@ -32,3 +32,12 @@ class AuthTokenSerializer(XModelSerializer):
     class Meta:
         model = AuthToken
         fields = ('key', 'user_id', 'created_at', 'expired_at')
+
+
+class CaptchaSerializer(XModelSerializer):
+
+    class Meta:
+        model = Captcha
+        fields = ('phone', 'code', 'created_at')
+
+        

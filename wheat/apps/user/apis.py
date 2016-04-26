@@ -1,75 +1,54 @@
 # -*- coding:utf-8 -*-
 
-from django.contrib.auth.models import AnonymousUser
 from rest_framework import viewsets, status
 from rest_framework.decorators import list_route
 
 from customs.response import SimpleResponse
 from customs.viewsets import ListModelMixin
 from errors import codes
-from utils import utils
-from .permissions import admin_required, is_userself, login_required
-from .validators import check_request
-from .services import UserService, AuthService
-from customs.services import MessageService
+from .permissions import admin_required, login_required
+from .permissions import user_is_same_as_logined_user
+from .services import AuthService
 from customs import class_tools
+from apps.user.services import user_service
+from apps.user.services import captcha_service
 
 
 @class_tools.set_filter(['phone'])
-@class_tools.default_view_set
+@class_tools.set_service(user_service)
 class UserViewSet(ListModelMixin,
-                  viewsets.GenericViewSet):
+                  viewsets.ModelViewSet):
 
     """
     麦粒用户系统相关API.
     ### Resource Description
     """
-    @admin_required
-    def list(self, request):
-        '''
-        List all users by pages. Admin Required.
-        page -- page
-        ---
-        omit_serializer: true
-        '''
-
-        response = super(UserViewSet, self).list(request)
-        return SimpleResponse(response.data)
 
     @list_route(methods=['get'])
     def register(self, request):
         '''
         获取关于注册列表的相关信息
-
         ### Request example:
-
-        URL: {API_URL}/users/register?phone=18582227569 
+        URL: {API_URL}/users/register?phone=18582227569
 
         phone -- phone number
         ---
-        omit_serializer: true 
+        omit_serializer: true
         '''
         PHONE = 'phone'
         phone = request.query_params.get(PHONE, None)
-        if phone:
-            return self._check_if_registed(phone)
-        else:
-            return SimpleResponse(errors='query_params not support')
 
-    def _check_if_registed(self, phone):
-        user = UserService.get_users(phone=phone)
+        registed = user_service.check_if_registed(phone)
 
-        context = {
-            "phone": phone,
-            "registered": False
+        data = {
+            'phone': phone,
+            'registered': registed
         }
 
-        if len(user) != 0:
-            context['registered'] = True
-
-        return SimpleResponse(context)
+        return SimpleResponse(status=200, data=data)
 
     @list_route(methods=['post'])
+    @login_required
     def password(self, request):
         '''
         修改用户的密码，用于重置密码
@@ -90,17 +69,13 @@ class UserViewSet(ListModelMixin,
         '''
 
         phone = request.data.get('phone', None)
-        user = UserService.get_user(phone=phone)
-        return self._update_user_info(user, request.data)
+        password = request.data.get('password', None)
 
-    def _update_user_info(self, user, data):
-        if not user:
-            return SimpleResponse(errors=codes.errors(codes.USER_NOT_EXIST))
-        success = UserService.update_user(user, **data)
-        if success:
-            data = UserService.serialize(user)
-            return SimpleResponse(data)
-        return SimpleResponse(success=False)
+        if phone != request.user.phone:
+            return SimpleResponse(code=codes.OPERATION_FORBIDDEN)
+        else:
+            user = user_service.set_password_by_phone_and_password(phone, password)
+            return SimpleResponse(data=user)
 
     def create(self, request):
         '''
@@ -120,78 +95,15 @@ class UserViewSet(ListModelMixin,
             - name: body
               paramType: body
         '''
-
         phone = request.data.pop('phone', None)
         password = request.data.pop('password', None)
-        if not phone or not password:
-            return SimpleResponse(status=status.HTTP_400_BAD_REQUEST)
-        if not utils.valid_phone(phone) or not utils.valid_password(password):
-            return SimpleResponse(status=status.HTTP_400_BAD_REQUEST)
-        user = UserService.get_user(phone=phone)
-        if user:
-            return SimpleResponse(status=status.HTTP_409_CONFLICT)
-        user = UserService.create_user(phone=phone, password=password, **request.data)
-        data = UserService.serialize(user)
 
-        UserService.login_user(request, phone, password)
-        data['token']['token'] = AuthService.get_token(user.id)
-        return SimpleResponse(data)
-
-    @check_request('user')
-    def retrieve(self, request, id):
-        '''
-        Retrieve user profile and other info. info is limited for not logged in user
-        ---
-        omit_serializer: true
-        '''
-        data = UserService.serialize(request.user)
-        if isinstance(request.user, AnonymousUser) or request.user.id != data['id']:
-            user_self = False
+        if user_service.check_register_info_valid(phone=phone, password=password):
+            user = user_service.register(phone, password, request, **request.data)
+            code = 200 if user else codes.PHONE_ALREADY_REGISTERED
+            return SimpleResponse(code=code, data=user)
         else:
-            user_self = True
-
-        def _retrieve(self, request, id):
-            if not user_self:
-                # UserService.get_restricted_account_info(data)
-                pass
-            return SimpleResponse(data)
-        return _retrieve(self, request, id)
-
-    @is_userself
-    def update(self, request, id):
-        '''
-        Update user info
-        ### Example Request
-
-            {
-                "phone": "xxx",
-                "nickname": "xxx",
-                "first_name": "xxx",
-                "last_name": "xxx",
-                "tagline":"xxx",
-                "gender": "M/F",
-                "marital_status": true/false,
-                "birthday": "xxx",
-                "city": "xxx",
-                "province": "xxx",
-                "country": "xxx",
-            }
-        ---
-        omit_serializer: true
-        omit_parameters:
-            - form
-        parameters:
-            - name: body
-              paramType: body
-        '''
-        user = UserService.get_user(id=id)
-        if not user:
-            return SimpleResponse(errors=codes.errors(codes.USER_NOT_EXIST))
-        success = UserService.update_user(user, **request.data)
-        if success:
-            data = UserService.serialize(user)
-            return SimpleResponse(data)
-        return SimpleResponse(success=False)
+            return SimpleResponse(status=status.HTTP_400_BAD_REQUEST)
 
     @admin_required
     def destroy(self, request, id):
@@ -200,8 +112,7 @@ class UserViewSet(ListModelMixin,
         ---
         omit_serializer: true
         '''
-        user = UserService.get_user(id=id)
-        return SimpleResponse(success=UserService.lazy_delete_user(user))
+        return SimpleResponse(data=user_service.delete(user_id=id))
 
     @list_route(methods=['post'])
     def login(self, request):
@@ -223,72 +134,16 @@ class UserViewSet(ListModelMixin,
         '''
         phone = request.data.get('phone', '')
         password = request.data.get('password', '')
-        result = UserService.login_user(request, phone, password)
 
-        if result.success:
-            data = UserService.serialize(result.data, context={'request': request})
-            return SimpleResponse(data)
-        return SimpleResponse(errors=result.errors)
+        code, user = user_service.login_user(request, phone, password)
 
-    @login_required
-    @list_route(methods=['put', 'get'])
-    def token(self, request):
-        '''
-        1. put: refresh old token.
-        2. GET: check token if valid.
-        ### Example Request
-
-        When POST:
-
-
-            {
-                "user_id": "user_id",
-                "token": "old token"
-            }
-
-        2. GET: 获得关于某个token的信息
-
-        When GET:
-
-            {URL}/user/token/?action=check&token=XXX
-
-        token -- token, 仅当Get时使用
-        action -- 仅当Get时使用，对token采取的操作，当action == check 时候，返回该token是否有效
-
-        ---
-        omit_serializer: true
-        omit_parameters:
-            - form
-        parameters:
-            - name: body
-              paramType: body
-
-        '''
-
-        USER_ID, TOKEN = 'user_id', 'token'
-        if request.method == 'PUT':
-            user_id = request.data.get(USER_ID)
-            key = request.data.get(TOKEN, None)
-            if not key:
-                return SimpleResponse(code=codes.INVALID_TOKEN)
-            elif str(user_id) != str(request.user.id):
-                return SimpleResponse(code=codes.LOGIN_REQUIRED)
-            else:
-                token = UserService.get_auth_token(key=key)
-                if token:
-                    token = UserService.refresh_auth_token(token)
-                    return SimpleResponse(token.token)
-                else:
-                    return SimpleResponse(code=codes.INVALID_TOKEN)
-        elif request.method == 'GET':
-            TOKEN, VALID = 'token', 'valid'
-            token = request.query_params.get(TOKEN, None)
-            data = {VALID: False}
-
-            data[VALID] = AuthService.check_if_token_valid(token)
-            return SimpleResponse(data)
+        if code:
+            return SimpleResponse(code=code)
+        else:
+            return SimpleResponse(data=user)
 
     @login_required
+    @user_is_same_as_logined_user
     @list_route(methods=['put'])
     def avatar(self, request):
         '''
@@ -308,19 +163,10 @@ class UserViewSet(ListModelMixin,
             - name: data
               paramType: body
         '''
+        avatar = request.data.get('avatar', None)
 
-        UESR_ID, AVATAR = 'user_id', 'avatar'
-
-        user_id = request.data.get(UESR_ID, None)
-        avatar = request.data.get(AVATAR, None)
-
-        if user_id != str(request.user.id):
-            return SimpleResponse(errors='user id != logined user')
-        elif not avatar:
-            return SimpleResponse(errors='avatar value cannot be null')
-        else:
-            data = UserService.update_avatar(user_id, avatar)
-            return SimpleResponse(data)
+        user = user_service.update_by_id(request.user.id, avatar=avatar)
+        return SimpleResponse(user)
 
     @list_route(methods=['get'])
     def online(self, request):
@@ -339,26 +185,56 @@ class UserViewSet(ListModelMixin,
         ---
         omit_serializer: true
         '''
-        online = {
-            "online": False
-        }
-
         user_id = request.query_params.get('user_id', None)
 
-        if request.session.get('user_id', None) == user_id:
-            online['online'] = True
+        online = {
+            "online": request.user.id == user_id
+        }
 
         return SimpleResponse(online)
 
+
+class CaptchaViewSet(viewsets.GenericViewSet):
+    @login_required
     @list_route(methods=['post'])
-    def captcha(self, request):
+    def check(self, request):
+        '''
+        检查验证码是否相符（action = check）
+
+        ### Example Request
+
+            {
+                "phone": "18857453090",
+                "captcha": "259070"
+                // 该请求为检查验证码是否相符时候的请求
+            }
+        ---
+        omit_serializer: true
+        omit_parameters:
+            - form
+        parameters:
+            - name: phone
+              paramType: body
+        '''
+        phone = request.data.get('phone', None)
+        captcha = request.data.get('captcha', None)
+        match = captcha_service.check_captcha(phone, captcha)
+
+        return_context = {
+            'phone': phone,
+            'captcha': captcha,
+            'matched': match
+        }
+
+        return SimpleResponse(return_context)
+
+    def send(self, request):
         '''
         Does actions for captcha.
 
         用以处理和验证码相关的信息，根据action不同，可以有
-        1. 发送验证码（action = send），
-        2. 测试发送验证码但是不发送短信（action ＝ test_send）
-        3. 检查验证码是否相符（action = check）
+        1. 发送验证码
+        2. 测试发送验证码但是不发送短信（test = '1')
         ### Example Request
 
             {
@@ -366,13 +242,7 @@ class UserViewSet(ListModelMixin,
                 // 该请求为发送验证码时候的请求
             }
 
-            {
-                 "phone": "18857453090",
-                 "captcha": "259070"
-                 // 该请求为检查验证码是否相符时候的请求
-            }
-
-        action -- action
+        test -- if this value is '1', will not send message, just echo with captcha code.
         ---
         omit_serializer: true
         omit_parameters:
@@ -382,49 +252,62 @@ class UserViewSet(ListModelMixin,
               paramType: body
         '''
 
-        ACTION, PHONE, CAPTCHA = 'action','phone', 'captcha'
-        SEND, CHECK, TEST_SEND = 'send', 'check', 'test_send'
-        action = request.query_params.get(ACTION, None)
-        if action == SEND:
-            phone = request.data.get(PHONE, None)
-            return self._send_message(phone, send=True)
-        elif action == TEST_SEND:
-            phone = request.data.get(PHONE, None)
-            return self._send_message(phone, send=False)
-        elif action == CHECK:
-            phone = request.data.get(PHONE, None)
-            captcha = request.data.get(CAPTCHA, None)
-            return self._check_captcha(phone, captcha)
-        else:
-            return SimpleResponse(errors='action not supply')
+        test = request.query_params.get('test', None)
+        phone = request.data.get('phone', None)
 
-    def _check_captcha(self, phone, captcha):
-        match = MessageService.check_captcha(phone=phone, captcha=captcha)
-        return_context = {
-            'phone': phone,
-            'captcha': captcha,
-            'matched': False
-        }
+        send = True
+        if test == '1':
+            send = False
 
-        if match:
-            return_context['matched'] = True
-
-        return SimpleResponse(return_context)
-
-    def _send_message(self, phone, send):
-        send_succeed, code = MessageService.send_message(phone=phone, send=send)
+        send_succeed, code = captcha_service.send_captcha(phone=phone, send=send)
 
         return_context = {
             'phone': phone,
             'captcha': code
         }
 
-        if not send_succeed:
-            return SimpleResponse(success=False)
-        else:
+        if send_succeed:
             return SimpleResponse(return_context)
+        else:
+            return SimpleResponse(success=False)
 
 
-class InvitationViewSet(ListModelMixin,
-                        viewsets.GenericViewSet):
-    pass
+class TokenViewSet(viewsets.GenericViewSet):
+
+    @list_route(methods=['put'])
+    @user_is_same_as_logined_user
+    @login_required
+    def refresh(self, request):
+        '''
+        ### Example Request
+
+            {
+                "user_id": "user_id",
+                "token": "old token"
+            }
+        '''
+        token = AuthService.refresh_token(request.user.id)
+        return SimpleResponse(token.token)
+
+    @list_route(methods=['get'])
+    @login_required
+    def check(self, request):
+        '''
+        GET: check token if valid.
+
+        ## Example Request:
+
+            {URL}/user/token/?token=XXX
+        ---
+        omit_serializer: true
+        omit_parameters:
+            - form
+        parameters:
+            - name: body
+              paramType: body
+
+        '''
+        token = request.query_params.get('token', None)
+        valid = AuthService.check_if_token_valid(token)
+        data = {'valid': valid}
+        return SimpleResponse(data)

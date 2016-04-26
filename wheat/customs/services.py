@@ -4,6 +4,7 @@ from collections import OrderedDict
 from datetime import datetime
 import hashlib
 import requests
+from django.db import transaction
 
 role_map = {
 	'm-grandfather': u'外公',
@@ -29,17 +30,92 @@ role_map = {
     'self': 'self'
 }
 
-class BaseService:
+
+class BaseService(object):
+    '''
+    Base class of every service.
+    '''
+    model = None
+    serializer = None
+
+    def get_model(self):
+        return self.model
+
+    def get_serializer(self):
+        return self.serializer
+
+    def exist(self, **kwargs):
+        return self.model.objects.filter(**kwargs).exists()
+
+    @transaction.atomic
+    def create(self, **kwargs):
+        fields = self.filter_read_only_field(**kwargs)
+        new_obj = self.model(**fields)
+        new_obj.save()
+        return new_obj
+
+    @transaction.atomic
+    def update_by_id(self, id, **kwargs):
+        return self.update(self.get(id=id), **kwargs)
+
+    @transaction.atomic
+    def update(self, instance, **kwargs):
+        update_fields = self.filter_read_only_field(**kwargs)
+        new_obj = instance.update(**update_fields)
+        # notice, the arg to seriazer's update is a dictionary
+        new_obj.save()
+        return new_obj
+
+    def get(self, many=False, **kwargs):
+        if not self.exist(**kwargs):
+            return None
+        else:
+            if many:
+                return self.model.objects.filter(**kwargs)
+            else:
+                return self.model.objects.filter(**kwargs)[0]
+
+    def serialize(self, obj):
+        many = False
+        
+        try:
+            iter(obj)
+        except TypeError:
+            # this is a single obj
+            pass 
+        else:
+            many = True
+
+        return self.serializer(obj, many=many).data if obj else None
+
+    def delete(self, instance):
+        DELETED = 'deleted'
+        if hasattr(instance, DELETED):
+            setattr(instance, DELETED, True)
+        else:
+            raise ReferenceError('cannot delete this obj in db, use deleted = True')
+
+        return instance
 
     @classmethod
-    def serialize_objs(cls, obj_list, request=None):
-        data = []
-        for obj in obj_list:
-            if request is None:
-                data.append(OrderedDict(cls.serialize(obj)))
+    def filter_read_only_field(cls, **kwargs):
+        '''
+        Delete the read only field in kwargs. To protect data not be changed by
+        normal user.
+        '''
+        read_only_fields = cls.serializer.Meta.read_only_fields
+        update_fields = {k: v for k, v in kwargs.iteritems() if k not in read_only_fields}
+        return update_fields
+
+    @classmethod
+    def api_json_method(cls, func):
+        def check_result(**kwargs):
+            result = func(**kwargs)
+            if isinstance(result, dict):
+                return result
             else:
-                data.append(OrderedDict(cls.serialize(obj, context={'request': request})))
-        return data
+                return cls.seriaze(result)
+        return check_result
 
 
 class MessageService(object):
@@ -71,7 +147,7 @@ class MessageService(object):
         software_version = '2014-06-30' # version for verification system, provided by upaas company.
         HOST = 'http://www.ucpaas.com/maap/sms/code'
         ACCOUNT_ID = '8a70971adf5ba2d4598193cc03fcbaa2'
-        VER_AUTH_TOKEN = "7c7c4e5d324b7efbf75db740fdf6a253"  
+        VER_AUTH_TOKEN = "7c7c4e5d324b7efbf75db740fdf6a253"
         APP_ID = '71ca63be653c45129a819964265eccec'
         TEMPLATE_ID = template_id
 

@@ -59,6 +59,9 @@ EMAIL_ALREADY_EXIST_MSG = "邮箱已经被注册"
 USERNAME_ALREADY_EXIST = 41006
 USERNAME_ALREADY_EXIST_MSG = "用户名已经被注册"
 
+PHONE_ALREAD_EXIST = 41007
+PHONE_ALREAD_EXIST_MSG = 'this phone number has been registered already'
+
 INVALID_CODE = 41007
 INVALID_CODE_MSG = "无效的激活码"
 
@@ -101,8 +104,11 @@ INVITATION_ALREADY_USED_MSG = "邀请已失效"
 LACK_USER_ID_MSG = 'request信息未包含user_id字段'
 LACK_USER_ID = 41020
 
-UNVALID_USER_ID_MSG= '该user_id与系统正在登录的user_id不符'
-UNVALID_USER_ID = 41021
+INVALID_USER_ID_MSG = '该user_id与系统正在登录的user_id不符'
+INVALID_USER_ID = 41021
+
+OPERATION_FORBIDDEN_MSG = 'this operation is invalid for this user(check if you had logined)'
+OPERATION_FORBIDDEN = 41030
 ########################################################
 # 群组相关
 ########################################################

@@ -176,6 +176,9 @@ class FriendViewSet(ListModelMixin, viewsets.GenericViewSet):
         ---
         omit_serializer: true
         '''
+        if str(request.user.id) == str(id):
+           return SimpleResponse(success=False)
+
         try:
             GroupService.delete_person_from_each_group(
                 host_id=request.user.id, member_id=id)
@@ -185,6 +188,7 @@ class FriendViewSet(ListModelMixin, viewsets.GenericViewSet):
                 status=status.HTTP_403_FORBIDDEN,
                 errors=e.message
             )
+
 
 
 class InvitationViewSet(viewsets.GenericViewSet):

@@ -50,11 +50,11 @@ class UserViewSet(ListModelMixin,
 
         ### Request example:
 
-        URL: {API_URL}/users/register?phone=18582227569 
+        URL: {API_URL}/users/register?phone=18582227569
 
         phone -- phone number
         ---
-        omit_serializer: true 
+        omit_serializer: true
         '''
         PHONE = 'phone'
         phone = request.query_params.get(PHONE, None)
@@ -130,14 +130,17 @@ class UserViewSet(ListModelMixin,
 
         phone = request.data.pop('phone', None)
         password = request.data.pop('password', None)
-        if not phone or not password:
+        nickname = request.data.pop('nickname', None)
+        gender = request.data.pop('gender', None)
+        if not phone or not password or not nickname or gender not in ['M', 'F']:
             return SimpleResponse(status=status.HTTP_400_BAD_REQUEST)
         if not utils.valid_phone(phone) or not utils.valid_password(password):
             return SimpleResponse(status=status.HTTP_400_BAD_REQUEST)
         user = UserService.get_user(phone=phone)
         if user:
             return SimpleResponse(status=status.HTTP_409_CONFLICT)
-        user = UserService.create_user(phone=phone, password=password, **request.data)
+        user = UserService.create_user(phone=phone, password=password,
+                             nickname=nickname, gender=gender, **request.data)
         data = UserService.serialize(user)
         UserService.login_user(request, phone, password)
         return SimpleResponse(data)

@@ -101,7 +101,7 @@ class GroupService(BaseService):
         group = GroupService.get_group(creator_id=group_owner.id, group_type='all_home_member')
         if not group:
             return codes.UNKNOWN_GROUP
-        if str(member.id) in group.members:
+        if member and str(member.id) in group.members:
             return codes.INVITATION_DUPLICATE_INVITER
         if not role_multiple:
             for member_id, info in group.members.iteritems():

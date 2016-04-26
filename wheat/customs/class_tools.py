@@ -10,6 +10,26 @@ from rest_condition import Or
 from customs.permissions import AllowPostPermission
 
 
+def set_service(service):
+    def func(cls):
+        try:
+            cls.model = service.get_model()
+            cls.serializer_class = service.get_serializer()
+        except AttributeError as e:
+            print('service without method get_model or get_serializer')
+            raise e
+        else:
+            def serialize_data(cls, data, many=False):
+                return cls.serializer_class(data, many=many).data
+
+            cls.serialize_data = classmethod(serialize_data)
+            cls.queryset = cls.model.get_queryset()
+            cls.lookup_field = 'id'
+            cls.permission_classes = [Or(permissions.IsAuthenticatedOrReadOnly, AllowPostPermission,)]
+            return cls
+    return func
+
+
 def default_view_set(cls):
     '''
     Sets cls as follow:
@@ -26,10 +46,17 @@ def default_view_set(cls):
     try:
         cls.model = get_class_model(cls_name)
         cls.serializer_class = get_class_serializer(cls_name)
+
+        def serialize_data(cls, data, many=False):
+            return cls.serializer_class(data, many=many).data
+
+        cls.serialize_data = classmethod(serialize_data)
+
     except NameError as e:
         print e.message
-        print 'Keep your model name, serializer name and class name same'
-        print 'If not same, set model and serializer mannually'
+        msg_1 =  'Keep your model name, serializer name and class name same'
+        msg_2 =  'If not same, set model and serializer mannually'
+        raise NameError(msg_1 + '\n' + msg_2 + '\n' + e.message)
     else:
         cls.queryset = cls.model.get_queryset()
 

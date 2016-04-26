@@ -2,8 +2,7 @@ from django.test import TestCase
 from customs.urls import get_urlpattern
 from customs.urls import get_url
 from customs import class_tools
-
-import sys
+from apps.user.services import user_service
 
 
 class TestUrlUtils(TestCase):
@@ -41,3 +40,13 @@ class TestClassUtils(TestCase):
         self.assertIsNotNone(kls)
         self.assertIsNotNone(kls.name)
         
+
+class TestSetClassService(TestCase):
+    def test_set_service(self):
+        class TestClass(object):
+            model = None
+
+        TestClass = class_tools.set_service(user_service)(TestClass)
+#        self.assertIsNotNone(TestClass.model)
+#        self.assertIsNotNone(TestClass.queryset)
+       

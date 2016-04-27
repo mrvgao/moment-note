@@ -79,7 +79,6 @@ class Common(Configuration):
         # 'django_gravatar',
         # 'rest_framework_mongoengine',
         # 'haystack',
-        'management',
     )
     # Apps specific for this project go here.
     LOCAL_APPS = (
@@ -418,7 +417,7 @@ class Common(Configuration):
             # Set to empty string for localhost. Not used with sqlite3.
             'HOST': '127.0.0.1',
             # Set to empty string for default. Not used with sqlite3.
-            'PORT': '3306',
+            'ili$20!6PORT': '3306',
             # 'TEST_CHARSET': 'utf8',
             # 'TEST_COLLATION': 'utf8_general_ci',
             'OPTIONS': {'charset': 'utf8mb4'},

@@ -13,8 +13,10 @@ from .validators import check_request
 from errors import codes
 from . import services
 from rest_framework.decorators import detail_route
+from customs import class_tools
 
 
+@class_tools.default_view_set
 class GroupViewSet(ListModelMixin,
                    viewsets.GenericViewSet):
 
@@ -22,13 +24,6 @@ class GroupViewSet(ListModelMixin,
     麦粒群组系统相关API.
     ### Resource Description
     """
-    model = GroupService._get_model()
-    queryset = model.get_queryset()
-    serializer_class = GroupService.get_serializer()
-    lookup_field = 'id'
-    permission_classes = [
-        Or(permissions.IsAuthenticatedOrReadOnly, AllowPostPermission,)]
-
     # @admin_required
     @login_required
     def list(self, request):
@@ -168,18 +163,7 @@ class FriendViewSet(ListModelMixin, viewsets.GenericViewSet):
     permission_classes = [
         Or(permissions.IsAuthenticatedOrReadOnly, AllowPostPermission,)]
 
-    def list(self, request):
-        pass
-    
-    def create(self, request):
-        pass
-
-    def update(self, request, id):
-        pass
-
-    def retrieve(self, request, id):
-        pass
-    
+   
     @login_required
     def destroy(self, request, id):
         '''
@@ -197,7 +181,8 @@ class FriendViewSet(ListModelMixin, viewsets.GenericViewSet):
                 errors=e.message
             )
 
-
+        
+@class_tools.default_view_set
 class InvitationViewSet(viewsets.GenericViewSet):
 
     """
@@ -205,12 +190,6 @@ class InvitationViewSet(viewsets.GenericViewSet):
     ### Resource Description
     """
     INVITATION = 'Invitation'
-    model = GroupService._get_model()
-    queryset = model.get_queryset()
-    serializer_class = GroupService.get_serializer(INVITATION)
-    lookup_field = 'id'
-    permission_classes = [
-        Or(permissions.IsAuthenticatedOrReadOnly, AllowPostPermission,)]
 
     @login_required
     def create(self, request):
@@ -315,7 +294,6 @@ class InvitationViewSet(viewsets.GenericViewSet):
                 raise SyntaxError('role should be valid and invitee and message cannot be null')
         else:
             raise ReferenceError('user id is error, no this user') # not login
-
 
     @login_required
     @check_request('invitation')

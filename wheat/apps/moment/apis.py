@@ -13,8 +13,10 @@ from . import services
 from rest_framework.decorators import list_route, detail_route
 from customs.utility import get_image_from_maili_by_img_list
 from .services import CommentService, MarkService
+from customs import class_tools
 
-
+    
+@class_tools.default_view_set
 class MomentViewSet(ListModelMixin,
                     viewsets.GenericViewSet):
 
@@ -22,13 +24,6 @@ class MomentViewSet(ListModelMixin,
     麦粒和家系统相关API.
     ### Resource Description
     """
-    model = MomentService._get_model()
-    queryset = model.get_queryset()
-    serializer_class = MomentService.get_serializer()
-    lookup_field = 'id'
-    permission_classes = [
-        Or(permissions.IsAuthenticatedOrReadOnly, AllowPostPermission,)]
-
     @login_required
     def list(self, request):
         '''

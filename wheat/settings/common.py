@@ -79,6 +79,7 @@ class Common(Configuration):
         # 'django_gravatar',
         # 'rest_framework_mongoengine',
         # 'haystack',
+        'management',
     )
     # Apps specific for this project go here.
     LOCAL_APPS = (
@@ -422,23 +423,6 @@ class Common(Configuration):
             # 'TEST_COLLATION': 'utf8_general_ci',
             'OPTIONS': {'charset': 'utf8mb4'},
         },
-
-        'test':{
-            # Add 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or
-            # 'oracle'.
-            'ENGINE': 'django.db.backends.mysql',
-            # Or path to database file if using sqlite3.
-            'NAME': 'wheat',
-            'USER': 'root',                      # Not used with sqlite3.
-            'PASSWORD': '',                  # Not used with sqlite3.
-            # Set to empty string for localhost. Not used with sqlite3.
-            'HOST': '127.0.0.1',
-            # Set to empty string for default. Not used with sqlite3.
-            'PORT': '3306',
-            # 'TEST_CHARSET': 'utf8',
-            # 'TEST_COLLATION': 'utf8_general_ci',
-            'OPTIONS': {'charset': 'utf8mb4'},
-        },
     }
     # END DATABASE CONFIGURATION
 
@@ -545,3 +529,9 @@ class Common(Configuration):
     REDIS_PUBSUB_TAG = 'dev'
     REDIS_PUBSUB_CHANNEL = 'as12afzxjk@askfl'
     # END REDIS DB
+
+    if 'test' in sys.argv:
+        DATABASES['default'] = {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': 'mydatabase'
+        }

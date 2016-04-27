@@ -1,25 +1,17 @@
 # -*- coding:utf-8 -*-
 
-from rest_framework import permissions, viewsets, status
-from rest_condition import Or
+from rest_framework import viewsets, status
 from django.core.files.uploadedfile import InMemoryUploadedFile
 
-from customs.permissions import AllowPostPermission
 from customs.response import SimpleResponse
 from .services import ImageService
 import datetime
 import threading
+from customs import class_tools
 
-
+    
+@class_tools.default_view_set
 class ImageViewSet(viewsets.GenericViewSet):
-
-    model = ImageService._get_model()
-    queryset = model.get_queryset()
-    serializer_class = ImageService.get_serializer()
-    lookup_field = 'id'
-    permission_classes = [
-        Or(permissions.IsAuthenticatedOrReadOnly, AllowPostPermission,)]
-
     def create(self, request):
         """
         Upload an image.

@@ -9,7 +9,7 @@ from jsonfield import JSONCharField, JSONField
 from customs.models import EnhancedModel, CommonUpdateAble, CacheableManager
 
 
-class MultiAuthorGroup(CommonUpdateAble, models.Model, EnhancedModel):
+class Author(CommonUpdateAble, models.Model, EnhancedModel):
     USER = 'user'
 
     id = UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -21,7 +21,7 @@ class MultiAuthorGroup(CommonUpdateAble, models.Model, EnhancedModel):
     objects = CacheableManager()
 
     def add_group_member(self, user_list):
-        USER = MultiAuthorGroup.USER
+        USER = Author.USER
         map(lambda user_id: self.members[USER].append(str(user_id)), user_list)
 
     class Meta:

@@ -1,11 +1,9 @@
 # -*- coding:utf-8 -*-
 
 from django.contrib.auth.models import AnonymousUser
-from rest_framework import permissions, viewsets, status
-from rest_condition import Or
+from rest_framework import viewsets, status
 from rest_framework.decorators import list_route
 
-from customs.permissions import AllowPostPermission
 from customs.response import SimpleResponse
 from customs.viewsets import ListModelMixin
 from errors import codes
@@ -14,8 +12,11 @@ from .permissions import admin_required, is_userself, login_required
 from .validators import check_request
 from .services import UserService, AuthService
 from customs.services import MessageService
+from customs import class_tools
 
 
+@class_tools.set_filter(['phone'])
+@class_tools.default_view_set
 class UserViewSet(ListModelMixin,
                   viewsets.GenericViewSet):
 
@@ -23,14 +24,6 @@ class UserViewSet(ListModelMixin,
     麦粒用户系统相关API.
     ### Resource Description
     """
-    model = UserService._get_model()
-    queryset = model.get_queryset()
-    serializer_class = UserService.get_serializer()
-    lookup_field = 'id'
-    permission_classes = [
-        Or(permissions.IsAuthenticatedOrReadOnly, AllowPostPermission,)]
-    filter_fields = ['phone']
-
     @admin_required
     def list(self, request):
         '''
@@ -139,7 +132,9 @@ class UserViewSet(ListModelMixin,
             return SimpleResponse(status=status.HTTP_409_CONFLICT)
         user = UserService.create_user(phone=phone, password=password, **request.data)
         data = UserService.serialize(user)
+
         UserService.login_user(request, phone, password)
+        data['token']['token'] = AuthService.get_token(user.id)
         return SimpleResponse(data)
 
     @check_request('user')

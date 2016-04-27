@@ -6,8 +6,8 @@ from settings import REDIS_PUBSUB_DB
 
 from customs.services import BaseService
 from apps.user.services import UserService
-from .models import MultiAuthorGroup, Book, Order
-from .serializers import MultiAuthorGroupSerializer, BookSerializer, OrderSerializer
+from .models import Author, Book, Order
+from .serializers import AuthorSerializer, BookSerializer, OrderSerializer
 from customs.services import MessageService
 import ast
 from functools import partial
@@ -19,15 +19,15 @@ class AuthorService:
 
     @staticmethod
     def get_serializer():
-        return MultiAuthorGroupSerializer
+        return AuthorSerializer
 
     @staticmethod
     def get_model():
-        return MultiAuthorGroup
+        return Author
 
     @staticmethod
     def get_author_group_info(group_id, user_service):
-        group = MultiAuthorGroup.objects.get_or_none(id=group_id)
+        group = Author.objects.get_or_none(id=group_id)
 #        if group:
 #           return MultiAuthorGroupSerializer(group).data
 
@@ -53,11 +53,11 @@ class AuthorService:
 
     @staticmethod
     def serialize(obj):
-        return MultiAuthorGroupSerializer(obj).data
+        return AuthorSerializer(obj).data
 
     @staticmethod
     def create_author_group(creator, user_list):
-        author_group = MultiAuthorGroup.objects.create(creator_id=creator)
+        author_group = Author.objects.create(creator_id=creator)
         author_group.add_group_member(user_list)
         author_group.save()
         return author_group
@@ -68,7 +68,7 @@ class AuthorService:
         Gives the author list based on a group_id
         '''
         author_list = []
-        author_group_member = MultiAuthorGroup.objects.get_or_none(id=group_id).members
+        author_group_member = Author.objects.get_or_none(id=group_id).members
 
         for user in author_group_member['user']:
             author_list.append(user)

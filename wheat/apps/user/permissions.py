@@ -12,8 +12,10 @@ from .services import UserService
 def login_required(func):
     @functools.wraps(func)
     def func_wrapper(self, request, *args, **kwargs):
-        if not isinstance(request.user, UserService._get_model()):
+        if isinstance(request.user, AnonymousUser):
             raise exceptions.APIError(code=codes.LOGIN_REQUIRED, status=status.HTTP_401_UNAUTHORIZED)
+        elif request.user.token_expired:
+            raise exceptions.APIError(code=codes.INVALID_TOKEN, status=status.HTTP_401_UNAUTHORIZED)
         else:
             return func(self, request, *args, **kwargs)
     return func_wrapper

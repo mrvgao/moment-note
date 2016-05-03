@@ -1,6 +1,6 @@
 # -*- coding:utf-8 -*-
 from rest_framework import viewsets, status
-from rest_framework.decorators import list_route
+from rest_framework.decorators import list_route, detail_route
 
 from customs.response import SimpleResponse
 from customs.response import APIResponse
@@ -74,8 +74,11 @@ class UserViewSet(ListModelMixin,
         password = request.data.get('password', None)
 
         user = user_service.set_password_by_phone_and_password(phone, password)
-        return APIResponse(user)
 
+        result = user or codes.PHONE_NUMBER_NOT_EXIST
+
+        return APIResponse(result)
+        
     def create(self, request):
         '''
         Registration.
@@ -94,28 +97,26 @@ class UserViewSet(ListModelMixin,
             - name: body
               paramType: body
         '''
-        phone = request.data.pop('phone', None)
-        password = request.data.pop('password', None)
+        phone = request.data.pop('phone', None)[0]
+        password = request.data.pop('password', None)[0]
 
         user = None
-        error_code = codes.PHONE_ALREAD_EXIST,
+        error_code = None
 
-        if not user_service.check_register_info_valid(phone, password):
+        valid, registed_again = user_service.check_register_info(phone, password)
+
+        if not valid:
             error_code = codes.INVALID_REG_INFO
+        elif registed_again:
+            error_code = codes.PHONE_ALREAD_EXIST
         else:
-            user = self.register_user(request, phone, password)
+            user = user_service.register(phone, password)
+            login(request, user)
 
         return_value = user or error_code
         # if user is None, return error code  r = u | code
 
-        return SimpleResponse(return_value)
-
-    def register_user(self, request, phone, password, **kwargs):
-        user = user_service.register(phone, password)
-        if user:
-            auth_user = authenticate(username=phone, password=password)
-            login(request, auth_user)
-        return user
+        return APIResponse(return_value)
 
     @admin_required
     def destroy(self, request, id):
@@ -124,7 +125,7 @@ class UserViewSet(ListModelMixin,
         ---
         omit_serializer: true
         '''
-        return SimpleResponse(data=user_service.delete(user_id=id))
+        return APIResponse(user_service.delete(user_id=id))
 
     @list_route(methods=['post'])
     def login(self, request):
@@ -147,23 +148,13 @@ class UserViewSet(ListModelMixin,
         phone = request.data.get('phone', '')
         password = request.data.get('password', '')
 
-        error_code = self.check_info(phone, password)
-
-        if not error_code:
-            user = user_service.get(phone=phone)
+        user = user_service.login_user(phone, password)
+        if user:
             login(request, user)
-
-        return APIResponse(user or error_code)
-
-    def check_user_valid(phone, password):
-        error = None
-        if user_service.check_if_credential(phone, password):
-            if not user_service.check_if_activated(phone):
-                error = codes.INACTIVE_ACCOUNT
+            return APIResponse(user)
         else:
-            error = codes.INCORRECT_CREDENTIAL
-
-        return error
+            error_code = codes.INCORRECT_CREDENTIAL
+            return APIResponse(error_code)
 
     @login_required
     @user_is_same_as_logined_user
@@ -187,41 +178,8 @@ class UserViewSet(ListModelMixin,
               paramType: body
         '''
         avatar = request.data.get('avatar', None)
-
         user = user_service.update_by_id(request.user.id, avatar=avatar)
-        return SimpleResponse(user)
-
-    @list_route(methods=['get'])
-    def online(self, request):
-        '''
-        测试该user_id是否正保持在线，保持在线是指，该client登录之后，session没有中断
-
-        返回样例：
-
-        online ＝ ｛
-            “online”： False
-        ｝
-
-        该用户未在此session登录
-
-        user_id -- user_id
-        ---
-        omit_serializer: true
-        '''
-        user_id = request.query_params.get('user_id', None)
-
-        online = {
-            "online": request.user.id == user_id
-        }
-
-        return SimpleResponse(online)
-
-    @list_route(methods=['get'])
-    def _test(self, request):
-        '''
-        Just for test request functinonality.
-        '''
-        return SimpleResponse(success=True)
+        return APIResponse(user)
 
 
 @class_tools.set_service(captcha_service)

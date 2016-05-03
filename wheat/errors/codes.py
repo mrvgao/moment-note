@@ -110,6 +110,9 @@ INVALID_USER_ID = 41021
 INVALID_REG_INFO_MSG = 'This phone number or password is invalid'
 INVALID_REG_INFO = 41022
 
+PHONE_NUMBER_NOT_EXIST_MSG = 'This phone number not exist in system'
+PHONE_NUMBER_NOT_EXIST = 41023
+
 OPERATION_FORBIDDEN_MSG = 'this operation is invalid for this user(check if you had logined)'
 OPERATION_FORBIDDEN = 41030
 ########################################################

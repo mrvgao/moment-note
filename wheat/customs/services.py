@@ -92,6 +92,7 @@ class BaseService(object):
         DELETED = 'deleted'
         if hasattr(instance, DELETED):
             setattr(instance, DELETED, True)
+            instance.save()
         else:
             raise ReferenceError('cannot delete this obj in db, use deleted = True')
 

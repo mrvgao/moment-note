@@ -74,6 +74,7 @@ class AuthToken(EnhancedModel, CommonUpdateAble, models.Model):
         return {
             'token': self.key,
             'expired_at': self.expired_timestamp,
+            'expired': self.expired()
         }
 
     def __str__(self):
@@ -137,9 +138,11 @@ class User(AbstractBaseUser, EnhancedModel, CommonUpdateAble):
     @property
     def token(self):
         tk, created = AuthToken.objects.get_or_create(user_id=self.id)
-        if tk.expired():
-            tk = AuthToken.objects.refresh_token(tk)
         return tk.token
+
+    @property
+    def token_expired(self):
+        return self.token['expired']
 
 
 class Relationship(CommonUpdateAble, models.Model, EnhancedModel):

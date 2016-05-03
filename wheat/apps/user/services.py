@@ -20,6 +20,7 @@ class UserService(BaseService):
     model = User
     serializer = UserSerializer
 
+    @api
     def delete(self, user_id):
         user = self.get(id=user_id)
         if user:
@@ -60,17 +61,25 @@ class UserService(BaseService):
         user = self.update(user, deleted=True)
         return user
 
+    def check_register_info(self, phone, password):
+        valid_info = self.check_info_formatted(phone, password)
+        registed_again = self.check_if_registed(phone)
+        return valid_info, registed_again
+
     @api
     def register(self, phone, password, **kwargs):
         user = None
 
         if not self.check_if_registed(phone):
             user = self.create(phone, password, **kwargs)
+            user = authenticate(username=phone, password=password)
             
         return user
 
-    def check_register_info_valid(self, phone, password):
-        return True
+    def check_info_formatted(self, phone, password):
+        PHONE_LENGTH = 11
+        PWD_LENGTH = 6
+        return len(phone) == PHONE_LENGTH and len(password) >= PWD_LENGTH
 
     def check_if_credential(self, phone, password):
         user = authenticate(username=phone, password=password)
@@ -84,6 +93,11 @@ class UserService(BaseService):
             return user.activated
         else:
             return False
+
+    @api
+    def login_user(self, phone, password):
+        user = authenticate(username=phone, password=password)
+        return user
 
 
 class FriendshipService(BaseService):
@@ -206,10 +220,6 @@ class AuthService(BaseService):
     def get_token(user_id):
         token = AuthToken.objects.get_or_none(user_id=user_id)
         return token.key
-
-    @staticmethod
-    def check_register_info_valid(phone, password):
-        return utils.valid_phone(phone) and utils.valid_password(password)
 
     @staticmethod
     def check_auth_token(user_id, token):

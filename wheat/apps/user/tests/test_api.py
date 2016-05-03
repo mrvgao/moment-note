@@ -7,12 +7,15 @@ from rest_framework.test import APITestCase
 from settings import API_VERSION
 from rest_framework.test import APIClient
 from apps.user.services import user_service
+from errors import codes
+from django.contrib.auth import authenticate
+from apps.user.models import User, AuthToken
 
 
 URL_PREFIX = '/api/%s/' % API_VERSION
 
 
-class UserViewSetTest(APITestCase):
+class UserAPITest(APITestCase):
     def setUp(self):
         self.phone = '18857453090'
         self.password = '12345678'
@@ -56,8 +59,13 @@ class UserViewSetTest(APITestCase):
             'password': new_password
         }
 
-        url = URL_PREFIX + 'users/password/'
+        invalid_user = authenticate(username=self.phone, password=new_password)
+        self.assertIsNone(invalid_user)
 
+        valid_user = authenticate(username=self.phone, password=self.phone)
+        self.assertIsNone(valid_user)
+
+        url = URL_PREFIX + 'users/password/'
         response = self.client.post(url, post_data)
 
         self.assertEqual(response.status_code, 200)
@@ -69,23 +77,128 @@ class UserViewSetTest(APITestCase):
 
         self.assertEqual(rsp_data['phone'], self.phone)
 
-    def test_check_if_registed(self):
-        pass
+        invalid_user = authenticate(username=self.phone, password=self.phone)
+        self.assertIsNone(invalid_user)
 
-    def test_register_user_method(self):
-        pass
+        valid_user = authenticate(username=self.phone, password=new_password)
+        self.assertIsNotNone(valid_user)
 
-    def test_destroy(self):
-        pass
+    def test_set_password_faild(self):
+        post_data = {
+            'phone': 'some-phone',
+            'password': 'some-pwd'
+        }
 
-    def test_login(self):
-        pass
+        url = URL_PREFIX + 'users/password/'
+        response = self.client.post(url, post_data)
 
-    def test_check_user_valid(self):
-        pass
+        self.assertEqual(response.data['errors']['code'], codes.PHONE_NUMBER_NOT_EXIST)
 
+    def test_invalid_registed(self):
+        post_data = {
+            'phone': '110',
+            'password': '123'
+        }
+
+        url = URL_PREFIX + 'users/'
+        response = self.client.post(url, post_data)
+
+        self.assertTrue('errors' in response.data)
+        self.assertEqual(response.data['errors']['code'], codes.INVALID_REG_INFO)
+
+    def test_registed_again(self):
+        post_data = {
+            'phone': self.phone,
+            'password': 'some-password'
+        }
+
+        url = URL_PREFIX + 'users/'
+        response = self.client.post(url, post_data)
+
+        self.assertTrue('errors' in response.data)
+        self.assertEqual(response.data['errors']['code'], codes.PHONE_ALREAD_EXIST)
+
+    def test_registed_success(self):
+        new_numbner = '13993300082'
+
+        post_data = {
+            'phone': '13993300082',
+            'password': 'some-password'
+        }
+
+        url = URL_PREFIX + 'users/'
+        response = self.client.post(url, post_data)
+
+        self.assertTrue('data' in response.data)
+        self.assertEqual(response.data['data']['phone'], new_numbner)
+
+        user = User.objects.get(phone=new_numbner)
+        self.assertIsNotNone(user)
+
+        token = AuthToken.objects.get(user_id=user.id)
+        user_token = response.data['data']['token']['token']
+        self.assertEqual(token.key, user_token)
+        self.assertFalse(token.expired())
+
+    def test_destroy_success(self):
+        self.user.is_admin = True
+        self.user.save()
+        self.update_client_token(self.phone, self.password)
+
+        user_id = self.user.id
+        url = URL_PREFIX + 'users/{0}/'.format(user_id)
+        response = self.client.delete(url)
+
+        self.assertEqual(response.data['data']['id'], str(user_id))
+
+        user = user_service.get(id=user_id)
+        self.assertTrue(user.deleted)
+
+    def test_login_success(self):
+        response = self.login(self.phone, self.password)
+
+        self.assertEqual(response.data['data']['phone'], self.phone)
+        user_id = response.data['data']['id']
+
+        token = AuthToken.objects.get(user_id=user_id)
+        user_token = response.data['data']['token']['token']
+        self.assertEqual(token.key, user_token)
+        self.assertFalse(token.expired())
+
+    def test_login_failed(self):
+        response = self.login(self.phone, 'wrong-pwd')
+        self.assertEqual(response.data['request'], 'fail')
+        self.assertEqual(response.data['errors']['code'], codes.INCORRECT_CREDENTIAL)
+        
+    def login(self, phone, password):
+        url = URL_PREFIX + 'users/login/'
+        post_data = {
+            'phone': phone,
+            'password': password
+        }
+        response = self.client.post(url, post_data)
+        return response
+        
+    def update_client_token(self, phone, password):
+        response = self.login(phone, password)
+        user_token = response.data['data']['token']['token']
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + user_token)
+        
     def test_set_avatar(self):
-        pass
+        self.update_client_token(self.phone, self.password)
 
-    def test_if_online(self):
+        post_data = {
+            'avatar': 'new-avatar',
+            'user_id': str(self.user.id)
+        }
+
+        old_avatar = self.user.avatar
+
+        set_avatar_url = URL_PREFIX + 'users/avatar/'
+        response = self.client.put(set_avatar_url, post_data)
+        self.assertNotEqual(response.data['data']['avatar'], old_avatar)
+
+
+def TestUserViewSet(TestCase):
+    def test_register_user(self):
         pass

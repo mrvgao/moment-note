@@ -12,6 +12,20 @@ from django.http import HttpRequest
 
 
 class UserServiceTestCase(TestCase):
+    def test_registe_info_check(self):
+        phone = '18857453090'
+        password = '123456'
+
+        valid, registed_again = user_service.check_register_info(phone, password)
+        self.assertTrue(valid)
+        self.assertFalse(registed_again)
+
+        User.objects.create(phone=phone)
+
+        valid, registed_again = user_service.check_register_info(phone, password)
+        self.assertTrue(valid)
+        self.assertTrue(registed_again)
+
     def test_create_new_user(self):
         original_pwd = '1234567'
         original_phone = '18857453090'
@@ -111,7 +125,10 @@ class UserInfoModificationTestCase(TestCase):
         self.assertEqual(user.phone, new_phone)
 
     def test_check_register_info_valid(self):
-        valid = user_service.check_register_info_valid('some-phone', 'some-pwd')
+        valid = user_service.check_info_formatted('some-phone', 'some-pwd')
+        self.assertFalse(valid)
+
+        valid = user_service.check_info_formatted('18857453090', 'some-pwd')
         self.assertTrue(valid)
 
     def test_if_credential(self):
@@ -133,6 +150,13 @@ class UserInfoModificationTestCase(TestCase):
 
         inactivated = user_service.check_if_activated('some-phone')
         self.assertFalse(inactivated)
+
+    def test_login(self):
+        user = user_service.login_user(self.test_phone, self.test_password)
+        self.assertIsNotNone(user)
+
+        user = user_service.login_user(self.test_phone, 'some-pwd')
+        self.assertIsNone(user)
 
 
 class ServiceCommunicationWithAPITestCase(TestCase):

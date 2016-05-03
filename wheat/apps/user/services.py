@@ -5,31 +5,20 @@ from django.contrib.auth import authenticate, login
 
 from customs.services import BaseService
 from customs.response import Result
-from errors import codes
 from .models import User, AuthToken, FriendShip, Captcha
 from .serializers import UserSerializer, AuthTokenSerializer, CaptchaSerializer
+from .serializers import FriendshipSerializer
 import datetime
 from django.db.models import Q
 from utils import utils
 from customs.services import MessageService
+from customs.api_tools import api
 
 
 class UserService(BaseService):
 
     model = User
     serializer = UserSerializer
-
-    def register(self, phone, password, request=None, **kwargs):
-        user = None
-        if not self.check_if_registed(phone):
-            user = self.create(phone, password, **kwargs)
-        
-        if user and request:  # if user created and request valid
-            self.login_user(request, phone, password)
-            new_token = AuthService.get_token(user.id)
-            user.token.token = new_token
-
-        return self.serialize(user)
 
     def delete(self, user_id):
         user = self.get(id=user_id)
@@ -42,12 +31,15 @@ class UserService(BaseService):
         kwargs['phone'] = phone
         user = super(UserService, self).create(**kwargs)
         user.set_password(password)
+        user.save()
         return user
 
+    @api
     def set_password_by_phone_and_password(self, phone, password):
         user = self.get(phone=phone)
-        self.set_password(user, password)
-        return self.serialize(user)
+        if user:
+            self.set_password(user, password)
+        return user
 
     def set_password(self, user, password):
         user.set_password(password)
@@ -57,49 +49,46 @@ class UserService(BaseService):
     def check_if_registed(self, phone, password=''):
         return self.exist(phone=phone)
     
-    def login_user(self, request, phone, password):
-        user = authenticate(username=phone, password=password)
-        code = None
-        if user:
-            if user.activated:
-                login(request, user)
-                UserService.set_session_user_id(request, user.id)
-                AuthService.refresh_token(user_id=user.id)
-            else:
-                code = codes.INACTIVE_ACCOUNT
-        else:
-            code = codes.INCORRECT_CREDENTIAL
-
-        return code, self.serialize(user)
-
+    @api
     def update_by_id(self, user_id, **kwargs):
         new_user = super(UserService, self).update_by_id(user_id, **kwargs)
-        return self.serialize(new_user)
+        return new_user
 
     @transaction.atomic
+    @api
     def lazy_delete_user(self, user):
         user = self.update(user, deleted=True)
         return user
 
-    @staticmethod
-    def set_session_user_id(request, user_id):
-        '''
-        Set session user id. When user login or created.
-        '''
-        request.session.setdefault('user_id', user_id)
+    @api
+    def register(self, phone, password, **kwargs):
+        user = None
 
-    @staticmethod
-    def check_auth_token(user_id, token):
-        token_obj = AuthToken.objects.get_or_none(user_id=user_id)
-        if token_obj and token_obj.key == token and not token_obj.expired():
+        if not self.check_if_registed(phone):
+            user = self.create(phone, password, **kwargs)
+            
+        return user
+
+    def check_register_info_valid(self, phone, password):
+        return True
+
+    def check_if_credential(self, phone, password):
+        user = authenticate(username=phone, password=password)
+        if user:
             return True
         return False
 
-    @transaction.atomic
-    @staticmethod
-    def refresh_auth_token(token):
-        token = AuthToken.objects.refresh_token(token)
-        return token
+    def check_if_activated(self, phone):
+        user = self.get(phone=phone)
+        if user:
+            return user.activated
+        else:
+            return False
+
+
+class FriendshipService(BaseService):
+    model = FriendShip
+    serializer = FriendshipSerializer
 
     @transaction.atomic
     @staticmethod
@@ -150,11 +139,6 @@ class UserService(BaseService):
             friend_ids.append(str(id))
         return friend_ids
 
-    def update_avatar(self, user_id, avatar):
-        user = self.get(id=user_id)
-        self.update(user, avatar=avatar)
-        return {'user_id': user_id, 'avatar': avatar}
-
     @staticmethod
     def is_friend(user_a, user_b):
         friend = True
@@ -162,7 +146,7 @@ class UserService(BaseService):
             friend = True
         elif str(user_a) == str(user_b):
             friend = True
-        elif not UserService.exist_friendship(user_a, user_b):
+        elif not FriendshipService.exist_friendship(user_a, user_b):
             friend = False
 
         return friend
@@ -179,7 +163,7 @@ class UserService(BaseService):
     def all_is_friend(user_list):
         for u1 in user_list:
             for u2 in user_list:
-                if not UserService.is_friend(u1, u2):
+                if not FriendshipService.is_friend(u1, u2):
                     return False
         return True
 
@@ -212,9 +196,10 @@ class AuthService(BaseService):
             return False
 
     @staticmethod
-    def refresh_token(user_id):
+    def refresh_token(user_id, refresh_token=True):
         token = AuthToken.objects.get_or_none(user_id=user_id)
-        token = AuthToken.objects.refresh_token(token)
+        if refresh_token:
+            token = AuthToken.objects.refresh_token(token)
         return token
 
     @staticmethod
@@ -225,6 +210,13 @@ class AuthService(BaseService):
     @staticmethod
     def check_register_info_valid(phone, password):
         return utils.valid_phone(phone) and utils.valid_password(password)
+
+    @staticmethod
+    def check_auth_token(user_id, token):
+        token_obj = AuthToken.objects.get_or_none(user_id=user_id)
+        if token_obj and token_obj.key == token and not token_obj.expired():
+            return True
+        return False
 
 
 user_service = UserService()

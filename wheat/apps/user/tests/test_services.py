@@ -4,11 +4,11 @@ Test for services.
 '''
 
 from django.test import TestCase
-from apps.user.models import AuthToken
 from apps.user.models import User
-from apps.user.models import Relationship
-from apps.user.models import FriendShip
 from apps.user.services import user_service
+from django.conf import settings
+from django.utils.importlib import import_module
+from django.http import HttpRequest
 
 
 class UserServiceTestCase(TestCase):
@@ -64,7 +64,7 @@ class UserServiceTestCase(TestCase):
         self.assertFalse(registered)
 
 
-class TestUserInfoModification(TestCase):
+class UserInfoModificationTestCase(TestCase):
     def setUp(self):
         self.test_phone = '18857453090'
         self.test_password = '123456'
@@ -81,25 +81,85 @@ class TestUserInfoModification(TestCase):
         self.test_user = user_service.delete(user_id)
         self.assertTrue(self.test_user.deleted)
 
+    def test_change_password_by_phone_and_password(self):
+        phone = self.test_phone
+        old_password = self.test_user.password
 
-class TestUserCommunicationWithAPI(TestCase):
-    phone = '18857453090'
-    pwd = '12345678'
-    gender = 'M'
+        user = user_service.get(phone=phone)
+        self.assertEqual(user.password, old_password)  # ensure test
+
+        new_user = user_service.set_password_by_phone_and_password(phone, 'new-password')
+        user = user_service.get(phone=phone)
+        self.assertIsNotNone(user)
+        self.assertNotEqual(user.password, old_password)
+
+        phone = '12345678910'
+        new_user = user_service.set_password_by_phone_and_password(phone, 'new-password')
+        self.assertIsNone(new_user)   # if no this user, return none.
+
+    def test_update_by_id(self):
+        # test for valid update
+        id = self.test_user.id
+        user = user_service.get(id=id)
+        self.assertEqual(user.phone, self.test_phone)
+
+        new_phone = '18857453099'
+        new_user = user_service.update_by_id(id, phone=new_phone)
+
+        self.assertEqual(new_user.phone, new_phone)
+        user = user_service.get(id=id)
+        self.assertEqual(user.phone, new_phone)
+
+    def test_check_register_info_valid(self):
+        valid = user_service.check_register_info_valid('some-phone', 'some-pwd')
+        self.assertTrue(valid)
+
+    def test_if_credential(self):
+        valid = user_service.check_if_credential(self.test_phone, self.test_password)
+        self.assertTrue(valid)
+        
+        invalid = user_service.check_if_credential(self.test_phone, 'wrong-pwd')
+        self.assertFalse(invalid)
+
+        invalid = user_service.check_if_credential('wrong-number', self.test_password)
+        self.assertFalse(invalid)
+
+        invalid = user_service.check_if_credential('wrong-number', 'wrong-pwd')
+        self.assertFalse(invalid)
+
+    def test_if_activated(self):
+        activaed = user_service.check_if_activated(self.test_phone)
+        self.assertTrue(activaed)
+
+        inactivated = user_service.check_if_activated('some-phone')
+        self.assertFalse(inactivated)
+
+
+class ServiceCommunicationWithAPITestCase(TestCase):
+    def setUp(self):
+        self.request = HttpRequest()
+        engine = import_module(settings.SESSION_ENGINE)
+        session_key = None
+        self.request.session = engine.SessionStore(session_key)
+
+        self.exist_phone = '18857453090'
+        self.password = '123456'
+        self.exist_user = user_service.create(self.exist_phone, self.password)
 
     def test_register(self):
-        user = user_service.register(self.phone, self.pwd, gender=self.gender)
-        self.assertTrue(isinstance(user, dict))
-        self.assertTrue('phone' in user)
-        self.assertTrue('password' not in user)
-        # password field is invisible in serialize data
-        self.assertTrue('gender' in user)
-
-    def test_cannot_register_again(self):
-        user = user_service.register(self.phone, self.pwd, gender=self.gender)
+        new_phone = '18857453099'
+        password = 'somepass'
+        user = user_service.register(new_phone, password)
         self.assertIsNotNone(user)
-        over_user = user_service.register(self.phone, self.pwd, gender=self.gender)
-        self.assertIsNone(over_user)
+        self.assertEqual(user.phone, new_phone)
+        self.assertTrue(hasattr(user, 'token'))
+        self.assertTrue('token' in user.token)
 
-    
-        
+    def test_cannot_register_duplcaite(self):
+        user = user_service.register(self.exist_phone, 'somepassword')
+        self.assertIsNone(user)
+
+    def test_login_inactivaed(self):
+        user = User.objects.get(phone=self.exist_phone)
+        user.activated = False
+        user.save()

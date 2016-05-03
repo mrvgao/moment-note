@@ -107,6 +107,9 @@ LACK_USER_ID = 41020
 INVALID_USER_ID_MSG = '该user_id与系统正在登录的user_id不符'
 INVALID_USER_ID = 41021
 
+INVALID_REG_INFO_MSG = 'This phone number or password is invalid'
+INVALID_REG_INFO = 41022
+
 OPERATION_FORBIDDEN_MSG = 'this operation is invalid for this user(check if you had logined)'
 OPERATION_FORBIDDEN = 41030
 ########################################################
@@ -122,7 +125,10 @@ for name in dir():
 
 
 def errors(code):
-    return {
-        "message": messages.get(code, ""),
-        "code": code,
-    }
+    if code in messages:
+        return {
+            "message": messages.get(code, ""),
+            "code": code,
+        }
+    else:
+        raise TypeError('unsupport error code, must be define in codes.error')

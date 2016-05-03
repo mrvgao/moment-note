@@ -121,7 +121,7 @@ class User(AbstractBaseUser, EnhancedModel, CommonUpdateAble):
     USERNAME_FIELD = 'phone'
     # REQUIRED_FIELDS = ['phone']
 
-    #objects = UserManager()
+    objects = UserManager()
 
     class Meta:
         db_table = 'user'

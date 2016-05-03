@@ -1,9 +1,9 @@
 # -*- coding:utf-8 -*-
-
 from rest_framework import viewsets, status
 from rest_framework.decorators import list_route
 
 from customs.response import SimpleResponse
+from customs.response import APIResponse
 from customs.viewsets import ListModelMixin
 from errors import codes
 from .permissions import admin_required, login_required
@@ -13,6 +13,7 @@ from customs import class_tools
 from apps.user.services import user_service
 from apps.user.services import captcha_service
 from apps.user.services import auth_service
+from django.contrib.auth import login, authenticate
 
 
 @class_tools.set_filter(['phone'])
@@ -28,7 +29,7 @@ class UserViewSet(ListModelMixin,
     @list_route(methods=['get'])
     def register(self, request):
         '''
-        获取关于注册列表的相关信息
+        测试该用户是否已经被注册
         ### Request example:
         URL: {API_URL}/users/register?phone=18582227569
 
@@ -46,10 +47,10 @@ class UserViewSet(ListModelMixin,
             'registered': registed
         }
 
-        return SimpleResponse(status=200, data=data)
+        return APIResponse(data)
 
     @list_route(methods=['post'])
-    @login_required
+    #@login_required
     def password(self, request):
         '''
         修改用户的密码，用于重置密码
@@ -72,11 +73,8 @@ class UserViewSet(ListModelMixin,
         phone = request.data.get('phone', None)
         password = request.data.get('password', None)
 
-        if phone != request.user.phone:
-            return SimpleResponse(code=codes.OPERATION_FORBIDDEN)
-        else:
-            user = user_service.set_password_by_phone_and_password(phone, password)
-            return SimpleResponse(data=user)
+        user = user_service.set_password_by_phone_and_password(phone, password)
+        return APIResponse(user)
 
     def create(self, request):
         '''
@@ -99,12 +97,25 @@ class UserViewSet(ListModelMixin,
         phone = request.data.pop('phone', None)
         password = request.data.pop('password', None)
 
-        if user_service.check_register_info_valid(phone=phone, password=password):
-            user = user_service.register(phone, password, request, **request.data)
-            code = 200 if user else codes.PHONE_ALREADY_REGISTERED
-            return SimpleResponse(code=code, data=user)
+        user = None
+        error_code = codes.PHONE_ALREAD_EXIST,
+
+        if not user_service.check_register_info_valid(phone, password):
+            error_code = codes.INVALID_REG_INFO
         else:
-            return SimpleResponse(status=status.HTTP_400_BAD_REQUEST)
+            user = self.register_user(request, phone, password)
+
+        return_value = user or error_code
+        # if user is None, return error code  r = u | code
+
+        return SimpleResponse(return_value)
+
+    def register_user(self, request, phone, password, **kwargs):
+        user = user_service.register(phone, password)
+        if user:
+            auth_user = authenticate(username=phone, password=password)
+            login(request, auth_user)
+        return user
 
     @admin_required
     def destroy(self, request, id):
@@ -125,7 +136,7 @@ class UserViewSet(ListModelMixin,
                 "phone": "18582227569",
                 "password": "q1w2e3"
             }
-        ---
+        --
         omit_serializer: true
         omit_parameters:
             - form
@@ -136,12 +147,23 @@ class UserViewSet(ListModelMixin,
         phone = request.data.get('phone', '')
         password = request.data.get('password', '')
 
-        code, user = user_service.login_user(request, phone, password)
+        error_code = self.check_info(phone, password)
 
-        if code:
-            return SimpleResponse(code=code)
+        if not error_code:
+            user = user_service.get(phone=phone)
+            login(request, user)
+
+        return APIResponse(user or error_code)
+
+    def check_user_valid(phone, password):
+        error = None
+        if user_service.check_if_credential(phone, password):
+            if not user_service.check_if_activated(phone):
+                error = codes.INACTIVE_ACCOUNT
         else:
-            return SimpleResponse(data=user)
+            error = codes.INCORRECT_CREDENTIAL
+
+        return error
 
     @login_required
     @user_is_same_as_logined_user
@@ -193,6 +215,13 @@ class UserViewSet(ListModelMixin,
         }
 
         return SimpleResponse(online)
+
+    @list_route(methods=['get'])
+    def _test(self, request):
+        '''
+        Just for test request functinonality.
+        '''
+        return SimpleResponse(success=True)
 
 
 @class_tools.set_service(captcha_service)

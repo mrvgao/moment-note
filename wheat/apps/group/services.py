@@ -6,6 +6,7 @@ from utils.redis_utils import publish_redis_message
 
 from customs.services import BaseService
 from apps.user.services import UserService
+from apps.user.services import FriendshipService
 from .models import Group, GroupMember, Invitation
 from .serializers import GroupSerializer, GroupMemberSerializer, InvitationSerializer
 from customs.services import MessageService
@@ -245,7 +246,7 @@ class GroupService(BaseService):
                     role=invitation.role
         )
         invitation.update(accepted=True, accept_time=datetime.now())
-        UserService.create_friendship(str(invitee.id), str(invitation.inviter))
+        FriendshipService.create_friendship(str(invitee.id), str(invitation.inviter))
         message = {
                     'event': 'invitation',
                     'sub_event': 'acc_inv_ntf',  # accept_invitation_notify
@@ -267,7 +268,7 @@ class GroupService(BaseService):
     def delete_person_from_each_group(host_id, member_id):
         GroupService.delete_from_host(host_id=host_id, member_id=member_id)
         GroupService.delete_from_host(host_id=member_id, member_id=host_id)
-        UserService.delete_friendship(host_id, member_id)
+        FriendshipService.delete_friendship(host_id, member_id)
         message = {
             'event': 'delete',
             'sub_event': 'friend',

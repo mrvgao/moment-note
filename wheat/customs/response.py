@@ -4,6 +4,50 @@ from rest_framework.response import Response
 from errors import codes
 
 
+class R(object):
+    def __init__(self):
+        self.__response = {'status': 200}
+        self._set_response_success(True)
+
+    def _set_response_success(self, success):
+        value = 'success' if success else 'fail'
+        self.__response['request'] = value
+
+    def set_response_error(self, error_code):
+        self._set_response_success(False)
+        self.__response['errors'] = codes.errors(error_code)
+
+    def set_response_data(self, data):
+        self.__response['data'] = data
+
+    @property
+    def response(self):
+        return self.__response
+
+
+class APIResponse(Response):
+    '''
+    API response for django restful
+    '''
+    def __init__(self, result, **kwargs):
+
+        r = R()
+
+        if isinstance(result,  int):
+            r.set_response_error(error_code=result)
+        elif isinstance(result, dict):
+            r.set_response_data(result)
+        else:
+            if hasattr(result, 'serialized_data'):
+                r.set_response_data(result.serialized_data)
+            else:
+                raise TypeError('unsupport type, return type must be json')
+
+        response = r.response
+
+        super(APIResponse, self).__init__(response, **kwargs)
+
+
 class SimpleResponse(Response):
 
     def __init__(self, data=None, success=True, message='', code=0, errors={}, **kwargs):
@@ -51,3 +95,5 @@ class Result:
             "message": self.message,
             "code": self.code,
         }
+
+

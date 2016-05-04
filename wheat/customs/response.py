@@ -38,10 +38,7 @@ class APIResponse(Response):
         elif isinstance(result, dict):
             r.set_response_data(result)
         else:
-            if hasattr(result, 'serialized_data'):
-                r.set_response_data(result.serialized_data)
-            else:
-                raise TypeError('{0} unsupport type, return type must be json'.format(result))
+            raise TypeError('{0} unsupport type, return type must be json'.format(result))
 
         response = r.response
 

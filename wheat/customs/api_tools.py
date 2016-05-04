@@ -65,7 +65,6 @@ def get_class_that_defined_method(meth):
 def change_func_return_value(func):
     def change_value(arg, *args, **kwargs):
 
-        serialize_func = None
         if type(func).__name__ == 'function':
             cls = arg
         else:  # func is instancemethod.
@@ -73,24 +72,31 @@ def change_func_return_value(func):
 
         value = func(arg, *args, **kwargs)
 
-        if value and hasattr(cls, 'serialize'):  # if value is not None
-            if hasattr(cls, '__call__'):
-                serialize_func = cls().serialize
-            else:
-                serialize_func = cls.serialize
+        if cls.__api__:
+            value = serialize_return_value(value, cls)
 
-            try:
-                serialized_data = serialize_func(value)
-                setattr(value, 'serialized_data', serialized_data)
-            except Exception as e:
-                print e
-                print('{0} not support serialize'.format(value))
         return value
     return change_value
 
 
+def serialize_return_value(value, cls):
+        serialize_func = None
+        if hasattr(cls, '__call__'):
+            serialize_func = cls().serialize
+        else:
+            serialize_func = cls.serialize
+        try:
+            value = serialize_func(value)
+        except Exception as e:
+            print e
+            print('{0} not support serialize'.format(value))
+
+        return value
+
+
 class ReturnMap(object):
     pass
+
 
 def get_return_value(return_map):
     results = filter(lambda cond: cond, return_map)

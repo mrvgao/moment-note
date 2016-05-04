@@ -13,6 +13,7 @@ from customs.permissions import AllowPostPermission
 def set_service(service):
     def func(cls):
         try:
+            setattr(service, '__api__', True)
             cls.model = service.get_model()
             cls.serializer_class = service.get_serializer()
         except AttributeError as e:

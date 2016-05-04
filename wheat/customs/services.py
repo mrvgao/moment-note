@@ -38,6 +38,8 @@ class BaseService(object):
     model = None
     serializer = None
 
+    __api__ = False
+
     def get_model(self):
         return self.model
 

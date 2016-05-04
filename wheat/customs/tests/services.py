@@ -1,4 +1,7 @@
 from customs.api_tools import api
+from customs.services import BaseService
+from apps.user.models import User
+from apps.user.serializers import UserSerializer
 
 
 class Num(object):
@@ -6,8 +9,11 @@ class Num(object):
         self.num = num
 
         
-class UserService(object):
+class UserService(BaseService):
     name = 'UserService'
+
+    model = User
+    serrializer = UserSerializer
 
     @api
     def test(self, num1, num2):
@@ -31,3 +37,6 @@ class UserService(object):
 
     def serialize(self, value):
         return True
+
+
+user_service = UserService()

@@ -79,6 +79,6 @@ class TestR(TestCase):
 
 
 class TestMessage(TestCase):
-    def test_send(self):
+    def _test_send(self):
         okay = MessageService.send_captcha('18857453090', '123456')
         self.assertTrue(okay)

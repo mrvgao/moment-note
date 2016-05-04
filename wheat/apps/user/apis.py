@@ -111,7 +111,7 @@ class UserViewSet(ListModelMixin,
             error_code = codes.PHONE_ALREAD_EXIST
         else:
             user = user_service.register(phone, password)
-            login(request, user)
+            login(request, authenticate(username=phone, password=password))
 
         return_value = user or error_code
         # if user is None, return error code  r = u | code
@@ -150,7 +150,7 @@ class UserViewSet(ListModelMixin,
 
         user = user_service.login_user(phone, password)
         if user:
-            login(request, user)
+            login(request, authenticate(username=phone, password=password))
             return APIResponse(user)
         else:
             error_code = codes.INCORRECT_CREDENTIAL

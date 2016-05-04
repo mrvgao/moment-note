@@ -186,13 +186,49 @@ class CapthchaService(BaseService):
     model = Captcha
     serializer = CaptchaSerializer
 
+    def _expired(self, captcha_obj):
+        VALID_MIN = 10
+        valid_time = 60 * VALID_MIN
+        # valid time is 10 mins.
+        
+        created_time = captcha_obj.created_at
+        if (datetime.datetime.now() - created_time).seconds > valid_time:
+            return True
+        return False
+        
+    def get_new_captch(self, phone):
+        captcha_code = MessageService.random_code(phone, plus=datetime.datetime.now().microsecond)
+        return captcha_code
+
+    def get_captcha_code_from_obj(self, captcha_obj):
+        captcha_code = captcha_obj.code
+
+        if self._expired(captcha_obj):
+            captcha_code = self.get_new_captch(captcha_obj.phone)
+            self.update(captcha_obj, code=captcha_code)
+
+        return captcha_code
+
+    def get_captch(self, phone):
+        captcha_obj = self.get(phone=phone)
+        captcha_code = None
+        if captcha_obj:
+            captcha_code = self.get_captcha_code_from_obj(captcha_obj)
+        else:
+            captcha_code = self.get_new_captch(phone)
+            self.create(phone=phone, code=captcha_code)
+
+        return captcha_code
+
     def send_captcha(self, phone, send=True):
         send_succeed, code = MessageService.send_message(phone=phone, send=send)
         return send_succeed, code
 
     def check_captcha(self, phone, captcha):
-        match = MessageService.check_captcha(phone=phone, captcha=captcha)
-        return match
+        captcha_obj = self.get(phone=phone, code=captcha)
+        if captcha_obj:
+            return True
+        return False
 
 
 class AuthService(BaseService):

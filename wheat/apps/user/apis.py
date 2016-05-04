@@ -50,7 +50,7 @@ class UserViewSet(ListModelMixin,
         return APIResponse(data)
 
     @list_route(methods=['post'])
-    #@login_required
+    @login_required
     def password(self, request):
         '''
         修改用户的密码，用于重置密码
@@ -137,7 +137,7 @@ class UserViewSet(ListModelMixin,
                 "phone": "18582227569",
                 "password": "q1w2e3"
             }
-        --
+        ---
         omit_serializer: true
         omit_parameters:
             - form
@@ -184,34 +184,36 @@ class UserViewSet(ListModelMixin,
 
 @class_tools.set_service(captcha_service)
 class CaptchaViewSet(viewsets.ViewSet):
+    lookup_url_kwarg = 'code'
+
     @login_required
-    @list_route(methods=['post'])
-    def check(self, request):
+    @detail_route(methods=['get'])
+    def check(self, request, code):
         '''
         检查验证码是否相符（action = check）
 
         ### Example Request
 
+        captcha/check/{String}/?phone=18857453090
+
+        ### Response
+
             {
-                "phone": "18857453090",
-                "captcha": "259070"
-                // 该请求为检查验证码是否相符时候的请求
+                "phone": {String},
+                "captcha": {String},
+                "matched": {Boolean}
             }
+        
+        phone -- phone number
         ---
         omit_serializer: true
-        omit_parameters:
-            - form
-        parameters:
-            - name: phone
-              paramType: body
         '''
-        phone = request.data.get('phone', None)
-        captcha = request.data.get('captcha', None)
-        match = captcha_service.check_captcha(phone, captcha)
+        phone = request.query_params.get('phone', None)
+        match = captcha_service.check_captcha(phone, code)
 
         return_context = {
             'phone': phone,
-            'captcha': captcha,
+            'captcha': code,
             'matched': match
         }
 

@@ -104,8 +104,13 @@ class BaseService(object):
         Delete the read only field in kwargs. To protect data not be changed by
         normal user.
         '''
-        read_only_fields = cls.serializer.Meta.read_only_fields
+        if hasattr(cls.serializer.Meta, 'read_only_fields'):
+            read_only_fields = cls.serializer.Meta.read_only_fields
+        else:
+            read_only_fields = ()
+
         update_fields = {k: v for k, v in kwargs.iteritems() if k not in read_only_fields}
+
         return update_fields
 
     @classmethod
@@ -120,14 +125,13 @@ class BaseService(object):
 
 
 class MessageService(object):
-
     @staticmethod
-    def random_code(number):
+    def random_code(number, plus=0):
         '''
         Gets random code from a number.
         '''
         def add_one(item):
-            value = int(item) * 103 % 10
+            value = int(item) * (103 + plus) % 10
             return str(value)
 
         number = map(add_one, number[-6:])
@@ -145,14 +149,17 @@ class MessageService(object):
             if succeed, return (ture, ******)
             else return (false, None)
         '''
-        software_version = '2014-06-30' # version for verification system, provided by upaas company.
+        software_version = '2014-06-30'
+        # version for verification system, provided by upaas company.
+
         HOST = 'http://www.ucpaas.com/maap/sms/code'
         ACCOUNT_ID = '8a70971adf5ba2d4598193cc03fcbaa2'
         VER_AUTH_TOKEN = "7c7c4e5d324b7efbf75db740fdf6a253"
         APP_ID = '71ca63be653c45129a819964265eccec'
         TEMPLATE_ID = template_id
 
-        current_time = datetime.now().strftime("%Y%m%d%H%M%S%f")[:-3] # get time token yyyyMMddHHmmss
+        current_time = datetime.now().strftime("%Y%m%d%H%M%S%f")[:-3]
+        # get time token yyyyMMddHHmmss
 
         m = hashlib.md5()
         m.update(ACCOUNT_ID + current_time + VER_AUTH_TOKEN)
@@ -161,7 +168,7 @@ class MessageService(object):
         verification_code = MessageService.random_code(phone)
 
         if message_param is None:
-        	message_param = verification_code
+            message_param = verification_code
 
         post_message = {
             'sid': ACCOUNT_ID,
@@ -176,12 +183,12 @@ class MessageService(object):
         SUCCEED_MARK = '000000'
 
         if send:
-       		response = requests.post(HOST, data=post_message, verify=False)
-       	 	status = response.json()['resp']['respCode']
-       	else:
-       		status = SUCCEED_MARK
+            response = requests.post(HOST, data=post_message, verify=False)
+            status = response.json()['resp']['respCode']
+        else:
+            status = SUCCEED_MARK
 
-        if status == SUCCEED_MARK: # if status is 000000, send is succeed
+        if status == SUCCEED_MARK:  # if status is 000000, send is succeed
             return True, verification_code
         else:
             return False, None

@@ -7,7 +7,7 @@ from rest_framework.test import APITestCase
 from settings import API_VERSION
 from rest_framework.test import APIClient
 from apps.user.services import user_service
-from errors import codes
+from errors import codes, exceptions
 from django.contrib.auth import authenticate
 from apps.user.models import User, AuthToken
 
@@ -59,6 +59,8 @@ class UserAPITest(APITestCase):
             'password': new_password
         }
 
+        self.update_client_token(self.phone, self.password)
+
         invalid_user = authenticate(username=self.phone, password=new_password)
         self.assertIsNone(invalid_user)
 
@@ -92,7 +94,7 @@ class UserAPITest(APITestCase):
         url = URL_PREFIX + 'users/password/'
         response = self.client.post(url, post_data)
 
-        self.assertEqual(response.data['errors']['code'], codes.PHONE_NUMBER_NOT_EXIST)
+        self.assertEqual(response.data['errors']['code'], codes.LOGIN_REQUIRED)
 
     def test_invalid_registed(self):
         post_data = {

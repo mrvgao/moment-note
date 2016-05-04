@@ -83,8 +83,11 @@ def set_serializer(serializer_name):
     return func
 
 
-def set_loopup_field(loop_up_field):
-    pass
+def set_lookup_field(lookup_field):
+    def func(cls):
+        cls.lookup_field = lookup_field
+        return cls
+    return func
 
 
 def set_filter(filter_fields):

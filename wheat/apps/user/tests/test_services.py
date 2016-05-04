@@ -5,10 +5,14 @@ Test for services.
 
 from django.test import TestCase
 from apps.user.models import User
+from apps.user.models import Captcha
 from apps.user.services import user_service
+from apps.user.services import captcha_service
+from apps.user.services import auth_service
 from django.conf import settings
 from django.utils.importlib import import_module
 from django.http import HttpRequest
+import datetime
 
 
 class UserServiceTestCase(TestCase):
@@ -187,3 +191,64 @@ class ServiceCommunicationWithAPITestCase(TestCase):
         user = User.objects.get(phone=self.exist_phone)
         user.activated = False
         user.save()
+
+
+class TestCaptchaService(TestCase):
+    def setUp(self):
+        self.phone = '18857453090'
+        self.old_phone = '18857453099'
+        self.captcha = Captcha.objects.create(phone=self.phone, code='123456')
+        self.old_captcha = Captcha.objects.create(
+            phone=self.old_phone, code='111111',
+        )
+        self.old_captcha.created_at = datetime.datetime(2014, 1, 1)
+        self.old_captcha.save()
+
+    def test_get_new_captcha(self):
+        captcha_code = captcha_service.get_new_captch(self.phone)
+        self.assertEqual(len(captcha_code), 6)
+
+        new_code = captcha_service.get_new_captch(self.old_phone)
+        self.assertNotEqual(captcha_code, new_code)
+
+    def test_expired(self):
+        unexipred = captcha_service._expired(self.captcha)
+        self.assertFalse(unexipred)
+        
+        exipred = captcha_service._expired(self.old_captcha)
+        self.assertTrue(exipred)
+
+    def test_get_captcha_from_obj(self):
+        code = captcha_service.get_captcha_code_from_obj(self.captcha)
+        self.assertEqual(code, self.captcha.code)
+        
+        old_code = self.old_captcha.code
+        new_code = captcha_service.get_captcha_code_from_obj(self.old_captcha)
+        self.assertNotEqual(new_code, old_code)
+
+    def test_get_captch(self):
+        code = self.captcha.code
+        new_code = captcha_service.get_captch(self.phone)
+        self.assertEqual(code, new_code)
+
+        code = self.old_captcha.code
+        new_code = captcha_service.get_captch(self.old_phone)
+        self.assertNotEqual(code, new_code)
+
+    def test_get_captch_with_new_phone(self):
+        phone_number = '13993300082'
+        code = captcha_service.get_captch(phone_number)
+        self.assertIsNotNone(code)
+        
+        self.assertIsNotNone(Captcha.objects.get(phone=phone_number))
+
+        code_again = captcha_service.get_captch(phone_number)
+        self.assertEqual(code_again, code)
+
+
+class TestAuthService(TestCase):
+    pass
+
+
+class TetstFriendship(TestCase):
+    pass

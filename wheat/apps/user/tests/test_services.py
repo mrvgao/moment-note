@@ -245,6 +245,22 @@ class TestCaptchaService(TestCase):
         code_again = captcha_service.get_captch(phone_number)
         self.assertEqual(code_again, code)
 
+    def test_send_message(self):
+        send = captcha_service.send_captcha(self.phone, self.captcha.code)
+        self.assertTrue(send)
+
+    def test_check_captcha(self):
+        code = self.captcha.code
+        valid = captcha_service.check_captcha(self.phone, code)
+        self.assertTrue(valid)
+
+        invalid = captcha_service.check_captcha('some-phone', code)
+        self.assertFalse(invalid)
+
+        old_code = self.old_captcha.code
+        invalid = captcha_service.check_captcha(self.old_phone, old_code)
+        self.assertFalse(invalid)
+        
 
 class TestAuthService(TestCase):
     pass

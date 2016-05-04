@@ -220,13 +220,13 @@ class CapthchaService(BaseService):
 
         return captcha_code
 
-    def send_captcha(self, phone, send=True):
-        send_succeed, code = MessageService.send_message(phone=phone, send=send)
-        return send_succeed, code
+    def send_captcha(self, phone, captcha):
+        send_succeed = MessageService.send_captcha(phone=phone, captcha=captcha)
+        return send_succeed
 
     def check_captcha(self, phone, captcha):
         captcha_obj = self.get(phone=phone, code=captcha)
-        if captcha_obj:
+        if captcha_obj and not self._expired(captcha_obj):
             return True
         return False
 

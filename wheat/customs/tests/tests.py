@@ -4,6 +4,7 @@ from customs.urls import get_url
 from customs import class_tools
 from apps.user.services import user_service
 from customs import response
+from customs.services import MessageService
 
 
 class TestUrlUtils(TestCase):
@@ -77,5 +78,7 @@ class TestR(TestCase):
         self.assertIsNotNone(response.APIResponse(data))
 
 
-
-        
+class TestMessage(TestCase):
+    def test_send(self):
+        okay = MessageService.send_captcha('18857453090', '123456')
+        self.assertTrue(okay)

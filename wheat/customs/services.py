@@ -125,6 +125,11 @@ class BaseService(object):
 
 
 class MessageService(object):
+    HOST = 'http://www.ucpaas.com/maap/sms/code'
+    ACCOUNT_ID = '8a70971adf5ba2d4598193cc03fcbaa2'
+    VER_AUTH_TOKEN = "7c7c4e5d324b7efbf75db740fdf6a253"
+    APP_ID = '71ca63be653c45129a819964265eccec'
+
     @staticmethod
     def random_code(number, plus=0):
         '''
@@ -136,6 +141,34 @@ class MessageService(object):
 
         number = map(add_one, number[-6:])
         return ''.join(number)
+
+    @staticmethod
+    def send_captcha(phone, captcha):
+        template_id = '12750'
+        TEMPLATE_ID = template_id
+        current_time = datetime.now().strftime("%Y%m%d%H%M%S%f")[:-3]
+        m = hashlib.md5()
+        m.update(MessageService.ACCOUNT_ID + current_time + MessageService.VER_AUTH_TOKEN)
+        sig_md5_code = m.hexdigest()
+
+        post_message = {
+            'sid': MessageService.ACCOUNT_ID,
+            'appId': MessageService.APP_ID,
+            'sign': sig_md5_code,
+            'time': current_time,
+            'templateId': TEMPLATE_ID,
+            'to': phone,
+            'param': captcha
+        }
+
+        SUCCEED_MARK = '000000'
+        response = requests.post(MessageService.HOST, data=post_message, verify=False)
+        status = response.json()['resp']['respCode']
+
+        success = False
+        if status == SUCCEED_MARK:
+            success = True
+        return success
 
     @staticmethod
     def send_message(phone='18857453090', template_id='12750', message_param=None, send=True):

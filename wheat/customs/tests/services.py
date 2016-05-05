@@ -2,6 +2,7 @@ from customs.api_tools import api
 from customs.services import BaseService
 from apps.user.models import User
 from apps.user.serializers import UserSerializer
+from customs.delegates import delegate
 
 
 class Num(object):
@@ -20,7 +21,11 @@ class UserService(BaseService):
         return num1 + num2
 
     @api
+    def test_inner_call(self, num1):
+        return num1 + self.test(num1, 2)
+
     @classmethod
+    @api
     def test_cls(cls, num1):
         return num1 + 10
 
@@ -40,3 +45,4 @@ class UserService(BaseService):
 
 
 user_service = UserService()
+user_service_delegate = delegate(UserService())

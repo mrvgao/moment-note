@@ -39,19 +39,15 @@ class AuthToken(EnhancedModel, CommonUpdateAble, models.Model):
     class Meta:
         db_table = 'auth_token'
 
-    def refresh_token(self):
-        self.key = self.generate_key()
-        self.created_at = datetime.now()
-        self.save()
-        return self.key
-
     def save(self, *args, **kwargs):
         if not self.key:
-            self.key = self.generate_key()
-        self.expired_at = datetime.now() + timedelta(hours=24 * settings.AUTHTOKEN_EXPIRED_DAYS)
+            self.key = self._generate_key()
+
+        if not self.expired_at:
+            self.expired_at = datetime.now() + timedelta(hours=24 * settings.AUTHTOKEN_EXPIRED_DAYS)
         return super(AuthToken, self).save(*args, **kwargs)
 
-    def generate_key(self):
+    def _generate_key(self):
         return binascii.hexlify(os.urandom(16)).decode()
 
     @property

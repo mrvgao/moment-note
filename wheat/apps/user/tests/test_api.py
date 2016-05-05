@@ -142,7 +142,7 @@ class UserAPITest(APITestCase):
         self.assertEqual(token.key, user_token)
         self.assertFalse(token.expired())
 
-    def test_destroy_success(self):
+    def _test_destroy_success(self):
         self.user.is_admin = True
         self.user.save()
         self.update_client_token(self.phone, self.password)
@@ -185,6 +185,7 @@ class UserAPITest(APITestCase):
         response = self.login(phone, password)
         user_token = response.data['data']['token']['token']
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + user_token)
+        return user_token
         
     def test_set_avatar(self):
         self.update_client_token(self.phone, self.password)
@@ -201,6 +202,44 @@ class UserAPITest(APITestCase):
         self.assertNotEqual(response.data['data']['avatar'], old_avatar)
 
 
-def TestUserViewSet(TestCase):
-    def test_register_user(self):
-        pass
+class TestTokenViewSet(APITestCase):
+    def setUp(self):
+        self.phone = '18857453090'
+        self.password = '12345678'
+        self.user = user_service.create(self.phone, self.password)
+        self.client = APIClient()
+        self.client.credentials(enforce_csrf_checks=False)
+
+    def update_client_token(self, phone, password):
+        response = self.login(phone, password)
+        user_token = response.data['data']['token']['token']
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + user_token)
+        return user_token
+     
+    def login(self, phone, password):
+        url = URL_PREFIX + 'users/login/'
+        post_data = {
+            'phone': phone,
+            'password': password
+        }
+        response = self.client.post(url, post_data, format='json')
+        return response
+     
+    def test_refesh_token(self):
+        new_token = self.update_client_token(self.phone, self.password)
+        url = URL_PREFIX + 'token/refresh'
+
+        put_data = {
+            'user_id': str(self.user.id),
+            'token': new_token
+        }
+
+        response = self.client.put(url, put_data, format='json')
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['data']['user-id'], str(self.user.id))
+        self.assertNotEqual(response.data['data']['new-token'], self.user.token)
+
+        key = AuthToken.objects.get(user_id=str(self.user.id)).key
+        self.assertNotEqual(response.data['data']['new-token'], key)
+

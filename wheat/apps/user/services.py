@@ -8,11 +8,15 @@ from customs.response import Result
 from .models import User, AuthToken, FriendShip, Captcha
 from .serializers import UserSerializer, AuthTokenSerializer, CaptchaSerializer
 from .serializers import FriendshipSerializer
-import datetime
+from datetime import datetime, timedelta
 from django.db.models import Q
 from utils import utils
 from customs.services import MessageService
 from customs.api_tools import api
+import binascii
+import os
+from django.conf import settings
+from customs.delegates import delegate
 
 
 class UserService(BaseService):
@@ -22,6 +26,9 @@ class UserService(BaseService):
 
     @api
     def delete(self, user_id):
+        return self._delete(user_id)
+
+    def _delete(self, user_id):
         user = self.get(id=user_id)
         if user:
             user = super(UserService, self).delete(user)
@@ -98,6 +105,89 @@ class UserService(BaseService):
     def login_user(self, phone, password):
         user = authenticate(username=phone, password=password)
         return user
+
+
+class AuthService(BaseService):
+    model = AuthToken
+    serializer = AuthTokenSerializer
+
+    def refresh_user_token(self, user_id):
+        token = self.get(user_id=user_id)
+        if token:
+            token.key = self._generate_key()
+            token.created_at = datetime.now()
+            token.expired_at = datetime.now() + timedelta(hours=24 * settings.AUTHTOKEN_EXPIRED_DAYS)
+            token.save()
+            return token.key
+        else:
+            return None
+
+    def get_token(self, user_id):
+        token = self.get(user_id=user_id)
+        if not token:
+            return None
+        else:
+            return token.key
+
+    def _generate_key(self):
+        return binascii.hexlify(os.urandom(16)).decode()
+
+    def check_auth_token(self, user_id, token):
+        token_obj = self.get(user_id=user_id)
+        valid = False
+        if token_obj:
+            if token_obj.key == token and not token_obj.expired():
+                valid = True
+        return valid
+
+
+class CaptchaService(BaseService):
+    model = Captcha
+    serializer = CaptchaSerializer
+
+    def _expired(self, captcha_obj):
+        VALID_MIN = 10
+        valid_time = 60 * VALID_MIN
+        # valid time is 10 mins.
+        
+        created_time = captcha_obj.created_at
+        if (datetime.now() - created_time).seconds > valid_time:
+            return True
+        return False
+        
+    def get_new_captch(self, phone):
+        captcha_code = MessageService.random_code(phone, plus=datetime.now().microsecond)
+        return captcha_code
+
+    def get_captcha_code_from_obj(self, captcha_obj):
+        captcha_code = captcha_obj.code
+
+        if self._expired(captcha_obj):
+            captcha_code = self.get_new_captch(captcha_obj.phone)
+            self.update(captcha_obj, code=captcha_code)
+
+        return captcha_code
+
+    def get_captch(self, phone):
+        captcha_obj = self.get(phone=phone)
+        captcha_code = None
+        if captcha_obj:
+            captcha_code = self.get_captcha_code_from_obj(captcha_obj)
+        else:
+            captcha_code = self.get_new_captch(phone)
+            self.create(phone=phone, code=captcha_code)
+
+        return captcha_code
+
+    def send_captcha(self, phone, captcha):
+        send_succeed = MessageService.send_captcha(phone=phone, captcha=captcha)
+        return send_succeed
+
+    def check_captcha(self, phone, captcha):
+        captcha_obj = self.get(phone=phone, code=captcha)
+        if captcha_obj and not self._expired(captcha_obj):
+            return True
+        return False
 
 
 class FriendshipService(BaseService):
@@ -182,89 +272,6 @@ class FriendshipService(BaseService):
         return True
 
 
-class CapthchaService(BaseService):
-    model = Captcha
-    serializer = CaptchaSerializer
-
-    def _expired(self, captcha_obj):
-        VALID_MIN = 10
-        valid_time = 60 * VALID_MIN
-        # valid time is 10 mins.
-        
-        created_time = captcha_obj.created_at
-        if (datetime.datetime.now() - created_time).seconds > valid_time:
-            return True
-        return False
-        
-    def get_new_captch(self, phone):
-        captcha_code = MessageService.random_code(phone, plus=datetime.datetime.now().microsecond)
-        return captcha_code
-
-    def get_captcha_code_from_obj(self, captcha_obj):
-        captcha_code = captcha_obj.code
-
-        if self._expired(captcha_obj):
-            captcha_code = self.get_new_captch(captcha_obj.phone)
-            self.update(captcha_obj, code=captcha_code)
-
-        return captcha_code
-
-    def get_captch(self, phone):
-        captcha_obj = self.get(phone=phone)
-        captcha_code = None
-        if captcha_obj:
-            captcha_code = self.get_captcha_code_from_obj(captcha_obj)
-        else:
-            captcha_code = self.get_new_captch(phone)
-            self.create(phone=phone, code=captcha_code)
-
-        return captcha_code
-
-    def send_captcha(self, phone, captcha):
-        send_succeed = MessageService.send_captcha(phone=phone, captcha=captcha)
-        return send_succeed
-
-    def check_captcha(self, phone, captcha):
-        captcha_obj = self.get(phone=phone, code=captcha)
-        if captcha_obj and not self._expired(captcha_obj):
-            return True
-        return False
-
-
-class AuthService(BaseService):
-    model = AuthToken
-    serializer = AuthTokenSerializer
-
-    @staticmethod
-    def check_if_token_valid(token):
-        auth_token = AuthToken.objects.get_or_none(key=token)
-
-        if auth_token:
-            expired_time = auth_token.expired_at
-            return expired_time > datetime.datetime.now()
-        else:
-            return False
-
-    @staticmethod
-    def refresh_token(user_id, refresh_token=True):
-        token = AuthToken.objects.get_or_none(user_id=user_id)
-        if refresh_token:
-            token = AuthToken.objects.refresh_token(token)
-        return token
-
-    @staticmethod
-    def get_token(user_id):
-        token = AuthToken.objects.get_or_none(user_id=user_id)
-        return token.key
-
-    @staticmethod
-    def check_auth_token(user_id, token):
-        token_obj = AuthToken.objects.get_or_none(user_id=user_id)
-        if token_obj and token_obj.key == token and not token_obj.expired():
-            return True
-        return False
-
-
-user_service = UserService()
-captcha_service = CapthchaService()
-auth_service = AuthService()
+user_service = delegate(UserService())
+captcha_service = delegate(CaptchaService())
+auth_service = delegate(AuthService())

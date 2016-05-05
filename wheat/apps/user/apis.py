@@ -277,8 +277,8 @@ class TokenViewSet(viewsets.ViewSet):
                 "token": "old token"
             }
         '''
-        token = AuthService.refresh_token(request.user.id)
-        return SimpleResponse(token.token)
+        token = AuthService.refresh_user_token(request.user.id)
+        return APIResponse({'user_id': request.user.id, 'new-token': token})
 
     @list_route(methods=['get'])
     @login_required

@@ -6,9 +6,10 @@ Test for services.
 from django.test import TestCase
 from apps.user.models import User
 from apps.user.models import Captcha
+from apps.user.models import AuthToken
 from apps.user.services import UserService
-from apps.user.services import captcha_service
-from apps.user.services import auth_service
+from apps.user.services import CaptchaService
+from apps.user.services import AuthService
 from django.conf import settings
 from django.utils.importlib import import_module
 from django.http import HttpRequest
@@ -98,7 +99,7 @@ class UserInfoModificationTestCase(TestCase):
 
     def test_delete_user(self):
         user_id = self.test_user.id
-        self.test_user = user_service.delete(user_id)
+        self.test_user = user_service._delete(user_id)
         self.assertTrue(self.test_user.deleted)
 
     def test_change_password_by_phone_and_password(self):
@@ -195,6 +196,9 @@ class ServiceCommunicationWithAPITestCase(TestCase):
         user.save()
 
 
+captcha_service = CaptchaService()
+
+
 class TestCaptchaService(TestCase):
     def setUp(self):
         self.phone = '18857453090'
@@ -264,8 +268,55 @@ class TestCaptchaService(TestCase):
         self.assertFalse(invalid)
         
 
+auth_service = AuthService()
+
+
 class TestAuthService(TestCase):
-    pass
+    def setUp(self):
+        self.user = User.objects.create(phone='18857453090', password='123456')
+
+    def test_generate_token(self):
+        old_token = auth_service._generate_key()
+        new_token = auth_service._generate_key()
+        self.assertNotEqual(old_token, new_token)
+
+    def test_get_valid(self):
+        token = self.user.token['token']
+        get_token = auth_service.get_token(self.user.id)
+        self.assertEqual(token, get_token)
+
+    def test_get_null(self):
+        null_token = auth_service.get_token('some-phone')
+        self.assertIsNone(null_token)
+
+    def test_refesh_token(self):
+        token = self.user.token['token']
+        new_token = auth_service.refresh_user_token(self.user.id)
+        self.assertNotEqual(token, new_token)
+
+        valid_token = auth_service.refresh_user_token('some-id')
+        self.assertIsNone(valid_token)
+
+    def test_check_token(self):
+        token = self.user.token['token']
+        okay = auth_service.check_auth_token(self.user.id, token)
+        self.assertTrue(okay)
+
+    def test_check_token_unvalid(self):
+        wrong = auth_service.check_auth_token(self.user.id, 'some-token')
+        self.assertFalse(wrong)
+
+        token = self.user.token['token']
+        auth_service.refresh_user_token(self.user.id)
+        wrong = auth_service.check_auth_token(self.user.id, token)
+        self.assertFalse(wrong)
+        
+        refreshed = auth_service.refresh_user_token(self.user.id)
+        token_obj = AuthToken.objects.get(user_id=self.user.id)
+        token_obj.expired_at = datetime.datetime(2014, 1, 1)
+        token_obj.save()
+        wrong = auth_service.check_auth_token(self.user.id, refreshed)
+        self.assertFalse(wrong)
 
 
 class TetstFriendship(TestCase):

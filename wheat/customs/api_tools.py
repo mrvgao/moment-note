@@ -5,6 +5,7 @@ Add information of apis
 '''
 import inspect
 import sys
+import functools
 
 
 def _get_file_name(frame):
@@ -23,17 +24,19 @@ def called_by_target_file(caller_file_name, stack):
             break
     return called
 
-        
+
 def api(func):
+    setattr(func, '__api__', True)
+    return func
+
+
+def get_api_method(func):
     '''
     Changes func's return value.
     If func is been called in apis.py file,
     the func's return value will changet to serialized value.
     else, will not change the return value of this func.
     '''
-    # target_file = '/apis.py'
-
-    # stack = inspect.stack(0)
 
     is_cls = isinstance(func, classmethod)
     is_static = isinstance(func, staticmethod)
@@ -41,16 +44,12 @@ def api(func):
     if is_static:
         raise TypeError('Not Support Staticmethod for @api decorator,' + func.__func__.__name__)
 
-    # called = called_by_target_file(target_file, stack)
-
     if is_cls:
         new_func = change_func_return_value(func.__func__)
         func = classmethod(new_func)
-    #        func.__func__.__dict__.setdefault('called', True)
     else:
         new_func = change_func_return_value(func)
         func = new_func
-    #        func.__dict__.setdefault('called', True)
 
     return func
 
@@ -63,6 +62,7 @@ def get_class_that_defined_method(meth):
 
 
 def change_func_return_value(func):
+    @functools.wraps(func)
     def change_value(arg, *args, **kwargs):
 
         if type(func).__name__ == 'function':
@@ -72,8 +72,7 @@ def change_func_return_value(func):
 
         value = func(arg, *args, **kwargs)
 
-        if cls.__api__:
-            value = serialize_return_value(value, cls)
+        value = serialize_return_value(value, cls)
 
         return value
     return change_value

@@ -1,28 +1,19 @@
 from django.test import TestCase
-from services import UserService
-from customs.api_tools import api
+from services import user_service
 from customs.api_tools import get_return_value
-from apis import Caller
+from services import user_service_delegate
 
 
 class APIFuncTest(TestCase):
-    #def test_add_serialized_data(self):
-        #user_service = UserService()
-        #decorated_func = api(user_service.test_add)
-        #result = decorated_func(1, 2)
-        #self.assertTrue(hasattr(result, 'serialized_data'))
-        #self.assertEqual(result.num, 1+2)
+    def test_delegate(self):
+        result = user_service_delegate.test(1, 2)
+        result_org = user_service.test(1, 2)
 
-    #def test_decorator(self):
-        #pass
-        #result = UserService().decorator(1, 2)
-        #self.assertTrue(hasattr(result, 'serialized_data'))
-        #self.assertEqual(result.num, 1+2)
+        inner_call = user_service_delegate.test_inner_call(1)
+        inner_call_result = user_service.test_inner_call(1)
 
-    def test_change_value(self):
-        result = UserService().test(1, 1)
-        changed_result = Caller().test_method(1, 1)
-        self.assertNotEqual(result, changed_result)
+        self.assertNotEqual(result, result_org)
+        self.assertNotEqual(inner_call, inner_call_result)
 
 
 class TestReturnVlaue(TestCase):

@@ -10,6 +10,7 @@ from apps.user.services import user_service
 from errors import codes, exceptions
 from django.contrib.auth import authenticate
 from apps.user.models import User, AuthToken
+from apps.user.permissions import encode_maili
 
 
 URL_PREFIX = '/api/%s/' % API_VERSION
@@ -209,6 +210,8 @@ class TestTokenViewSet(APITestCase):
         self.user = user_service.create(self.phone, self.password)
         self.client = APIClient()
         self.client.credentials(enforce_csrf_checks=False)
+        self.login(self.phone, self.password)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.user.token['token'])
 
     def update_client_token(self, phone, password):
         response = self.login(phone, password)
@@ -226,20 +229,77 @@ class TestTokenViewSet(APITestCase):
         return response
      
     def test_refesh_token(self):
-        new_token = self.update_client_token(self.phone, self.password)
-        url = URL_PREFIX + 'token/refresh'
-
         put_data = {
             'user_id': str(self.user.id),
-            'token': new_token
+            'token': self.user.token['token']
         }
 
+        key = AuthToken.objects.get(user_id=str(self.user.id)).key
+        
+        url = URL_PREFIX + 'token/refresh/'
         response = self.client.put(url, put_data, format='json')
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data['data']['user-id'], str(self.user.id))
-        self.assertNotEqual(response.data['data']['new-token'], self.user.token)
+        self.assertEqual(response.data['data']['user_id'], str(self.user.id))
 
-        key = AuthToken.objects.get(user_id=str(self.user.id)).key
-        self.assertNotEqual(response.data['data']['new-token'], key)
+        self.assertNotEqual(response.data['data']['new_token'], key)
+        user_token = User.objects.get(id=self.user.id).token['token']
+        self.assertEqual(response.data['data']['new_token'], user_token)
 
+    def test_check_token_valid(self):
+        token = self.user.token['token']
+
+        url = URL_PREFIX + 'token/{0}/valid/'.format(token)
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.data['data']['valid'])
+
+        token = 'some-wrong-token'
+        url = URL_PREFIX + 'token/{0}/valid/'.format(token)
+        response = self.client.get(url)
+        self.assertFalse(response.data['data']['valid'])
+
+
+class TestCaptchaViewSet(APITestCase):
+    def test_get_captcha(self):
+        phone = '18857453090'
+        url = URL_PREFIX + 'captcha/{0}/'.format(phone)
+        code = encode_maili()
+        response = self.client.get(url, **{'KEY': code})
+        self.assertEqual(response.status_code, 200)
+
+        first_captcha = response.data['data']['captcha']
+        self.assertEqual(response.data['data']['phone'], phone)
+        self.assertIsNotNone(response.data['data']['captcha'])
+        self.assertEqual(len(response.data['data']['captcha']), 6)
+
+        response = self.client.get(url, **{'KEY': 'arbitary-code'})
+        self.assertNotEqual(response.status_code, 200)
+
+        response = self.client.get(url, **{'KEY': code})
+        self.assertEqual(response.status_code, 200)
+
+        self.assertEqual(response.data['data']['captcha'], first_captcha)
+
+        url = URL_PREFIX + 'captcha/{0}/'.format('13993300082')
+        response = self.client.get(url, **{'KEY': code})
+        self.assertEqual(response.status_code, 200)
+
+        self.assertNotEqual(response.data['data']['captcha'], first_captcha)
+
+    def _test_send_captcha(self):
+        phone = '18857453090'
+        url = URL_PREFIX + 'captcha/{0}/send/'.format(phone)
+        code = encode_maili()
+        response = self.client.get(url, **{'KEY': code})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data['data']['captcha']), 6)
+
+        url = URL_PREFIX + 'captcha/{0}/send/'.format('noaphone')
+        response = self.client.get(url, **{'KEY': code})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['request'], 'fail')
+        
+
+    

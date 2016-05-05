@@ -8,6 +8,7 @@ from customs.viewsets import ListModelMixin
 from errors import codes
 from .permissions import admin_required, login_required
 from .permissions import user_is_same_as_logined_user
+from .permissions import check_token
 from .services import AuthService
 from customs import class_tools
 from apps.user.services import user_service
@@ -184,56 +185,49 @@ class UserViewSet(ListModelMixin,
 
 @class_tools.set_service(captcha_service)
 class CaptchaViewSet(viewsets.ViewSet):
-    lookup_url_kwarg = 'code'
 
-    @login_required
-    @detail_route(methods=['get'])
-    def check(self, request, code):
+    lookup_url_kwarg = 'phone'
+
+    @check_token
+    def retrieve(self, request, phone):
         '''
-        检查验证码是否相符（action = check）
+        获得某个手机号的验证码
 
         ### Example Request
 
-        captcha/check/{String}/?phone=18857453090
+        captcha/{phone}/
 
         ### Response
 
-            {
-                "phone": {String},
-                "captcha": {String},
-                "matched": {Boolean}
-            }
-        
-        phone -- phone number
-        ---
-        omit_serializer: true
-        '''
-        phone = request.query_params.get('phone', None)
-        match = captcha_service.check_captcha(phone, code)
-
-        return_context = {
+        {
             'phone': phone,
             'captcha': code,
-            'matched': match
         }
 
-        return SimpleResponse(return_context)
+        '''
+        code = captcha_service.get_captch(phone)
 
-    def send(self, request):
+        response = {
+            'phone': phone,
+            'captcha': code,
+        }
+
+        return APIResponse(response)
+
+    @check_token
+    @detail_route(methods=['get'])
+    def send(self, request, phone):
         '''
         Does actions for captcha.
+        captcha/{phone}/send/
 
-        用以处理和验证码相关的信息，根据action不同，可以有
-        1. 发送验证码
-        2. 测试发送验证码但是不发送短信（test = '1')
-        ### Example Request
+        发送验证码
 
-            {
-                "phone": "18582227569"
-                // 该请求为发送验证码时候的请求
-            }
+        {
+            'phone': phone,
+            'captcha': code,
+        }
 
-        test -- if this value is '1', will not send message, just echo with captcha code.
         ---
         omit_serializer: true
         omit_parameters:
@@ -243,28 +237,29 @@ class CaptchaViewSet(viewsets.ViewSet):
               paramType: body
         '''
 
-        test = request.query_params.get('test', None)
-        phone = request.data.get('phone', None)
+        phone_valid = user_service.check_phone_valid(phone)
 
-        send = True
-        if test == '1':
-            send = False
-
-        send_succeed, code = captcha_service.send_captcha(phone=phone, send=send)
-
-        return_context = {
-            'phone': phone,
-            'captcha': code
-        }
+        if phone_valid:
+            code = captcha_service.get_captch(phone)
+            send_succeed = captcha_service.send_captcha(phone=phone, captcha=code)
+            response = {
+                'phone': phone,
+                'captcha': code
+            }
+        else:
+            send_succeed = False
 
         if send_succeed:
-            return SimpleResponse(return_context)
+            return APIResponse(response)
         else:
-            return SimpleResponse(success=False)
+            return APIResponse(codes.CAPTCHA_SEND_FAILED)
 
 
 @class_tools.set_service(auth_service)
 class TokenViewSet(viewsets.ViewSet):
+
+    lookup_url_kwarg = 'code'
+
     @user_is_same_as_logined_user
     @login_required
     @list_route(methods=['put'])
@@ -277,18 +272,19 @@ class TokenViewSet(viewsets.ViewSet):
                 "token": "old token"
             }
         '''
-        token = AuthService.refresh_user_token(request.user.id)
-        return APIResponse({'user_id': request.user.id, 'new-token': token})
+        uid = str(request.user.id)
+        token = auth_service.refresh_user_token(uid)
+        return APIResponse({'user_id': uid, 'new_token': token})
 
-    @list_route(methods=['get'])
     @login_required
-    def check(self, request):
+    @detail_route(methods=['get'])
+    def valid(self, request, code):
         '''
         GET: check token if valid.
 
         ## Example Request:
 
-            {URL}/user/token/?token=XXX
+            {URL}/token/{code}/valid/
         ---
         omit_serializer: true
         omit_parameters:
@@ -298,7 +294,6 @@ class TokenViewSet(viewsets.ViewSet):
               paramType: body
 
         '''
-        token = request.query_params.get('token', None)
-        valid = AuthService.check_if_token_valid(token)
+        valid = auth_service.check_auth_token(request.user.id, code)
         data = {'valid': valid}
         return SimpleResponse(data)

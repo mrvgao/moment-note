@@ -41,6 +41,9 @@ NOT_EXIST_MSG = "不存在请求的资源"
 # 账户相关
 ########################################################
 
+CAPTCHA_SEND_FAILED = 41000
+CAPTCHA_SEND_FAILED_MSG = 'captcha send is faild'
+
 INACTIVE_ACCOUNT = 41001
 INACTIVE_ACCOUNT_MSG = "账号未激活"
 

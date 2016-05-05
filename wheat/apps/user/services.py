@@ -68,8 +68,12 @@ class UserService(BaseService):
         user = self.update(user, deleted=True)
         return user
 
+    def check_phone_valid(self, phone):
+        PHONE_LENGTH = 11
+        return len(phone) == PHONE_LENGTH
+
     def check_register_info(self, phone, password):
-        valid_info = self.check_info_formatted(phone, password)
+        valid_info = self.check_phone_valid(phone) and self.check_pwd_formatted(password)
         registed_again = self.check_if_registed(phone)
         return valid_info, registed_again
 
@@ -83,10 +87,9 @@ class UserService(BaseService):
             
         return user
 
-    def check_info_formatted(self, phone, password):
-        PHONE_LENGTH = 11
+    def check_pwd_formatted(self, password):
         PWD_LENGTH = 6
-        return len(phone) == PHONE_LENGTH and len(password) >= PWD_LENGTH
+        return len(password) >= PWD_LENGTH
 
     def check_if_credential(self, phone, password):
         user = authenticate(username=phone, password=password)
@@ -118,6 +121,7 @@ class AuthService(BaseService):
             token.created_at = datetime.now()
             token.expired_at = datetime.now() + timedelta(hours=24 * settings.AUTHTOKEN_EXPIRED_DAYS)
             token.save()
+            UserService().update_by_id(user_id, token=token)
             return token.key
         else:
             return None
@@ -174,7 +178,7 @@ class CaptchaService(BaseService):
         if captcha_obj:
             captcha_code = self.get_captcha_code_from_obj(captcha_obj)
         else:
-            captcha_code = self.get_new_captch(phone)
+            captcha_code = self.get_new_captch(str(phone))
             self.create(phone=phone, code=captcha_code)
 
         return captcha_code

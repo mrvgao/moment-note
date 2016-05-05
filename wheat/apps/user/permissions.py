@@ -7,6 +7,43 @@ from rest_framework import status
 
 from errors import codes, exceptions
 from .services import UserService
+from datetime import datetime
+import hashlib
+
+KEY = 'Ma1@Li'
+HOUR = datetime.now().hour
+DELTA = 97
+CODE = HOUR * DELTA
+
+
+def encode(msg):
+    m = hashlib.md5()
+    m.update(msg)
+    x = m.hexdigest()
+    return x
+
+
+def encode_maili():
+    origin_code = KEY + str(CODE)
+    return encode(origin_code)
+
+
+def valid(key):
+    origin_code = KEY + str(CODE)
+    if key == encode(origin_code):
+        return True
+    return False
+
+
+def check_token(func):
+    @functools.wraps(func)
+    def token_valid(self, request, *args, **kwargs):
+        key = request.META.get('HTTP_KEY') or request.META.get('KEY')
+        if not key or not valid(key):
+            raise exceptions.APIError(code=codes.HAS_NO_PERMISSION, status=status.HTTP_403_FORBIDDEN)
+        else:
+            return func(self, request, *args, **kwargs)
+    return token_valid
 
 
 def login_required(func):

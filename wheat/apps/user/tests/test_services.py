@@ -132,10 +132,10 @@ class UserInfoModificationTestCase(TestCase):
         self.assertEqual(user.phone, new_phone)
 
     def test_check_register_info_valid(self):
-        valid = user_service.check_info_formatted('some-phone', 'some-pwd')
+        valid = user_service.check_pwd_formatted('some')
         self.assertFalse(valid)
 
-        valid = user_service.check_info_formatted('18857453090', 'some-pwd')
+        valid = user_service.check_phone_valid('18857453090')
         self.assertTrue(valid)
 
     def test_if_credential(self):
@@ -293,6 +293,8 @@ class TestAuthService(TestCase):
         token = self.user.token['token']
         new_token = auth_service.refresh_user_token(self.user.id)
         self.assertNotEqual(token, new_token)
+        user_token = User.objects.get(id=self.user.id).token['token']
+        self.assertEqual(user_token, self.user.token['token'])
 
         valid_token = auth_service.refresh_user_token('some-id')
         self.assertIsNone(valid_token)

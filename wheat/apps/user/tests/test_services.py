@@ -339,7 +339,7 @@ class TestAuthService(TestCase):
 fs_service = FriendshipService()
 
 
-class TetstFriendship(TestCase):
+class TestFriendship(TestCase):
     def setUp(self):
         self.phones = [
             '18857453090',
@@ -417,6 +417,15 @@ class TetstFriendship(TestCase):
 
         condition = Q(user_a=user_a_id, user_b=user_b_id) | Q(user_a=user_b_id, user_b=user_a_id)
         self.assertTrue(Friendship.objects.filter(condition).exists())
+
+    def test_create_friend_with_unvalid_person(self):
+        invalid_phone = '13993300082'
+        created = fs_service.create_friendship(invalid_phone, self.users[0].id)
+        self.assertFalse(created)
+
+        user_service.delete_by_id(self.users[0].id)
+        created = fs_service.create_friendship(self.users[0].id, self.users[1].id)
+        self.assertFalse(created)
 
     def test_delete_friend(self):
         user_a_id = self.users[0].id

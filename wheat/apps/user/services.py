@@ -207,21 +207,31 @@ class FriendshipService(BaseService):
             user_a_id, user_b_id = user_b_id, user_a_id
         return user_a_id, user_b_id
 
-    def create(self, user_a_id, user_b_id):
+    def create_friendship(self, user_a_id, user_b_id):
         '''
         Creates friendship between user_a and user_b
         '''
+
+        user_a_valid = UserService().check_user_is_valid(id=user_a_id)
+        user_b_valid = UserService().check_user_is_valid(id=user_b_id)
+
+        created = True
+
+        if not user_a_valid or not user_b_valid:
+            created = False
+        elif user_a_id != user_b_id:
+            self.create(user_a_id, user_b_id)
+            created = True
+
+        return created
+
+    def create(self, user_a_id, user_b_id):
         user_a_id, user_b_id = self._sort_user(user_a_id, user_b_id)
-
-        user_a_exists = UserService()
-
-        if not user_a_id == user_b_id:
-            friendship = self.get(user_a_id, user_b_id)
-            if not friendship:
-                super(FriendshipService, self).create(user_a=user_a_id, user_b=user_b_id)
-            elif friendship.deleted:
-                super(FriendshipService, self).update(friendship, deleted=False)
-            
+        friendship = self.get(user_a_id, user_b_id)
+        if not friendship:
+            super(FriendshipService, self).create(user_a=user_a_id, user_b=user_b_id)
+        elif friendship.deleted:
+            super(FriendshipService, self).update(friendship, deleted=False)
         return user_a_id, user_b_id
 
     def delete(self, user_a_id, user_b_id):

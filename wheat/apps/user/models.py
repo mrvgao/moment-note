@@ -163,8 +163,6 @@ class Friendship(CommonUpdateAble, models.Model, EnhancedModel):
     ''' 好友关系表，包含了血缘关系 '''
     user_a = UUIDField(db_index=True)
     user_b = UUIDField(db_index=True)
-    user_a_name = models.CharField(max_length=40)  # 备注名
-    user_b_name = models.CharField(max_length=40)  # 备注名
     inviter = UUIDField(null=True, blank=True, default='')  # 关系的发起者
     created_at = models.DateTimeField(auto_now_add=True)
     deleted = models.BooleanField(default=False)

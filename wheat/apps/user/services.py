@@ -16,6 +16,7 @@ import binascii
 import os
 from django.conf import settings
 from customs.delegates import delegate
+import itertools
 
 
 class UserService(BaseService):
@@ -268,10 +269,16 @@ class FriendshipService(BaseService):
         '''
         Lets friend_ids (may be a list, set or some other collection) all user to
         be the friend of user_id, which is the first arg.
+
+        Returns:
+
+        returns the number of succeed build number.
         '''
-        for u in friend_ids:
-            self.create(user_id, u)
-        return True
+
+        created_result = map(lambda u: self.create_friendship(user_id, u), friend_ids)
+        succeed_num = len(filter(lambda created_succeed: created_succeed, created_result))
+
+        return succeed_num
 
     def is_friend(self, user_a_id, user_b_id):
         '''
@@ -298,85 +305,26 @@ class FriendshipService(BaseService):
         Judges if the user of user_ids all is friend each other.
         '''
 
-    '''
-    @transaction.atomic
-    @staticmethod
-    def create_friendship(user_a, user_b):
-        friendship = None
+        all_is = None
 
-        if user_a == user_b:
-            friendship = None
+        for u1, u2 in itertools.product(user_ids, user_ids):
+            if not self.is_friend(u1, u2):
+                all_is = False
+                break
         else:
-            if user_a > user_b:
-                user_a, user_b = user_b, user_a
+            all_is = True
+                
+        return all_is
 
-            friendship, created = FriendShip.objects.get_or_create(user_a=user_a, user_b=user_b)
-        return friendship
-
-    @transaction.atomic
-    @staticmethod
-    def create_friendships(user_id, friend_ids):
-        friendships = []
-        for friend_id in friend_ids:
-            user_a, user_b = user_id, friend_id
-            if user_a > user_b:
-                user_a, user_b = user_b, user_a
-                friendships.append(FriendShip(user_a=user_a, user_b=user_b))
-        if friendships:
-            FriendShip.objects.bulk_create(friendships)
-        return friendships
-
-    @transaction.atomic
-    @staticmethod
-    def delete_friendship(user_id, user_2_id):
-        user_a_b = Q(user_a=user_id, user_b=user_2_id)
-        user_b_a = Q(user_a=user_2_id, user_b=user_id)
-        condition = user_a_b | user_b_a
-        friends = FriendShip.objects.filter(condition)
-        for f in friends:
-            f.delete()
-        return True
-
-    @staticmethod
     def get_user_friend_ids(user_id):
         friend_ids = []
-        ids = FriendShip.objects.filter(user_a=user_id, deleted=False).values_list('user_b', flat=True)
+        ids = Friendship.objects.filter(user_a=user_id, deleted=False).values_list('user_b', flat=True)
         for id in ids:
             friend_ids.append(str(id))
-            ids = FriendShip.objects.filter(user_b=user_id, deleted=False).values_list('user_a', flat=True)
+            ids = Friendship.objects.filter(user_b=user_id, deleted=False).values_list('user_a', flat=True)
         for id in ids:
             friend_ids.append(str(id))
         return friend_ids
-
-    @staticmethod
-    def is_friend(user_a, user_b):
-        friend = True
-        if user_a is None or user_b is None:
-            friend = True
-        elif str(user_a) == str(user_b):
-            friend = True
-        elif not FriendshipService.exist_friendship(user_a, user_b):
-            friend = False
-
-        return friend
-
-    @staticmethod
-    def exist_friendship(user1, user2):
-        exist = True
-        if len(Friendship.objects.filter(user_a=user1, user_b=user2)) == 0:
-            if len(Friendship.objects.filter(user_a=user2, user_b=user1)) == 0:
-                exist = False
-        return exist
-
-    @staticmethod
-    def all_is_friend(user_list):
-        for u1 in user_list:
-            for u2 in user_list:
-                if not FriendshipService.is_friend(u1, u2):
-                    return False
-        return True
-    '''
-
 
 user_service = delegate(UserService())
 captcha_service = delegate(CaptchaService())

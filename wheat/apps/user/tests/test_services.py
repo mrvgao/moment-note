@@ -17,6 +17,7 @@ from django.utils.importlib import import_module
 from django.http import HttpRequest
 import datetime
 from django.db.models import Q
+import itertools
 
 user_service = UserService()
 
@@ -427,6 +428,12 @@ class TestFriendship(TestCase):
         created = fs_service.create_friendship(self.users[0].id, self.users[1].id)
         self.assertFalse(created)
 
+    def test_create_friend_with_valid_person(self):
+        created = fs_service.create_friendship(self.users[0].id, self.users[1].id)
+        self.assertTrue(created)
+        created = fs_service.create_friendship(self.users[1].id, self.users[3].id)
+        self.assertTrue(created)
+
     def test_delete_friend(self):
         user_a_id = self.users[0].id
         user_b_id = self.users[1].id
@@ -486,10 +493,28 @@ class TestFriendship(TestCase):
 
         target_user_id = self.users[3].id
 
-        fs_service.add_friends(target_user_id, friends)
+        succeed_num = fs_service.add_friends(target_user_id, friends)
+
+        self.assertEqual(succeed_num, len(friends))
+
         for u in friends:
             fs_service.is_friend(target_user_id, u)
             fs_service.is_friend(u, target_user_id)
 
+    def test_create_bulk_mix_invalid(self):
+        friends = [u.id for u in self.users]
+        friends.append('wrong-id')
+        target_user_id = self.users[3].id
+        succeed_num = fs_service.add_friends(target_user_id, friends)
+        self.assertNotEqual(succeed_num, len(friends))
+
     def test_judge_all_is_friend(self):
-        assert(False)
+        for u1, u2 in itertools.product(self.users, self.users):
+            fs_service.create_friendship(u1.id, u2.id)
+
+        user_ids = [u.id for u in self.users]
+
+        self.assertTrue(fs_service.all_is_friend(user_ids))
+
+        user_ids.append('other-person')
+        self.assertFalse(fs_service.all_is_friend(user_ids))

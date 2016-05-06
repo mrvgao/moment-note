@@ -24,10 +24,7 @@ class UserService(BaseService):
     serializer = UserSerializer
 
     @api
-    def delete(self, user_id):
-        return self._delete(user_id)
-
-    def _delete(self, user_id):
+    def delete_by_id(self, user_id):
         user = self.get(id=user_id)
         if user:
             user = super(UserService, self).delete(user)
@@ -55,6 +52,14 @@ class UserService(BaseService):
 
     def check_if_registed(self, phone, password=''):
         return self.exist(phone=phone)
+
+    def check_user_is_valid(self, **kwargs):
+        user = self.get(**kwargs)
+
+        if user and not user.deleted:
+            return True
+        else:
+            return False
     
     @api
     def update_by_id(self, user_id, **kwargs):
@@ -207,6 +212,8 @@ class FriendshipService(BaseService):
         Creates friendship between user_a and user_b
         '''
         user_a_id, user_b_id = self._sort_user(user_a_id, user_b_id)
+
+        user_a_exists = UserService()
 
         if not user_a_id == user_b_id:
             friendship = self.get(user_a_id, user_b_id)

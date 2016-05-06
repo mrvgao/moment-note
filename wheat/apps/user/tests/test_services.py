@@ -22,6 +22,10 @@ user_service = UserService()
 
 
 class UserServiceTestCase(TestCase):
+    def setUp(self):
+        phone = '1800000000'
+        self.user = User.objects.create(phone=phone)
+
     def test_registe_info_check(self):
         phone = '18857453090'
         password = '123456'
@@ -30,7 +34,7 @@ class UserServiceTestCase(TestCase):
         self.assertTrue(valid)
         self.assertFalse(registed_again)
 
-        User.objects.create(phone=phone)
+        self.user = User.objects.create(phone=phone)
 
         valid, registed_again = user_service.check_register_info(phone, password)
         self.assertTrue(valid)
@@ -72,12 +76,6 @@ class UserServiceTestCase(TestCase):
         user = user_service.lazy_delete_user(user)
         self.assertTrue(user.deleted)
 
-    def test_get_captcha(self):
-        pass
-
-    def test_creat_friendship(self):
-        pass
-
     def test_if_registed(self):
         '''
         Test if user has registed. if registerd, return True, return False if not.
@@ -87,6 +85,20 @@ class UserServiceTestCase(TestCase):
         registered = user_service.check_if_registed(phone)
         self.assertFalse(registered)
 
+    def test_user_if_valid(self):
+
+        valid = user_service.check_user_is_valid(id=self.user.id)
+        self.assertTrue(valid)
+
+        uid = self.user.id
+        user_service.delete_by_id(uid)
+
+        valid = user_service.check_user_is_valid(id=self.user.id)
+        self.assertFalse(valid)
+
+        valid = user_service.check_user_is_valid(id='some-id')
+        self.assertFalse(valid)
+        
 
 class UserInfoModificationTestCase(TestCase):
     def setUp(self):
@@ -102,7 +114,7 @@ class UserInfoModificationTestCase(TestCase):
 
     def test_delete_user(self):
         user_id = self.test_user.id
-        self.test_user = user_service._delete(user_id)
+        self.test_user = user_service.delete_by_id(user_id)
         self.assertTrue(self.test_user.deleted)
 
     def test_change_password_by_phone_and_password(self):

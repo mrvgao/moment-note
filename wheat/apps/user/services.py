@@ -316,15 +316,22 @@ class FriendshipService(BaseService):
                 
         return all_is
 
-    def get_user_friend_ids(user_id):
-        friend_ids = []
-        ids = Friendship.objects.filter(user_a=user_id, deleted=False).values_list('user_b', flat=True)
-        for id in ids:
-            friend_ids.append(str(id))
-            ids = Friendship.objects.filter(user_b=user_id, deleted=False).values_list('user_a', flat=True)
-        for id in ids:
-            friend_ids.append(str(id))
-        return friend_ids
+    def get_user_friend_ids(self, user_id):
+        condition = Q(user_a=user_id) | Q(user_b=user_id)
+        friends = super(FriendshipService, self).get(condition, many=True)
+
+        def get_user_friend(user_id, f):
+            '''
+            f.user_a and f.user_b could be user_id or user_id's friend_ids
+            so remove user_id from id pair and pop(), will get it's firend id
+            '''
+            pair = [f.user_a, f.user_b]
+            pair.remove(user_id)
+            return pair.pop()
+        
+        ids = map(lambda f: get_user_friend(user_id, f), friends)
+
+        return ids
 
 user_service = delegate(UserService())
 captcha_service = delegate(CaptchaService())

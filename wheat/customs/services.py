@@ -7,19 +7,19 @@ import requests
 from django.db import transaction
 
 role_map = {
-	'm-grandfather': u'外公',
-	'm-grandmother': u'外婆',
-	'f-grandfather': u'爷爷',
-	'f-grandmother': u'奶奶',
-	'father': u'爸爸',
-	'mother': u'妈妈',
-	'child': u'孩子',
+    'm-grandfather': u'外公',
+    'm-grandmother': u'外婆',
+    'f-grandfather': u'爷爷',
+    'f-grandmother': u'奶奶',
+    'father': u'爸爸',
+    'mother': u'妈妈',
+    'child': u'孩子',
     'wife': u'老婆',
     'husband': '老公',
     'son': u'儿子',
     'daughter': u'女儿',
-    'slibe':u'哥哥/弟弟',
-    'sister':u'姐姐／妹妹',
+    'slibe': u'哥哥/弟弟',
+    'sister': u'姐姐／妹妹',
     'l-father': '公公',
     'l-mother': '婆婆',
     'suocero': '岳父',
@@ -46,8 +46,8 @@ class BaseService(object):
     def get_serializer(self):
         return self.serializer
 
-    def exist(self, **kwargs):
-        return self.model.objects.filter(**kwargs).exists()
+    def exist(self, *arg, **kwargs):
+        return self.model.objects.filter(*arg, **kwargs).exists()
 
     @transaction.atomic
     def create(self, **kwargs):
@@ -68,14 +68,18 @@ class BaseService(object):
         new_obj.save()
         return new_obj
 
-    def get(self, many=False, **kwargs):
-        if not self.exist(**kwargs):
-            return None
-        else:
-            if many:
-                return self.model.objects.filter(**kwargs)
-            else:
-                return self.model.objects.filter(**kwargs)[0]
+    def get(self, *arg, **kwargs):
+
+        many = kwargs.pop('many', False)
+
+        result = None
+
+        if self.exist(*arg, **kwargs):
+            result = self.model.objects.filter(*arg, **kwargs)
+            if not many:
+                result = result.first()
+
+        return result
 
     def serialize(self, obj):
         many = False

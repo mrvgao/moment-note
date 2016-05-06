@@ -518,3 +518,16 @@ class TestFriendship(TestCase):
 
         user_ids.append('other-person')
         self.assertFalse(fs_service.all_is_friend(user_ids))
+
+    def test_get_user_friends(self):
+        for u1, u2 in itertools.product(self.users, self.users):
+            fs_service.create_friendship(u1.id, u2.id)
+
+        test_person = self.users[0]
+        friends_id = fs_service.get_user_friend_ids(test_person.id)
+        self.assertEqual(len(friends_id), len(self.users) - 1)
+
+        for u in friends_id:
+            if str(u) != str(test_person.id):
+                self.assertTrue(fs_service.is_friend(test_person.id, u))
+        

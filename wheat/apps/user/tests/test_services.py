@@ -461,7 +461,14 @@ class TetstFriendship(TestCase):
         self.assertTrue(fs_service.is_friend(user_a_id, user_b_id))
 
     def test_create_bulk(self):
-        assert(False)
+        friends = [u.id for u in self.users]
+
+        target_user_id = self.users[3].id
+
+        fs_service.add_friends(target_user_id, friends)
+        for u in friends:
+            fs_service.is_friend(target_user_id, u)
+            fs_service.is_friend(u, target_user_id)
 
     def test_judge_all_is_friend(self):
         assert(False)

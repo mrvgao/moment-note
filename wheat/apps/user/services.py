@@ -252,6 +252,9 @@ class FriendshipService(BaseService):
         Lets friend_ids (may be a list, set or some other collection) all user to
         be the friend of user_id, which is the first arg.
         '''
+        for u in friend_ids:
+            self.create(user_id, u)
+        return True
 
     def is_friend(self, user_a_id, user_b_id):
         '''

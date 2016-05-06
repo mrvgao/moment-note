@@ -428,16 +428,26 @@ class TetstFriendship(TestCase):
         user_a_id = self.users[0].id
         user_b_id = self.users[1].id
 
-        friendship = fs_service.update(user_a_id, user_b_id, user_a_name='name')
+        friendship = fs_service.update(user_a_id, user_b_id, deleted=True)
 
-        self.assertEqual(friendship.user_a_name, 'name')
+        self.assertTrue(friendship.deleted)
         condition = Q(user_a=user_a_id, user_b=user_b_id) | Q(user_a=user_b_id, user_b=user_a_id)
-        self.assertEqual(Friendship.objects.get(condition).user_a_name, 'name')
         
-    def test_update_with_converse_kwargs(self):
-        assert(False)
+        self.assertTrue(Friendship.objects.get(condition).deleted)
+
+    def test_self_if_self_friend(self):
+        user_a_id = self.users[0].id
+
+        is_friend = fs_service.is_friend(user_a_id, user_a_id)
+        self.assertTrue(is_friend)
+
+        user_a_id = 'arbitary-id'
+
+        is_friend = fs_service.is_friend(user_a_id, user_a_id)
+        self.assertTrue(is_friend)
 
     def test_create_after_delete(self):
+
         assert(False)
 
     def test_create_bulk(self):

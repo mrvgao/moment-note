@@ -208,9 +208,13 @@ class FriendshipService(BaseService):
         '''
         user_a_id, user_b_id = self._sort_user(user_a_id, user_b_id)
 
-        if not self.is_friend(user_a_id, user_b_id):
-            super(FriendshipService, self).create(user_a=user_a_id, user_b=user_b_id)
-
+        if not user_a_id == user_b_id:
+            friendship = self.get(user_a_id, user_b_id)
+            if not friendship:
+                super(FriendshipService, self).create(user_a=user_a_id, user_b=user_b_id)
+            elif friendship.deleted:
+                self.update(friendship, deleted=False)
+            
         return user_a_id, user_b_id
 
     def delete(self, user_a_id, user_b_id):
@@ -253,12 +257,21 @@ class FriendshipService(BaseService):
         '''
         Gets if is frend between user_a and user_b
         '''
-        friendship = self.get(user_a_id, user_b_id)
 
-        if friendship and not friendship.deleted:
-            return True
+        test_self = user_a_id == user_b_id
+
+        result = False
+
+        if not test_self:
+            friendship = self.get(user_a_id, user_b_id)
+            if friendship and not friendship.deleted:
+                result = True
+            else:
+                result = False
         else:
-            return False
+            result = True
+
+        return result
 
     def all_is_friend(self, user_ids):
         '''

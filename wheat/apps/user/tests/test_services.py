@@ -447,8 +447,18 @@ class TetstFriendship(TestCase):
         self.assertTrue(is_friend)
 
     def test_create_after_delete(self):
+        user_a_id = self.users[0].id
+        user_b_id = self.users[1].id
 
-        assert(False)
+        self.assertTrue(fs_service.is_friend(user_a_id, user_b_id))
+
+        fs_service.delete(user_a_id, user_b_id)
+
+        self.assertFalse(fs_service.is_friend(user_a_id, user_b_id))
+
+        fs_service.create(user_a_id, user_b_id)
+
+        self.assertTrue(fs_service.is_friend(user_a_id, user_b_id))
 
     def test_create_bulk(self):
         assert(False)

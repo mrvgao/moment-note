@@ -213,7 +213,7 @@ class FriendshipService(BaseService):
             if not friendship:
                 super(FriendshipService, self).create(user_a=user_a_id, user_b=user_b_id)
             elif friendship.deleted:
-                self.update(friendship, deleted=False)
+                super(FriendshipService, self).update(friendship, deleted=False)
             
         return user_a_id, user_b_id
 

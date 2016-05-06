@@ -7,13 +7,16 @@ from django.test import TestCase
 from apps.user.models import User
 from apps.user.models import Captcha
 from apps.user.models import AuthToken
+from apps.user.models import Friendship
 from apps.user.services import UserService
 from apps.user.services import CaptchaService
 from apps.user.services import AuthService
+from apps.user.services import FriendshipService
 from django.conf import settings
 from django.utils.importlib import import_module
 from django.http import HttpRequest
 import datetime
+from django.db.models import Q
 
 user_service = UserService()
 
@@ -321,5 +324,124 @@ class TestAuthService(TestCase):
         self.assertFalse(wrong)
 
 
+fs_service = FriendshipService()
+
+
 class TetstFriendship(TestCase):
-    pass
+    def setUp(self):
+        self.phones = [
+            '18857453090',
+            '18857453091',
+            '18857453092',
+            '18857453093',
+            '18857453094',
+            '18857453095',
+            '18857453096',
+            '18857453097',
+            '18857453098',
+            '18857453099',
+        ]
+
+        self.users = []
+
+        for number in self.phones:
+            user = User.objects.create(phone=number, password=number)
+            self.users.append(user)
+
+        if self.users[0].id > self.users[1].id:
+            self.friendship = Friendship.objects.create(user_a=self.users[1].id, user_b=self.users[0].id)
+        else:
+            self.friendship = Friendship.objects.create(user_a=self.users[0].id, user_b=self.users[1].id)
+
+    def test_sort_user(self):
+        less = self.phones[0]
+        larger = self.phones[1]
+
+        self.assertTrue(less < larger)
+        uid_1, uid_2 = fs_service._sort_user(less, larger)
+        self.assertTrue(uid_1 < uid_2)
+
+        larger = self.phones[1]
+        less = self.phones[0]
+        
+        self.assertTrue(larger > less)
+        uid_1, uid_2 = fs_service._sort_user(larger, less)
+        self.assertTrue(uid_1 < uid_2)
+
+    def test_get_friendship(self):
+        uid_1 = self.users[0].id
+        uid_2 = self.users[1].id
+
+        friendship = fs_service.get(uid_1, uid_2)
+        self.assertIsNotNone(friendship)
+
+        uid_3 = self.users[2].id
+        friendship = fs_service.get(uid_1, uid_3)
+        self.assertIsNone(friendship)
+
+    def test_is_friend(self):
+        exist = fs_service.is_friend(self.users[0].id, self.users[1].id)
+        self.assertTrue(exist)
+
+        exist = fs_service.is_friend(self.users[1].id, self.users[0].id)
+        self.assertTrue(exist)
+
+        unexist = fs_service.is_friend(self.users[1].id, self.users[2].id)
+        self.assertFalse(unexist)
+        
+    def test_create_friend(self):
+        user_a_id = self.users[0].id
+        user_b_id = self.users[1].id
+
+        self.assertIsNotNone(fs_service.create(user_a_id, user_b_id))
+
+        condition = Q(user_a=user_a_id, user_b=user_b_id) | Q(user_a=user_b_id, user_b=user_a_id)
+        self.assertTrue(Friendship.objects.filter(condition).exists())
+
+        user_a_id = self.users[2].id
+        user_b_id = self.users[1].id
+
+        self.assertIsNotNone(fs_service.create(user_a_id, user_b_id))
+
+        condition = Q(user_a=user_a_id, user_b=user_b_id) | Q(user_a=user_b_id, user_b=user_a_id)
+        self.assertTrue(Friendship.objects.filter(condition).exists())
+
+    def test_delete_friend(self):
+        user_a_id = self.users[0].id
+        user_b_id = self.users[1].id
+
+        condition = Q(user_a=user_a_id, user_b=user_b_id) | Q(user_a=user_b_id, user_b=user_a_id)
+        self.assertFalse(Friendship.objects.get(condition).deleted)
+
+        friendship = fs_service.delete(user_a_id, user_b_id)
+
+        self.assertIsNotNone(friendship)
+
+        self.assertTrue(friendship.deleted)
+
+        self.assertTrue(Friendship.objects.get(condition).deleted)
+
+        none_friendship = fs_service.delete('arbitary-id', 'other-id')
+        self.assertIsNone(none_friendship)
+
+    def test_update_friend(self):
+        user_a_id = self.users[0].id
+        user_b_id = self.users[1].id
+
+        friendship = fs_service.update(user_a_id, user_b_id, user_a_name='name')
+
+        self.assertEqual(friendship.user_a_name, 'name')
+        condition = Q(user_a=user_a_id, user_b=user_b_id) | Q(user_a=user_b_id, user_b=user_a_id)
+        self.assertEqual(Friendship.objects.get(condition).user_a_name, 'name')
+        
+    def test_update_with_converse_kwargs(self):
+        assert(False)
+
+    def test_create_after_delete(self):
+        assert(False)
+
+    def test_create_bulk(self):
+        assert(False)
+
+    def test_judge_all_is_friend(self):
+        assert(False)

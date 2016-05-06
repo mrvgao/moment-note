@@ -3,7 +3,7 @@
 from customs.serializers import XModelSerializer
 from customs.fields import XImageField
 from rest_framework.serializers import BooleanField
-from .models import User, AuthToken, Captcha, FriendShip
+from .models import User, AuthToken, Captcha, Friendship
 from rest_framework import serializers
 
 
@@ -44,5 +44,5 @@ class CaptchaSerializer(XModelSerializer):
 class FriendshipSerializer(XModelSerializer):
 
     class Meta:
-        model = FriendShip
+        model = Friendship
 

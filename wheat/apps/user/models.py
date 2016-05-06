@@ -159,7 +159,7 @@ class Relationship(CommonUpdateAble, models.Model, EnhancedModel):
         db_table = "relationship"
 
 
-class FriendShip(CommonUpdateAble, models.Model, EnhancedModel):
+class Friendship(CommonUpdateAble, models.Model, EnhancedModel):
     ''' 好友关系表，包含了血缘关系 '''
     user_a = UUIDField(db_index=True)
     user_b = UUIDField(db_index=True)

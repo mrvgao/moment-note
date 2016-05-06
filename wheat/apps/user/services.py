@@ -1,11 +1,10 @@
 # -*- coding:utf-8 -*-
 
 from django.db import transaction
-from django.contrib.auth import authenticate, login
+from django.contrib.auth import authenticate
 
 from customs.services import BaseService
-from customs.response import Result
-from .models import User, AuthToken, FriendShip, Captcha
+from .models import User, AuthToken, Friendship, Captcha
 from .serializers import UserSerializer, AuthTokenSerializer, CaptchaSerializer
 from .serializers import FriendshipSerializer
 from datetime import datetime, timedelta
@@ -195,9 +194,78 @@ class CaptchaService(BaseService):
 
 
 class FriendshipService(BaseService):
-    model = FriendShip
+    model = Friendship
     serializer = FriendshipSerializer
 
+    def _sort_user(self, user_a_id, user_b_id):
+        if user_a_id > user_b_id:
+            user_a_id, user_b_id = user_b_id, user_a_id
+        return user_a_id, user_b_id
+
+    def create(self, user_a_id, user_b_id):
+        '''
+        Creates friendship between user_a and user_b
+        '''
+        user_a_id, user_b_id = self._sort_user(user_a_id, user_b_id)
+
+        if not self.is_friend(user_a_id, user_b_id):
+            super(FriendshipService, self).create(user_a=user_a_id, user_b=user_b_id)
+
+        return user_a_id, user_b_id
+
+    def delete(self, user_a_id, user_b_id):
+        '''
+        Deletes friendship between user_a and user_b
+        '''
+        user_a_id, user_b_id = self._sort_user(user_a_id, user_b_id)
+
+        friendship = self.get(user_a_id, user_b_id)
+
+        if friendship:
+            friendship = super(FriendshipService, self).delete(friendship)
+        return friendship
+
+    def update(self, user_a_id, user_b_id, **kwargs):
+        '''
+        Update info of two user.
+        '''
+        user_a_id, user_b_id = self._sort_user(user_a_id, user_b_id)
+        friendship = self.get(user_a_id, user_b_id)
+        if friendship:
+            friendship = super(FriendshipService, self).update(friendship, **kwargs)
+
+        return friendship
+
+    def get(self, user_a_id, user_b_id):
+        '''
+        Get infor of user_a and user_b
+        '''
+        user_a_id, user_b_id = self._sort_user(user_a_id, user_b_id)
+        return super(FriendshipService, self).get(user_a=user_a_id, user_b=user_b_id)
+
+    def add_friends(self, user_id, friend_ids):
+        '''
+        Lets friend_ids (may be a list, set or some other collection) all user to
+        be the friend of user_id, which is the first arg.
+        '''
+
+    def is_friend(self, user_a_id, user_b_id):
+        '''
+        Gets if is frend between user_a and user_b
+        '''
+        friendship = self.get(user_a_id, user_b_id)
+
+        if friendship and not friendship.deleted:
+            return True
+        else:
+            return False
+
+    def all_is_friend(self, user_ids):
+        '''
+        Judges if the user of user_ids all is friend each other.
+        '''
+
+    '''
     @transaction.atomic
     @staticmethod
     def create_friendship(user_a, user_b):
@@ -262,8 +330,8 @@ class FriendshipService(BaseService):
     @staticmethod
     def exist_friendship(user1, user2):
         exist = True
-        if len(FriendShip.objects.filter(user_a=user1, user_b=user2)) == 0:
-            if len(FriendShip.objects.filter(user_a=user2, user_b=user1)) == 0:
+        if len(Friendship.objects.filter(user_a=user1, user_b=user2)) == 0:
+            if len(Friendship.objects.filter(user_a=user2, user_b=user1)) == 0:
                 exist = False
         return exist
 
@@ -274,6 +342,7 @@ class FriendshipService(BaseService):
                 if not FriendshipService.is_friend(u1, u2):
                     return False
         return True
+    '''
 
 
 user_service = delegate(UserService())

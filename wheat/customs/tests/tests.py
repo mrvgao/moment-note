@@ -56,15 +56,17 @@ class TestSetClassService(TestCase):
 class TestR(TestCase):
     def test_R(self):
         r = response.R()
-        self.assertEqual(r.response['status'], 200)
         self.assertEqual(r.response['request'], 'success')
 
         error_code = 410000
-        self.assertRaises(TypeError, r.set_response_error, error_code)
+
+        def set_error(self):
+            r.error = error_code
+            
+        self.assertRaises(TypeError, set_error)
 
         error_code = 41020
-        r.set_response_error(error_code)
-        self.assertEqual(r.response['status'], 200)
+        r.error = error_code
         self.assertEqual(r.response['request'], 'fail')
         self.assertEqual(r.response['errors']['code'], 41020)
         self.assertTrue(isinstance(r.response['errors']['message'], str))
@@ -73,7 +75,7 @@ class TestR(TestCase):
 
         r = response.R()
         data = {'user': 'test'}
-        r.set_response_data(data)
+        r.data = data
         self.assertEqual(r.response['data'], data)
         self.assertIsNotNone(response.APIResponse(data))
 

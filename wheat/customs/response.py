@@ -6,43 +6,50 @@ from errors import codes
 
 class R(object):
     def __init__(self):
-        self.__response = {'status': 200}
-        self._set_response_success(True)
+        self.__success = True
+        self.__error = None
+        self.data = None
 
-    def _set_response_success(self, success):
-        value = 'success' if success else 'fail'
-        self.__response['request'] = value
-
-    def set_response_error(self, error_code):
-        self._set_response_success(False)
-        self.__response['errors'] = codes.errors(error_code)
-
-    def set_response_data(self, data):
-        self.__response['data'] = data
+    @property
+    def success(self):
+        return 'success' if self.__success else 'fail'
 
     @property
     def response(self):
-        return self.__response
+        return {
+            'request': self.success,
+            'errors': self.error,
+            'data': self.data
+        }
+        
+    @property
+    def error(self):
+        return self.__error
+
+    @error.setter
+    def error(self, error_code):
+        self.__success = False
+        self.__error = codes.errors(error_code)
 
 
 class APIResponse(Response):
     '''
     API response for django restful
     '''
-    def __init__(self, result, **kwargs):
+    def __init__(self, result, status=200, **kwargs):
 
         r = R()
 
         if isinstance(result,  int):
-            r.set_response_error(error_code=result)
+            r.error = result
         elif isinstance(result, dict):
-            r.set_response_data(result)
+            r.data = result
         else:
             raise TypeError('{0} unsupport type, return type must be json'.format(result))
 
         response = r.response
 
-        super(APIResponse, self).__init__(response, **kwargs)
+        super(APIResponse, self).__init__(response, status=status,  **kwargs)
 
 
 class SimpleResponse(Response):

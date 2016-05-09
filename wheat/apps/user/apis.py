@@ -43,12 +43,16 @@ class UserViewSet(ListModelMixin,
 
         registed = user_service.check_if_registed(phone)
 
+        status_code = 200
+        if registed:
+            status_code = 409
+
         data = {
             'phone': phone,
             'registered': registed
         }
 
-        return APIResponse(data)
+        return APIResponse(data, status=status_code)
 
     @list_route(methods=['post'])
     @login_required
@@ -76,9 +80,11 @@ class UserViewSet(ListModelMixin,
 
         user = user_service.set_password_by_phone_and_password(phone, password)
 
+        status_code = 406 if not user else None
+
         result = user or codes.PHONE_NUMBER_NOT_EXIST
 
-        return APIResponse(result)
+        return APIResponse(result, status=status_code)
         
     def create(self, request):
         '''
@@ -106,10 +112,14 @@ class UserViewSet(ListModelMixin,
 
         valid, registed_again = user_service.check_register_info(phone, password)
 
+        status_code = 200
+
         if not valid:
             error_code = codes.INVALID_REG_INFO
+            status_code = 400
         elif registed_again:
             error_code = codes.PHONE_ALREAD_EXIST
+            status_code = 409
         else:
             user = user_service.register(phone, password)
             login(request, authenticate(username=phone, password=password))
@@ -117,7 +127,7 @@ class UserViewSet(ListModelMixin,
         return_value = user or error_code
         # if user is None, return error code  r = u | code
 
-        return APIResponse(return_value)
+        return APIResponse(return_value, status=status_code)
 
     @admin_required
     def destroy(self, request, id):
@@ -155,7 +165,7 @@ class UserViewSet(ListModelMixin,
             return APIResponse(user)
         else:
             error_code = codes.INCORRECT_CREDENTIAL
-            return APIResponse(error_code)
+            return APIResponse(error_code, status=401)
 
     @login_required
     @user_is_same_as_logined_user
@@ -252,7 +262,7 @@ class CaptchaViewSet(viewsets.ViewSet):
         if send_succeed:
             return APIResponse(response)
         else:
-            return APIResponse(codes.CAPTCHA_SEND_FAILED)
+            return APIResponse(codes.CAPTCHA_SEND_FAILED, status=408)
 
 
 @class_tools.set_service(auth_service)

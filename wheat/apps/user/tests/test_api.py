@@ -29,15 +29,15 @@ class UserAPITest(APITestCase):
         Test a phone number if has been registered.
         '''
         error_phone = '18857453091'   # this phone no registed
-        self._send_register_info(phone=error_phone, if_registered=False)
+        self._send_register_info(phone=error_phone, if_registered=False, status=200)
 
         right_phone = self.phone
-        self._send_register_info(phone=right_phone, if_registered=True)
+        self._send_register_info(phone=right_phone, if_registered=True, status=409)
 
         null_phone = ''  # test blank
-        self._send_register_info(phone=null_phone, if_registered=False)
+        self._send_register_info(phone=null_phone, if_registered=False, status=200)
 
-    def _send_register_info(self, phone, if_registered):
+    def _send_register_info(self, phone, if_registered, status):
         base_url = URL_PREFIX + 'users/register/'
         url = base_url + '?phone=' + phone
 
@@ -45,7 +45,7 @@ class UserAPITest(APITestCase):
         client.credentials(enforce_csrf_checks=False)
         response = client.get(url)
 
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, status)
         
         rsp_data = response.data['data']
         self.assertEqual(rsp_data['registered'], if_registered)
@@ -78,6 +78,7 @@ class UserAPITest(APITestCase):
 
         rsp_data = response.data['data']
 
+        self.assertEqual(response.status_code, 200)
         self.assertEqual(rsp_data['phone'], self.phone)
 
         invalid_user = authenticate(username=self.phone, password=self.phone)
@@ -93,8 +94,10 @@ class UserAPITest(APITestCase):
         }
 
         url = URL_PREFIX + 'users/password/'
+        self.login(self.phone, self.password)
         response = self.client.post(url, post_data)
 
+        self.assertEqual(response.status_code, 401)
         self.assertEqual(response.data['errors']['code'], codes.LOGIN_REQUIRED)
 
     def test_invalid_registed(self):
@@ -106,6 +109,7 @@ class UserAPITest(APITestCase):
         url = URL_PREFIX + 'users/'
         response = self.client.post(url, post_data)
 
+        self.assertEqual(response.status_code, 400)
         self.assertTrue('errors' in response.data)
         self.assertEqual(response.data['errors']['code'], codes.INVALID_REG_INFO)
 
@@ -118,6 +122,7 @@ class UserAPITest(APITestCase):
         url = URL_PREFIX + 'users/'
         response = self.client.post(url, post_data)
 
+        self.assertEqual(response.status_code, 409)
         self.assertTrue('errors' in response.data)
         self.assertEqual(response.data['errors']['code'], codes.PHONE_ALREAD_EXIST)
 
@@ -132,6 +137,7 @@ class UserAPITest(APITestCase):
         url = URL_PREFIX + 'users/'
         response = self.client.post(url, post_data)
 
+        self.assertEqual(response.status_code, 200)
         self.assertTrue('data' in response.data)
         self.assertEqual(response.data['data']['phone'], new_numbner)
 
@@ -160,6 +166,7 @@ class UserAPITest(APITestCase):
     def test_login_success(self):
         response = self.login(self.phone, self.password)
 
+        self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['data']['phone'], self.phone)
         user_id = response.data['data']['id']
 
@@ -170,6 +177,7 @@ class UserAPITest(APITestCase):
 
     def test_login_failed(self):
         response = self.login(self.phone, 'wrong-pwd')
+        self.assertEqual(response.status_code, 401)
         self.assertEqual(response.data['request'], 'fail')
         self.assertEqual(response.data['errors']['code'], codes.INCORRECT_CREDENTIAL)
         
@@ -298,7 +306,7 @@ class TestCaptchaViewSet(APITestCase):
 
         url = URL_PREFIX + 'captcha/{0}/send/'.format('noaphone')
         response = self.client.get(url, **{'KEY': code})
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 408)
         self.assertEqual(response.data['request'], 'fail')
         
 

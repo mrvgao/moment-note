@@ -2,8 +2,6 @@
 
 from datetime import datetime
 from django.db import transaction
-from utils.redis_utils import publish_redis_message
-
 from customs.services import BaseService
 from apps.user.services import UserService
 from apps.user.services import FriendshipService
@@ -12,156 +10,81 @@ from .serializers import GroupSerializer, GroupMemberSerializer, InvitationSeria
 from customs.services import MessageService
 from customs.services import role_map
 from apps.moment.services import MomentService
+from customs.api_tools import api
+from utils.redis_utils import publish_redis_message
+from information import redis_tools
 
 
 class GroupService(BaseService):
 
-    @classmethod
-    def _get_model(cls, name='Group'):
-        if name == 'Group':
-            return Group
-        elif name == 'GroupMember':
-            return GroupMember
-        elif name == 'Invitation':
-            return Invitation
+    model = Group
+    serializer = GroupSerializer
 
-    @classmethod
-    def get_serializer(cls, model='Group'):
-        if model == 'Group':
-            return GroupSerializer
-        elif model == 'GroupMember':
-            return GroupMemberSerializer
-        elif model == 'Invitation':
-            return InvitationSerializer
+    @api
+    def create(self, creator_id, group_type, creator_role=None, name=None):
+        creator_role = creator_role or 'self'
+        name = name or group_type
 
-    @staticmethod
-    def serialize_list(obj_list):
-        if len(obj_list) > 0 and isinstance(obj_list[0], Group):
-            return GroupSerializer(obj_list, many=True).data
-
-    @classmethod
-    def serialize(cls, obj, context={}):
-        if isinstance(obj, Group):
-            return GroupSerializer(obj, context=context).data
-        elif isinstance(obj, GroupMember):
-            return GroupMemberSerializer(obj, context=context).data
-        elif isinstance(obj, Invitation):
-            return InvitationSerializer(obj, context=context).data
-
-    @staticmethod
-    def get_group_if_without_create(owner_id, KEYWORD):
-        user = UserService.get_user(id=owner_id)
-        result = Group.objects.filter(creator_id=owner_id, group_type=KEYWORD)
-
-        if user and len(result) == 0:
-            # if this person no initial all friend group
-
-            SELF = 'self'
-            GroupService.create_group(
-                creator=user, group_type=KEYWORD,
-                name=KEYWORD, creator_role=SELF
-            )
-
-            result = Group.objects.filter(
-                creator_id=owner_id,
-                group_type=KEYWORD
-            )
-
-        return result
-
-    @staticmethod
-    def filter_group(**kwargs):
-        return Group.objects.filter(**kwargs)
-
-    @classmethod
-    def get_group(cls, **kwargs):
-        result = Group.objects.get_or_none(**kwargs)
-        return result
-
-    @classmethod
-    @transaction.atomic
-    def create_group(cls, creator, group_type, name, creator_role=None):
-        if not Group.valid_group_type(group_type) \
-                or not _valid_role(creator_role):
-            return None
-        group = Group.objects.create(
-            creator_id=creator.id,
+        group = super(GroupService, self).create(
+            creator_id=creator_id,
             group_type=group_type,
-            name=name,
-            admins={str(creator.id): {
-                'name': creator.nickname,
-                'joined_at': datetime.now()
-            }},
-            members={str(creator.id): {
-                'name': creator.nickname,
-                'joined_at': datetime.now(),
-                'role': creator_role
-            }})
+            name=name
+        )
 
-        if creator_role is not None:
-            GroupMember.objects.create(
-                member_id=creator.id,
-                group_id=group.id,
-                authority='admin',
-                group_remark_name=name,
-                avatar=creator.avatar,
-                nickname=creator.nickname,
-                role=creator_role)
+        GroupMemberService().create(creator_id, group.id, creator_role)
+
         return group
 
+    def create_default_home(self, user_id):
+        ALL_HOME = 'all_home_member'
+        return self.create(user_id, ALL_HOME)
+
+    def valid_role(self, r):
+        if r.startswith('r-'):
+            return r[2:] in role_map
+        return r in role_map
+
+    def group_type_valid(self, group_type):
+        return Group.valid_group_type(group_type)
+
+    @api
+    def get(self, owner_id, keyword):
+        return super(GroupService, self).get(creator_id=owner_id, group_type=keyword)
+        
     @classmethod
     @transaction.atomic
-    def create_group_invitation(cls, group, inviter, invitation_dict):
-        if not _valid_role(invitation_dict['role']) \
+    def create_group_invitation(cls, group, inviter, invitee_phone, role, append_msg):
+        if not _valid_role(role) \
                 or str(inviter.id) not in group.members:
             return None
-        message = {
-            'inviter': inviter.id,
-            'inviter_nickname': inviter.nickname,
-            'inviter_avatar': str(inviter.avatar),
-            'group_id': group.id,
-            'group_name': group.name,
-            'group_avatar': str(group.avatar),
-            'role': invitation_dict['role'],
-            'invitee': invitation_dict['invitee'],
-            'message': invitation_dict['message'],
-        }
+
         invitation = Invitation.objects.create(
             inviter=inviter.id,
-            invitee=invitation_dict['invitee'],
+            invitee=invitee_phone,
             group_id=group.id,
-            role=invitation_dict['role'],
-            message=message)
+            role=role,
+            message=append_msg)
         # send invitation
 
-        invitee = UserService.get_user(phone=invitation_dict['invitee'])
+        invitee = UserService.get_user(phone=invitee_phone)
 
         if invitee:
             # if user is registered send to redis
-            message = {
-                'event': 'invitation',
-                'sub_event': 'sd_inv',  # send_invitation
-                'invitation_id': invitation.id,
-                'receiver_id': invitee.id,
-                'message': message
-            }
-            publish_redis_message('invitation', message)
+            redis_tools.publish_invitation(
+                invitation_id=invitation.id,
+                inviter=inviter,
+                group=group.id,
+                role=role,
+                invitee_id=invitee.id,
+                msg=append_msg,
+            )
 
-        maili_url = 'http://www.mailicn.com'
-
-        msg = str(invitation_dict['message']).strip()
-        if msg == "":
-            msg = 'hi'
-
-        chinese_role = role_map.get(invitation_dict['role'], 'hi')
-        msg_string = chinese_role + '， ' + msg
-        nickname = '(%s)%s' % (inviter.phone, inviter.nickname)
-        send_message_param = '%s,%s,%s' % (msg_string, nickname, maili_url)
-
-        send_succeed, code = MessageService.send_message(
-            phone=invitation_dict['invitee'],
-            template_id='20721',
-            message_param=send_message_param
+        MessageService.send_invitation(
+            phone=invitee_phone,
+            inviter_phone=inviter.phone,
+            inviter_nickname=inviter.nickname,
+            message=str(append_msg).strip(),
+            role=role,
         )
 
         return invitation
@@ -380,3 +303,30 @@ def _role_duplicate(group, role):
             if info['role'] == role:
                 return True
         return False
+
+
+class GroupMemberService(BaseService):
+    
+    model = GroupMember
+    serializer = GroupMemberSerializer
+    
+    def create(self, uid, group_id, role, name='', remark='', avatar='', nickname='', authority='admin'):
+        member = super(GroupMemberService, self).create(
+                member_id=uid,
+                group_id=group_id,
+                authority=authority,
+                group_remark_name=name,
+                avatar=avatar,
+                nickname=nickname,
+                role=role)
+
+        return member
+        
+
+class InvitationService(BaseService):
+
+    model = Invitation
+    serializer = InvitationSerializer
+
+    def create(self):
+        pass

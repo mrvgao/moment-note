@@ -11,6 +11,8 @@ from errors import codes, exceptions
 from django.contrib.auth import authenticate
 from apps.user.models import User, AuthToken
 from apps.user.permissions import encode_maili
+from customs.test_tools import login_client
+from customs.test_tools import refresh_token
 
 
 URL_PREFIX = '/api/%s/' % API_VERSION
@@ -60,7 +62,7 @@ class UserAPITest(APITestCase):
             'password': new_password
         }
 
-        self.update_client_token(self.phone, self.password)
+        refresh_token(self.client, self.phone, self.password)
 
         invalid_user = authenticate(username=self.phone, password=new_password)
         self.assertIsNone(invalid_user)
@@ -94,7 +96,7 @@ class UserAPITest(APITestCase):
         }
 
         url = URL_PREFIX + 'users/password/'
-        self.login(self.phone, self.password)
+        login_client(self.client, self.phone, self.password)
         response = self.client.post(url, post_data)
 
         self.assertEqual(response.status_code, 401)
@@ -152,7 +154,7 @@ class UserAPITest(APITestCase):
     def _test_destroy_success(self):
         self.user.is_admin = True
         self.user.save()
-        self.update_client_token(self.phone, self.password)
+        refresh_token(self.client, self.phone, self.password)
 
         user_id = self.user.id
         url = URL_PREFIX + 'users/{0}/'.format(user_id)
@@ -190,15 +192,8 @@ class UserAPITest(APITestCase):
         response = self.client.post(url, post_data)
         return response
         
-    def update_client_token(self, phone, password):
-        response = self.login(phone, password)
-        user_token = response.data['data']['token']['token']
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + user_token)
-        return user_token
-        
     def test_set_avatar(self):
-        self.update_client_token(self.phone, self.password)
-
+        refresh_token(self.client, self.phone, self.password)
         post_data = {
             'avatar': 'new-avatar',
             'user_id': str(self.user.id)
@@ -221,12 +216,6 @@ class TestTokenViewSet(APITestCase):
         self.login(self.phone, self.password)
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.user.token['token'])
 
-    def update_client_token(self, phone, password):
-        response = self.login(phone, password)
-        user_token = response.data['data']['token']['token']
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + user_token)
-        return user_token
-     
     def login(self, phone, password):
         url = URL_PREFIX + 'users/login/'
         post_data = {

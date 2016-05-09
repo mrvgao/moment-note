@@ -35,6 +35,8 @@ class UserService(BaseService):
         kwargs['password'] = password
         kwargs['phone'] = phone
         user = super(UserService, self).create(**kwargs)
+        from apps.group.services import GroupService
+        GroupService().create_default_home(self, user.id)
         user.set_password(password)
         user.save()
         return user

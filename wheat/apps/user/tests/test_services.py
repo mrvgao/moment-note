@@ -12,6 +12,7 @@ from apps.user.services import UserService
 from apps.user.services import CaptchaService
 from apps.user.services import AuthService
 from apps.user.services import FriendshipService
+from apps.group.models import Group
 from django.conf import settings
 from django.utils.importlib import import_module
 from django.http import HttpRequest
@@ -44,7 +45,10 @@ class UserServiceTestCase(TestCase):
     def test_create_new_user(self):
         original_pwd = '1234567'
         original_phone = '18857453090'
+
         user = user_service.create(phone=original_phone, password=original_pwd)
+
+        self.assertIsNotNone(Group.objects.get(creator_id=user.id))
 
         password = user.password
 

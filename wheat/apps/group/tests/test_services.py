@@ -6,8 +6,10 @@ from django.test import TestCase
 from apps.user.models import User
 from apps.group.services import GroupService
 from apps.group.services import GroupMemberService
+from apps.group.services import InvitationService
 from apps.group.models import Group
 from apps.group.models import GroupMember
+from apps.group.models import Invitation
 
 
 group_service = GroupService()
@@ -36,9 +38,9 @@ class GroupServiceTest(TestCase):
 
     def test_create_group_member(self):
         user = self.users[0]
-        group_id = user.id
+        group = Group.objects.create(creator_id=user.id)
 
-        gmember_service.create(user.id, group_id, 'test', 'remark', user.avatar, 'nickname', 'role')
+        gmember_service.create(group, user.id, 'admins', 'self')
 
         self.assertIsNotNone(GroupMember.objects.get(member_id=user.id))
 
@@ -46,6 +48,9 @@ class GroupServiceTest(TestCase):
         user = self.users[0]
         creator_role = 'self'
         group = group_service.create(user.id, 'all_home_member', creator_role, 'all_home_member')
+
+        self.assertTrue(str(user.id) in group.admins)
+        self.assertTrue(str(user.id) in group.members)
 
         self.assertIsNotNone(group)
 
@@ -68,3 +73,86 @@ class GroupServiceTest(TestCase):
 
         self.assertIsNotNone(Group.objects.get(id=group.id))
 
+    def __member_is_empty(self, member):
+        return bool(member) is False  # bool({}) is false but bool({..}) is not false
+
+    def test_add_person_to_group(self):
+        user = self.users[0]
+        group = Group.objects.create(creator_id=user.id)
+
+        self.assertTrue(self.__member_is_empty(group.members))
+        group_service._add_group_person(group, 'members', user.id)
+        self.assertFalse(self.__member_is_empty(group.members))
+
+        self.assertTrue(self.__member_is_empty(group.admins))
+        group_service._add_group_person(group, 'admins', user.id)
+        self.assertFalse(self.__member_is_empty(group.admins))
+
+    def test_add_admin(self):
+        user = self.users[0]
+        user2 = self.users[1]
+        group = group_service.create_default_home(user.id)
+
+        self.assertIsNone(group.admins.get(user2.id, None))
+        group_service.add_group_admin(group, user2.id)
+        group = group_service.get_home(user.id)
+        self.assertIsNotNone(group.admins.get(str(user2.id), None))
+
+    def test_add_member(self):
+        user = self.users[0]
+        user2 = self.users[1]
+        group = group_service.create_default_home(user.id)
+
+        self.assertIsNone(group.members.get(user2.id, None))
+        group_service.add_group_member(group, user2.id)
+        group = group_service.get_home(user.id)
+        self.assertIsNotNone(group.members.get(str(user2.id), None))
+
+    def test_consist_member(self):
+        user = self.users[0]
+        user2 = self.users[1]
+        group = group_service.create_default_home(user.id)
+        self.assertIsNone(group.members.get(user2.id, None))
+        
+        consist = group_service.consist_member(group.id, user2.id)
+        self.assertFalse(consist)
+        group_service.add_group_member(group, user2.id)
+        consist = group_service.consist_member(group.id, user2.id)
+        self.assertTrue(consist)
+
+    def test_delete_member(self):
+        user = self.users[0]
+        user2 = self.users[1]
+        group = group_service.create_default_home(user.id)
+        group_service.add_group_member(group, user2.id)
+        consist = group_service.consist_member(group.id, user2.id)
+        self.assertTrue(consist)
+        group_service.delete_member(group, user2.id)
+        consist = group_service.consist_member(group.id, user2.id)
+        self.assertFalse(consist)
+
+
+inv_service = InvitationService()
+
+
+class InvitationServiceTest(TestCase):
+    def setUp(self):
+        PRE = '1881234000'
+        TOTAL = 10
+        self.phone_numbers = [PRE + str(i) for i in range(TOTAL)]
+        self.users = [User.objects.create(phone=p, password=p) for p in self.phone_numbers]
+        self.group = group_service.create_default_home(self.users[0].id)
+
+    def test_create(self):
+        user = self.users[0]
+        inv_service.create(user.id, '18857453090', self.group.id, 'self', {})
+        invitation = Invitation.objects.get(inviter=user.id, group_id=self.group.id)
+        self.assertIsNotNone(invitation)
+
+    def test_send_invitation(self):
+        inviter = self.users[0]
+        invitee_phone = self.phone_numbers[-1]
+        role = 'father'
+        append_msg = 'hi'
+
+        inv_service.invite_person(inviter, self.group, invitee_phone, role, append_msg)

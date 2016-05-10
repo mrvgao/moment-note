@@ -5,37 +5,32 @@ Tests for utils.
 '''
 
 from django.test import TestCase
-import redis
-from settings import REDIS_PUBSUB_TAG
-from settings import REDIS_PUBSUB_DB
 from information import redis_tools
-from utils.utils import to_dict
 from collections import namedtuple
+from information.utils import RedisPubsub
+from information.utils import get_channal_name
+from apps.message.models import MessageBackup
+import time
 
 
 class RedisUtilsTest(TestCase):
-    def setUp(self):
-        self.r = redis.StrictRedis(db=REDIS_PUBSUB_DB)
-        self.p = self.r.pubsub()
-        self.p.subscribe(redis_tools.get_channal_name())
-
     def test_get_channal_name(self):
-        channal = redis_tools.get_channal_name()
+        channal = get_channal_name()
         self.assertIsNotNone(channal)
 
     def test_pub_to_redis(self):
         message = {'code': '1101'}
 
-        redis_tools._pub_to_redis(message)
-        info = self.p.get_message()
+        RedisPubsub.pub(message)
+        info = RedisPubsub.get()
         self.assertIsNotNone(info)  # subscribe success
 
-        info = self.p.get_message()
+        info = RedisPubsub.get()
         self.assertIsNotNone(info)   # get data
 
         self.assertIsNotNone(info['data'])
         self.assertTrue('code' in info['data'])
-        info = self.p.get_message()
+        info = RedisPubsub.get()
         self.assertIsNone(info)
 
     def test_publish_invite_message(self):
@@ -43,12 +38,11 @@ class RedisUtilsTest(TestCase):
 
         redis_tools.publish_invite_message(event, 'sub_inv', 'hiruhkaf', 'i12hiur', {})
 
-        info = self.p.get_message()
-        self.assertIsNotNone(info)   # get data
-
-        info = self.p.get_message()
+        info = RedisPubsub.get()
         self.assertIsNotNone(info)
         self.assertTrue(str(info['data']).find(event) > 0)
+        message = MessageBackup.objects.get(event=event)
+        self.assertEqual(message.sub_event, 'sub_inv')
 
     def test_publish_invitation(self):
 
@@ -66,12 +60,6 @@ class RedisUtilsTest(TestCase):
 
         redis_tools.publish_invitation(invitation, inviter, group, invitee, 'no')
         
-        info = self.p.get_message()
-        self.assertIsNotNone(info)   # get data
-
-        info = self.p.get_message()
+        info = RedisPubsub.get()
         self.assertIsNotNone(info)
         self.assertTrue(str(info['data']).find('invitation') > 0)
-
-
-

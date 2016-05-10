@@ -37,23 +37,23 @@ def send_message_mannual(message_id):
     publish_redis_message('', msg, create_mid=False)
 
 
-def publish_invitation(invitation_id, inviter, group, role, invitee_id, msg):
+def publish_invitation(invitation, inviter, group, invitee, msg):
     message = {
-        'inviter': inviter.id,
+        'inviter': invitation.inviter,
         'inviter_nickname': inviter.nickname,
         'inviter_avatar': str(inviter.avatar),
         'group_id': group.id,
         'group_name': group.name,
         'group_avatar': str(group.avatar),
-        'role': role,
-        'invitee': invitee_id,
+        'role': invitation.role,
+        'invitee': invitee.id,
         'message': msg,
     }
 
-    publish_message('invitation', 'sub_inv', invitation_id, invitee_id, message)
+    publish_invite_message('invitation', 'sub_inv', invitation.id, invitee.id, message)
  
     
-def publish_message(event, sub_event, invitation_id, receiver_id, message):
+def publish_invite_message(event, sub_event, invitation_id, receiver_id, message):
     message = {
         'event': event,
         'sub_event': sub_event,

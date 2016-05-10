@@ -10,6 +10,7 @@ from settings import REDIS_PUBSUB_TAG
 from settings import REDIS_PUBSUB_DB
 from information import redis_tools
 from utils.utils import to_dict
+from collections import namedtuple
 
 
 class RedisUtilsTest(TestCase):
@@ -37,10 +38,10 @@ class RedisUtilsTest(TestCase):
         info = self.p.get_message()
         self.assertIsNone(info)
 
-    def test_publish_message(self):
+    def test_publish_invite_message(self):
         event = 'invitation'
 
-        redis_tools.publish_message(event, 'sub_inv', 'hiruhkaf', 'i12hiur', {})
+        redis_tools.publish_invite_message(event, 'sub_inv', 'hiruhkaf', 'i12hiur', {})
 
         info = self.p.get_message()
         self.assertIsNotNone(info)   # get data
@@ -53,24 +54,24 @@ class RedisUtilsTest(TestCase):
 
         invitation = '2p193i1904ru'
 
-        class Inviter:
-            id = '12312'
-            nickname = 'nickname'
-            avatar = 'avatar'
+        Inviter = namedtuple('Inviter', ['id', 'nickname', 'avatar'])
+        Group = namedtuple('Group', ['id', 'name', 'avatar'])
+        Invitee = namedtuple('Invitee', ['id'])
+        Invitation = namedtuple('Invitation', ['id', 'inviter', 'nickname', 'role'])
 
-        class Group:
-            id = 1312
-            name = 'haha'
-            avatar = 'avatar'
+        invitation = Invitation('inv-id', 'inviter', 'nickname', 'father')
+        inviter = Inviter('some-id', 'nickname', '/pic.jpg')
+        invitee = Invitee('some-invitee-id')
+        group = Group('group-id', 'group', 'avatar')
 
-        redis_tools.publish_invitation(invitation, Inviter(), Group(), 'father', '314afs', 'no')
+        redis_tools.publish_invitation(invitation, inviter, group, invitee, 'no')
         
         info = self.p.get_message()
         self.assertIsNotNone(info)   # get data
 
         info = self.p.get_message()
         self.assertIsNotNone(info)
-        self.assertTrue(str(info['data']).find(invitation) > 0)
+        self.assertTrue(str(info['data']).find('invitation') > 0)
 
 
 

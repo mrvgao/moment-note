@@ -10,6 +10,7 @@ from apps.group.services import InvitationService
 from apps.group.models import Group
 from apps.group.models import GroupMember
 from apps.group.models import Invitation
+from information.utils import RedisPubsub
 
 
 group_service = GroupService()
@@ -155,4 +156,18 @@ class InvitationServiceTest(TestCase):
         role = 'father'
         append_msg = 'hi'
 
-        inv_service.invite_person(inviter, self.group, invitee_phone, role, append_msg)
+        send = inv_service.invite_person(inviter, self.group, invitee_phone, role, append_msg)
+        self.assertTrue(send)
+        # message send succceed.
+
+        self.assertEqual(Invitation.objects.get(inviter=inviter.id).role, role)
+        self.assertFalse(Invitation.objects.get(inviter=inviter.id).accepted)
+        # invitation is created.
+
+        # redis has received msg.
+        redis_tool = RedisPubsub()
+        r_msg = redis_tool.get()
+        self.assertIsNotNone(r_msg)
+        r_msg = redis_tool.get()
+        self.assertTrue(role in str(r_msg['data']))
+        

@@ -20,6 +20,21 @@ class GroupService(BaseService):
     model = Group
     serializer = GroupSerializer
 
+    ALL_HOME = 'all_home_member'
+
+    class MemberInfo(object):
+        def __init__(self, role=None):
+            SELF = 'self'
+            self.role = role or SELF
+            self.joined_at = datetime.now()
+
+        @property
+        def info(self):
+            return {
+                'joined_at': self.joined_at,
+                'role': self.role,
+            }
+
     @api
     def create(self, creator_id, group_type, creator_role=None, name=None):
         creator_role = creator_role or 'self'
@@ -31,13 +46,13 @@ class GroupService(BaseService):
             name=name
         )
 
-        GroupMemberService().create(creator_id, group.id, creator_role)
+        self.add_group_member(group, creator_id)
+        self.add_group_admin(group, creator_id)
 
         return group
 
     def create_default_home(self, user_id):
-        ALL_HOME = 'all_home_member'
-        return self.create(user_id, ALL_HOME)
+        return self.create(user_id, GroupService.ALL_HOME)
 
     def valid_role(self, r):
         if r.startswith('r-'):
@@ -50,45 +65,47 @@ class GroupService(BaseService):
     @api
     def get(self, owner_id, keyword):
         return super(GroupService, self).get(creator_id=owner_id, group_type=keyword)
+
+    @api
+    def get_home(self, owner_id):
+        return self.get(owner_id, keyword=GroupService.ALL_HOME)
         
-    @classmethod
-    @transaction.atomic
-    def create_group_invitation(cls, group, inviter, invitee_phone, role, append_msg):
-        if not _valid_role(role) \
-                or str(inviter.id) not in group.members:
-            return None
+    def consist_member(self, group_id, user_id):
+        group = super(GroupService, self).get(id=group_id)
+        member_record = GroupMemberService().get(group_id=group_id, member_id=user_id)
 
-        invitation = Invitation.objects.create(
-            inviter=inviter.id,
-            invitee=invitee_phone,
-            group_id=group.id,
-            role=role,
-            message=append_msg)
-        # send invitation
+        consist = False
+        
+        if str(user_id) in group.members:
+            if member_record and not member_record.deleted:
+                consist = True
 
-        invitee = UserService.get_user(phone=invitee_phone)
+        return consist
 
-        if invitee:
-            # if user is registered send to redis
-            redis_tools.publish_invitation(
-                invitation_id=invitation.id,
-                inviter=inviter,
-                group=group.id,
-                role=role,
-                invitee_id=invitee.id,
-                msg=append_msg,
-            )
+    def _add_group_person(self, group, character, user_id, role=None):
+        member_info = GroupService.MemberInfo(role).info
+        getattr(group, character)[str(user_id)] = member_info
 
-        MessageService.send_invitation(
-            phone=invitee_phone,
-            inviter_phone=inviter.phone,
-            inviter_nickname=inviter.nickname,
-            message=str(append_msg).strip(),
-            role=role,
-        )
+        GroupMemberService().create(group, user_id, character, member_info['role'])
+        
+        # set group member by character. 
+        group.save()
+        return getattr(group, character)
 
-        return invitation
+    def add_group_member(self, group, user_id, role=None):
+        return self._add_group_person(group, 'members', user_id, role)
 
+    def add_group_admin(self, group, user_id):
+        return self._add_group_person(group, 'admins', user_id)
+    
+    def delete_member(self, group, member_id):
+        group.members.pop(str(member_id), None)
+        group.save()
+
+        GroupMemberService().delete_group_member(group.id, member_id)
+        return group
+
+    '''
     @classmethod
     @transaction.atomic
     def add_group_member(cls, group, user, role):
@@ -121,6 +138,7 @@ class GroupService(BaseService):
 
         return True
 
+    '''
     @staticmethod
     def get_home_member(user_id):
         try:
@@ -199,13 +217,6 @@ class GroupService(BaseService):
             'friend_id': host_id
         }
         publish_redis_message('test', message)
-
-    @staticmethod
-    def delete_from_host(host_id, member_id):
-        host_group = GroupService.get_group(creator_id=host_id)
-        host_group.delete_home_member(member_id)
-        GroupService.delete_from_group_member(host_group.id, member_id)
-        return host_group.id
 
     @staticmethod
     def delete_from_group_member(group_id, member):
@@ -310,23 +321,83 @@ class GroupMemberService(BaseService):
     model = GroupMember
     serializer = GroupMemberSerializer
     
-    def create(self, uid, group_id, role, name='', remark='', avatar='', nickname='', authority='admin'):
-        member = super(GroupMemberService, self).create(
-                member_id=uid,
-                group_id=group_id,
-                authority=authority,
-                group_remark_name=name,
-                avatar=avatar,
-                nickname=nickname,
-                role=role)
+    def create(self, group, user_id, character, role):
+        member = self.get(member_id=user_id)
+        if not member:
+            if character.endswith('s'):
+                character = character[:-1]  # change members to member, admins to admin
+
+            user = UserService().get(id=user_id)
+            member = super(GroupMemberService, self).create(
+                    member_id=user.id,
+                    group_id=group.id,
+                    authority=character,
+                    group_remark_name=group.group_type,
+                    avatar=user.avatar,
+                    nickname=user.nickname,
+                    role=role
+            )
+        elif member.deleted:
+            member.deleted = False
+            member.save()
 
         return member
-        
+
+    def get_group_member(self, group_id):
+        pass
+
+    def delete_group_member(self, group_id, user_id):
+        member_record = self.get(group_id=group_id, member_id=user_id)
+        super(GroupMemberService, self).delete(member_record)
+
+    def delete_each_other(self, user_id_1, user_id_2):
+        pass
+
+    def check_member_exist(self, group_id, user_id):
+        pass
+
+    def add_group_member(self, group_id, user_id):
+        pass
+    
 
 class InvitationService(BaseService):
 
     model = Invitation
     serializer = InvitationSerializer
 
-    def create(self):
+    def create(self, inviter_id, invitee_phone, group_id, role, append_msg):
+        msg = {
+            'invitee': invitee_phone,
+            'role': role,
+            'message': append_msg,
+        }
+
+        invitation = super(InvitationService, self).create(
+            inviter=inviter_id,
+            invitee=invitee_phone,
+            group_id=group_id,
+            role=role,
+            message=msg)
+
+        return invitation
+
+    def receive(self, invitation_id):
         pass
+
+    def reject(self, invitation_id):
+        pass
+
+    @transaction.atomic
+    def invite_person(self, inviter, group, invitee_phone, role, append_msg):
+        invitation = self.create(inviter.id, invitee_phone, group.id, role, append_msg)
+        invitee = UserService().get(phone=invitee_phone)
+        if invitee:
+            # if user is registered send to redis
+            message = invitation.message
+            redis_tools.publish_invitation(invitation, inviter, group, invitee, message)
+
+        append_msg = str(append_msg).strip()
+        send_succeed = MessageService.send_invitation(invitee_phone, inviter, append_msg, role)
+
+        return send_succeed
+

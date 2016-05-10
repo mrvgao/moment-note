@@ -131,83 +131,44 @@ class BaseService(object):
 
 
 class MessageService(object):
-    HOST = 'http://www.ucpaas.com/maap/sms/code'
-    ACCOUNT_ID = '8a70971adf5ba2d4598193cc03fcbaa2'
-    VER_AUTH_TOKEN = "7c7c4e5d324b7efbf75db740fdf6a253"
-    APP_ID = '71ca63be653c45129a819964265eccec'
 
-    @staticmethod
-    def random_code(number, plus=0):
-        '''
-        Gets random code from a number.
-        '''
-        def add_one(item):
-            value = int(item) * (103 + plus) % 10
-            return str(value)
-
-        number = map(add_one, number[-6:])
-        return ''.join(number)
+    temp_captcha = '12750'
+    temp_invitation = '20721'
 
     @staticmethod
     def send_captcha(phone, captcha):
-        template_id = '12750'
-        TEMPLATE_ID = template_id
-        current_time = datetime.now().strftime("%Y%m%d%H%M%S%f")[:-3]
-        m = hashlib.md5()
-        m.update(MessageService.ACCOUNT_ID + current_time + MessageService.VER_AUTH_TOKEN)
-        sig_md5_code = m.hexdigest()
-
-        post_message = {
-            'sid': MessageService.ACCOUNT_ID,
-            'appId': MessageService.APP_ID,
-            'sign': sig_md5_code,
-            'time': current_time,
-            'templateId': TEMPLATE_ID,
-            'to': phone,
-            'param': captcha
-        }
-
-        SUCCEED_MARK = '000000'
-        response = requests.post(MessageService.HOST, data=post_message, verify=False)
-        status = response.json()['resp']['respCode']
-
-        success = False
-        if status == SUCCEED_MARK:
-            success = True
+        success = MessageService.post_message(phone, MessageService.temp_captcha, captcha)
         return success
 
     @staticmethod
-    def send_message(phone='18857453090', template_id='12750', message_param=None, send=True):
-        '''
-        Sends verification message to a specific phone number.
+    def send_invitation(phone, inviter_phone, inviter_nickname, message, role):
+        chinese_role = role_map.get(role, 'hi')
+        maili_url = 'http://www.mailicn.com'
+        message = message or 'hi'
+        msg_string = chinese_role + '， ' + message
+        nickname = '(%s)%s' % (inviter_phone, inviter_nickname)
+        send_message_param = '%s,%s,%s' % (msg_string, nickname, maili_url)
 
-        Author: Minchiuan 2016-2-22
+        success = MessageService.post_message(
+            phone,
+            MessageService.temp_invitation,
+            send_message_param)
 
-        Return:
-            (send_if_succeed, verification code)
-            if succeed, return (ture, ******)
-            else return (false, None)
-        '''
-        software_version = '2014-06-30'
-        # version for verification system, provided by upaas company.
-
+        return success
+        
+    @staticmethod
+    def post_message(phone, template_id, message_param):
         HOST = 'http://www.ucpaas.com/maap/sms/code'
-        ACCOUNT_ID = '8a70971adf5ba2d4598193cc03fcbaa2'
-        VER_AUTH_TOKEN = "7c7c4e5d324b7efbf75db740fdf6a253"
         APP_ID = '71ca63be653c45129a819964265eccec'
         TEMPLATE_ID = template_id
 
+        ACCOUNT_ID = '8a70971adf5ba2d4598193cc03fcbaa2'
+        VER_AUTH_TOKEN = "7c7c4e5d324b7efbf75db740fdf6a253"
+        m = hashlib.md5()
         current_time = datetime.now().strftime("%Y%m%d%H%M%S%f")[:-3]
         # get time token yyyyMMddHHmmss
-
-        m = hashlib.md5()
         m.update(ACCOUNT_ID + current_time + VER_AUTH_TOKEN)
         sig_md5_code = m.hexdigest()
-
-        verification_code = MessageService.random_code(phone)
-
-        if message_param is None:
-            message_param = verification_code
 
         post_message = {
             'sid': ACCOUNT_ID,
@@ -221,17 +182,10 @@ class MessageService(object):
 
         SUCCEED_MARK = '000000'
 
-        if send:
-            response = requests.post(HOST, data=post_message, verify=False)
-            status = response.json()['resp']['respCode']
-        else:
-            status = SUCCEED_MARK
+        response = requests.post(HOST, data=post_message, verify=False)
+        status = response.json()['resp']['respCode']
 
         if status == SUCCEED_MARK:  # if status is 000000, send is succeed
-            return True, verification_code
+            return True
         else:
-            return False, None
-
-    @staticmethod
-    def check_captcha(phone, captcha):
-        return MessageService.random_code(phone) == captcha
+            return False

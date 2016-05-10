@@ -30,7 +30,7 @@ def api(func):
     return func
 
 
-def get_api_method(func):
+def get_api_method(func, serialize_func=None):
     '''
     Changes func's return value.
     If func is been called in apis.py file,
@@ -45,10 +45,10 @@ def get_api_method(func):
         raise TypeError('Not Support Staticmethod for @api decorator,' + func.__func__.__name__)
 
     if is_cls:
-        new_func = change_func_return_value(func.__func__)
+        new_func = change_func_return_value(func.__func__, serialize_func)
         func = classmethod(new_func)
     else:
-        new_func = change_func_return_value(func)
+        new_func = change_func_return_value(func, serialize_func)
         func = new_func
 
     return func
@@ -61,36 +61,18 @@ def get_class_that_defined_method(meth):
         return None
 
 
-def change_func_return_value(func):
+def change_func_return_value(func, serialize_func=None):
     @functools.wraps(func)
     def change_value(arg, *args, **kwargs):
-
-        if type(func).__name__ == 'function':
-            cls = arg
-        else:  # func is instancemethod.
-            cls = get_class_that_defined_method(func)
-
-        value = func(arg, *args, **kwargs)
-
-        value = serialize_return_value(value, cls)
-
-        return value
-    return change_value
-
-
-def serialize_return_value(value, cls):
-        serialize_func = None
-        if hasattr(cls, '__call__'):
-            serialize_func = cls().serialize
-        else:
-            serialize_func = cls.serialize
         try:
+            value = func(arg, *args, **kwargs)
             value = serialize_func(value)
         except Exception as e:
             print e
-            print('{0} not support serialize'.format(value))
+            print('lack of defining serialize func of {0}'.format(func.__name__))
 
         return value
+    return change_value
 
 
 class ReturnMap(object):

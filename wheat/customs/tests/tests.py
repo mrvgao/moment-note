@@ -84,3 +84,8 @@ class TestMessage(TestCase):
     def _test_send(self):
         okay = MessageService.send_captcha('18857453090', '123456')
         self.assertTrue(okay)
+
+    def _test_send_invitation(self):
+        okay = MessageService.send_invitation('18857453090', '18857453090', 'xuexue', 'where are you', 'son')
+        self.assertTrue(okay)
+

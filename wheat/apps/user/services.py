@@ -9,7 +9,6 @@ from .serializers import UserSerializer, AuthTokenSerializer, CaptchaSerializer
 from .serializers import FriendshipSerializer
 from datetime import datetime, timedelta
 from django.db.models import Q
-from utils import utils
 from customs.services import MessageService
 from customs.api_tools import api
 import binascii
@@ -30,13 +29,13 @@ class UserService(BaseService):
         if user:
             user = super(UserService, self).delete(user)
         return user
-            
+
     def create(self, phone, password, **kwargs):
         kwargs['password'] = password
         kwargs['phone'] = phone
         user = super(UserService, self).create(**kwargs)
         from apps.group.services import GroupService
-        GroupService().create_default_home(self, user.id)
+        GroupService().create_default_home(user.id)
         user.set_password(password)
         user.save()
         return user
@@ -63,7 +62,7 @@ class UserService(BaseService):
             return True
         else:
             return False
-    
+
     @api
     def update_by_id(self, user_id, **kwargs):
         new_user = super(UserService, self).update_by_id(user_id, **kwargs)
@@ -91,7 +90,7 @@ class UserService(BaseService):
         if not self.check_if_registed(phone):
             user = self.create(phone, password, **kwargs)
             user = authenticate(username=phone, password=password)
-            
+
         return user
 
     def check_pwd_formatted(self, password):
@@ -160,15 +159,15 @@ class CaptchaService(BaseService):
         VALID_MIN = 10
         valid_time = 60 * VALID_MIN
         # valid time is 10 mins.
-        
+
         created_time = captcha_obj.created_at
         if (datetime.now() - created_time).seconds > valid_time:
             return True
         return False
-        
+
     def get_new_captch(self, phone):
-        captcha_code = MessageService.random_code(phone, plus=datetime.now().microsecond)
-        return captcha_code
+        code_length = 6
+        return str(int(phone[:code_length]) * datetime.now().microsecond)[0:code_length]
 
     def get_captcha_code_from_obj(self, captcha_obj):
         captcha_code = captcha_obj.code
@@ -315,7 +314,7 @@ class FriendshipService(BaseService):
                 break
         else:
             all_is = True
-                
+
         return all_is
 
     def get_user_friend_ids(self, user_id):
@@ -330,11 +329,11 @@ class FriendshipService(BaseService):
             pair = [f.user_a, f.user_b]
             pair.remove(user_id)
             return pair.pop()
-        
+
         ids = map(lambda f: get_user_friend(user_id, f), friends)
 
         return ids
 
-user_service = delegate(UserService())
-captcha_service = delegate(CaptchaService())
-auth_service = delegate(AuthService())
+user_service = delegate(UserService(), serialize_func=UserService().serialize)
+captcha_service = delegate(CaptchaService(), serialize_func=CaptchaService().serialize)
+auth_service = delegate(AuthService(), serialize_func=AuthService().serialize)

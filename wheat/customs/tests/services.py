@@ -45,4 +45,4 @@ class UserService(BaseService):
 
 
 user_service = UserService()
-user_service_delegate = delegate(UserService())
+user_service_delegate = delegate(UserService(), UserService().serialize)

@@ -141,12 +141,12 @@ class MessageService(object):
         return success
 
     @staticmethod
-    def send_invitation(phone, inviter_phone, inviter_nickname, message, role):
+    def send_invitation(phone, inviter, message, role):
         chinese_role = role_map.get(role, 'hi')
         maili_url = 'http://www.mailicn.com'
         message = message or 'hi'
         msg_string = chinese_role + '， ' + message
-        nickname = '(%s)%s' % (inviter_phone, inviter_nickname)
+        nickname = '(%s)%s' % (inviter.phone, inviter.nickname)
         send_message_param = '%s,%s,%s' % (msg_string, nickname, maili_url)
 
         success = MessageService.post_message(

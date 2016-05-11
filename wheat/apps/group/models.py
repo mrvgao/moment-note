@@ -49,21 +49,6 @@ class Group(CommonUpdateAble, models.Model, EnhancedModel):
                 return True
         return False
 
-    @classmethod
-    def get_home_member(cls, user_id):
-        members = []
-
-        group = cls.objects.get_or_none(
-            creator_id=user_id,
-            group_type='all_home_member'
-        )
-
-        if group:
-            for m in group.members:
-                members.append(m)
-            return members
-        else:
-            return [user_id]
 
 # class GroupProfile(models.Model):
 #     ''' 更多的关于群的信息，包括一些个性化的东西，比如皮肤啊 '''

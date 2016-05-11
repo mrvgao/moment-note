@@ -79,6 +79,8 @@ class GroupService(BaseService):
 
     @transaction.atomic
     def _add_group_person(self, group, character, user_id, role=None):
+        assert group is not None, 'cannot add ' + user_id + 'to None Group'
+
         member_info = GroupService.MemberInfo(role).info
 
         # need check if this role could be add in!
@@ -100,7 +102,7 @@ class GroupService(BaseService):
         group.members.pop(str(member_id), None)
         group.save()
 
-        GroupMemberService().delete_group_member(group.id, member_id)
+        GroupMemberService().delete(group.id, member_id)
         # delete friendship relation.
         FriendshipService().delete(group.creator_id, member_id)
         return group
@@ -257,25 +259,11 @@ class GroupMemberService(BaseService):
         record = self.get(group_id=group_id, member_id=member_id)
         super(GroupMemberService, self).delete(record)
 
-    def get_group_member(self, group_id):
-        pass
-
-    def delete_group_member(self, group_id, user_id):
-        member_record = self.get(group_id=group_id, member_id=user_id)
-        super(GroupMemberService, self).delete(member_record)
-
-    def delete_each_other(self, user_id_1, user_id_2):
-        pass
-
-    def check_member_exist(self, group_id, user_id):
-        pass
-    
 
 class InvitationService(BaseService):
 
     model = Invitation
     serializer = InvitationSerializer
-
 
     def create(self, inviter_id, invitee_phone, group_id, role, append_msg):
         msg = {
@@ -300,14 +288,17 @@ class InvitationService(BaseService):
         invitation = self.get(id=invitation_id)
         invitee = UserService().get(phone=invitation.invitee)
 
+        assert invitee is not None, 'invitee cannot be none'
+
         inviter_id = invitation.inviter
         invitee_id = invitee.id
 
-        inviter_home = GroupService().get_home(invitation.inviter_id)
+        inviter_home = GroupService().get_home(invitation.inviter)
         GroupService().add_group_member(inviter_home, invitee_id, role=invitation.role)
 
         invitee_home = GroupService().get_home(invitee_id)
         reverse_role = 'r-' + invitation.role
+
         GroupService().add_group_member(invitee_home, inviter_id, role=reverse_role)
         
         # update invitation.
@@ -322,7 +313,9 @@ class InvitationService(BaseService):
         return invitation
 
     def reject(self, invitation_id):
-        pass
+        invitation = self.get(id=invitation_id)
+        self.delete(invitation)
+        return invitation
 
     @transaction.atomic
     def invite_person(self, inviter, group, invitee_phone, role, append_msg):
@@ -334,7 +327,9 @@ class InvitationService(BaseService):
             redis_tools.publish_invitation(invitation, inviter, group, invitee, message)
 
         append_msg = str(append_msg).strip()
-        send_succeed = MessageService.send_invitation(invitee_phone, inviter, append_msg, role)
 
-        return send_succeed
+        succeed = MessageService.send_invitation(invitee_phone, inviter, append_msg, role)
+        assert succeed, 'send invitation msg to {0} faild'.format(invitee_phone)
+
+        return invitation
 

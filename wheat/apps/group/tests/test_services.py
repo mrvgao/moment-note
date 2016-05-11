@@ -4,6 +4,8 @@ Test cases for group services.
 
 from django.test import TestCase
 from apps.user.models import User
+from apps.user.services import FriendshipService
+from apps.user.services import UserService
 from apps.group.services import GroupService
 from apps.group.services import GroupMemberService
 from apps.group.services import InvitationService
@@ -36,6 +38,9 @@ class GroupServiceTest(TestCase):
         
         valid_role = 'n-father'
         self.assertFalse(group_service.valid_role(valid_role))
+
+        valid_role = 'r-father'
+        self.assertTrue(group_service.valid_role(valid_role))
 
     def test_create_group_member(self):
         user = self.users[0]
@@ -189,12 +194,15 @@ class InvitationServiceTest(TestCase):
         TOTAL = 10
         self.phone_numbers = [PRE + str(i) for i in range(TOTAL)]
         self.users = [User.objects.create(phone=p, password=p) for p in self.phone_numbers]
-        self.group = group_service.create_default_home(self.users[0].id)
+        self.users[-1].phone = '15705116597'  # myself phone for test.
+        self.users[-1].save()
+        self.homes = [group_service.create_default_home(self.users[i].id) for i in range(TOTAL)]
 
     def test_create(self):
         user = self.users[0]
-        inv_service.create(user.id, '18857453090', self.group.id, 'self', {})
-        invitation = Invitation.objects.get(inviter=user.id, group_id=self.group.id)
+        group = self.homes[0]
+        inv_service.create(user.id, '18857453090', group.id, 'self', {})
+        invitation = Invitation.objects.get(inviter=user.id, group_id=group.id)
         self.assertIsNotNone(invitation)
 
     def _test_send_invitation(self):
@@ -203,7 +211,7 @@ class InvitationServiceTest(TestCase):
         role = 'father'
         append_msg = 'hi'
 
-        send = inv_service.invite_person(inviter, self.group, invitee_phone, role, append_msg)
+        send = inv_service.invite_person(inviter, self.homes[0], invitee_phone, role, append_msg)
         self.assertTrue(send)
         # message send succceed.
 
@@ -217,4 +225,69 @@ class InvitationServiceTest(TestCase):
         self.assertIsNotNone(r_msg)
         r_msg = redis_tool.get()
         self.assertTrue(role in str(r_msg['data']))
+
+    def test_accept_one_user_register_one_not_registert(self):
+        inviter = self.users[0]
+        phone = '13362133816'
+
+        invitation = inv_service.invite_person(inviter, self.homes[0], phone, 'father', 'where are you')
+
+        # receiver message and registed.
+
+        new_user = UserService().create(phone=phone, password=phone)
+        new_user_id = new_user.id
+
+        self.assertFalse(invitation.accepted)
+        invitation = inv_service.accept(invitation.id)
+
+        # inviter's home contains new_user
+        inviter_home = group_service.get_home(inviter.id)
+        consist = group_service.consist_member(inviter_home.id, new_user_id)
+        self.assertTrue(consist)
+                                   
+        # new_user's home contains inviter
+        new_user_home = group_service.get_home(new_user_id)
+        consist = group_service.consist_member(new_user_home.id, inviter.id)
+        self.assertTrue(consist)
+
+        # new_user is friend.
+        is_friend = FriendshipService().is_friend(inviter.id, new_user_id)
+        self.assertTrue(is_friend)
+
+        is_friend = FriendshipService().is_friend(new_user_id, inviter.id)
+        self.assertTrue(is_friend)
+
+    def test_accept_both_register(self):
+        inviter = self.users[0]
+        invitee_phone = self.users[-1].phone
         
+        invitation = inv_service.invite_person(inviter, self.homes[0], invitee_phone, 'father', 'where are you')
+
+        invitation = inv_service.accept(invitation.id)
+
+        new_user_id = self.users[-1].id
+        # inviter's home contains new_user
+        inviter_home = group_service.get_home(inviter.id)
+        consist = group_service.consist_member(inviter_home.id, new_user_id)
+        self.assertTrue(consist)
+                                   
+        # new_user's home contains inviter
+        new_user_home = group_service.get_home(new_user_id)
+        consist = group_service.consist_member(new_user_home.id, inviter.id)
+        self.assertTrue(consist)
+
+        # new_user is friend.
+        is_friend = FriendshipService().is_friend(inviter.id, new_user_id)
+        self.assertTrue(is_friend)
+
+        is_friend = FriendshipService().is_friend(new_user_id, inviter.id)
+        self.assertTrue(is_friend)
+
+    def test_reject(self):
+        inviter = self.users[0]
+        invitee_phone = self.users[-1].phone
+        
+        invitation = inv_service.invite_person(inviter, self.homes[0], invitee_phone, 'father', 'where are you')
+
+        invitation = inv_service.reject(invitation.id)
+        self.assertTrue(invitation.deleted)

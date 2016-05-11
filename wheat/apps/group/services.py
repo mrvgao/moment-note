@@ -11,7 +11,6 @@ from customs.services import MessageService
 from customs.services import role_map
 from apps.moment.services import MomentService
 from customs.api_tools import api
-from utils.redis_utils import publish_redis_message
 from information import redis_tools
 
 
@@ -63,12 +62,8 @@ class GroupService(BaseService):
         return Group.valid_group_type(group_type)
 
     @api
-    def get(self, owner_id, keyword):
-        return super(GroupService, self).get(creator_id=owner_id, group_type=keyword)
-
-    @api
     def get_home(self, owner_id):
-        return self.get(owner_id, keyword=GroupService.ALL_HOME)
+        return self.get(creator_id=owner_id, group_type=GroupService.ALL_HOME)
         
     def consist_member(self, group_id, user_id):
         group = super(GroupService, self).get(id=group_id)
@@ -82,8 +77,11 @@ class GroupService(BaseService):
 
         return consist
 
+    @transaction.atomic
     def _add_group_person(self, group, character, user_id, role=None):
         member_info = GroupService.MemberInfo(role).info
+
+        # need check if this role could be add in!
         getattr(group, character)[str(user_id)] = member_info
 
         GroupMemberService().create(group, user_id, character, member_info['role'])
@@ -103,132 +101,43 @@ class GroupService(BaseService):
         group.save()
 
         GroupMemberService().delete_group_member(group.id, member_id)
+        # delete friendship relation.
+        FriendshipService().delete(group.creator_id, member_id)
         return group
 
-    '''
-    @classmethod
-    @transaction.atomic
-    def add_group_member(cls, group, user, role):
-        if not _valid_role(role):
-            raise NameError(role)
-        elif user.id in group.members and user.id != group.creator_id:
-            raise ReferenceError(user.id)
-        elif len(group.members) >= group.max_members:
-            raise IndexError('reach the max member number of group')
-        elif _role_duplicate(group, role):
-            raise KeyError(role)
+    def get_user_home_member(self, user_id):
+        home = self.get_home(user_id)
+        members = [uid for uid in home.members]
+        return members
 
-        # member_ids = group.members.keys()
-        group.members[str(user.id)] = {
-            'name': user.nickname,
-            'joined_at': datetime.now(),
-            'role': role
-        }
-        group.save()
-        GroupMember.objects.create(
-            member_id=user.id,
-            group_id=group.id,
-            group_remark_name=group.name,
-            avatar=user.avatar,
-            nickname=user.nickname,
-            role=role)
-        # group里所有成员建立“好友关系”
-        # if not role.startswith('r-'):
-        # UserService.create_friendships(str(user.id), [])
+    def get_user_groups(self, user_id):
+        member_records = GroupMemberService().get(member_id=user_id, deleted=False, many=True)
 
-        return True
+        groups = [record.group_id for record in member_records]
 
-    '''
-    @staticmethod
-    def get_home_member(user_id):
-        try:
-            home_member = Group.get_home_member(user_id)
-            return home_member
-        except Exception as e:
-            raise e
+        return groups
 
-    @classmethod
-    def get_invitation(cls, **kwargs):
-        return Invitation.objects.get_or_none(**kwargs)
+    def delete_person_relation(self, host_id, member_id):
+        host_group = self.get_home(host_id)
 
-    @classmethod
-    @transaction.atomic
-    def delete_invitation(cls, invitee, invitation):
-        if str(invitee.phone) != invitation.invitee:
-            return False
-        invitation.update(deleted=True)
-        return True
+        if host_group:
+            self.delete_member(host_group, member_id)
+            GroupMemberService().delete(group_id=host_group.id, member_id=member_id)
 
-    @classmethod
-    @transaction.atomic
-    def add_person_to_user_group(cls, host_id, new_member_id, role, group_type='all_home_member'):
-        host_group_id = GroupService.get_group_if_without_create(host_id, group_type)
-        host_group = GroupService.get_group(id=host_group_id)
-        new_member_obj = UserService.get_user(id=new_member_id)
-        GroupService.add_group_member(host_group, new_member_obj, role)
+        member_group = self.get_home(member_id)
 
-    @staticmethod
-    @transaction.atomic
-    def accept_group_invitation(invitee, invitation):
-        '''
-        If invitee is already is his gorup member.
-        Raises:
-            ReferenceError When invitation.invitee value is not same as invitee.phone, which means this use not login.
-        '''
-        GroupService.add_person_to_user_group(
-                    host_id=str(invitee.id),
-                    new_member_id=str(invitation.inviter),
-                    role='r-'+invitation.role
-        )
+        if member_group:
+            self.delete_member(member_group, member_id)
+            GroupMemberService().delete(group_id=member_group.id, member_id=host_id)
 
-        GroupService.add_person_to_user_group(
-                    host_id=str(invitation.inviter),
-                    new_member_id=str(invitee.id),
-                    role=invitation.role
-        )
-        invitation.update(accepted=True, accept_time=datetime.now())
-        FriendshipService.create_friendship(str(invitee.id), str(invitation.inviter))
-        message = {
-                    'event': 'invitation',
-                    'sub_event': 'acc_inv_ntf',  # accept_invitation_notify
-                    'invitation_id': invitation.id,
-                    'receiver_id': invitation.inviter,
-                    'invitee': str(invitee.id)
-        }
-        publish_redis_message('invitation', message)
+        FriendshipService().delete(host_id, member_id)
 
-    @classmethod
-    def get_user_group_ids(cls, user_id):
-        group_ids = []
-        ids = GroupMember.objects.filter(member_id=user_id, deleted=False).values_list('group_id', flat=True)
-        for id in ids:
-            group_ids.append(str(id))
-        return group_ids
+        redis_tools.publish_delete_friend(member_id, host_id)
 
-    @staticmethod
-    def delete_person_from_each_group(host_id, member_id):
-        GroupService.delete_from_host(host_id=host_id, member_id=member_id)
-        GroupService.delete_from_host(host_id=member_id, member_id=host_id)
-        FriendshipService.delete_friendship(host_id, member_id)
-        message = {
-            'event': 'delete',
-            'sub_event': 'friend',
-            'receiver_id': member_id,
-            'friend_id': host_id
-        }
-        publish_redis_message('test', message)
-
-    @staticmethod
-    def delete_from_group_member(group_id, member):
-        try:
-            group_m = GroupMember.objects.get(group_id=group_id, member_id=member)
-            if group_m:
-                return group_m.delete()
-        except Exception as e:
-            print e
-            return False
+        return host_id, member_id
 
 
+'''
 def _get_all_friend_home_id(user_id):
     group_ids = list(GroupMember.objects.filter(member_id=user_id, deleted=False).values_list('group_id', flat=True))
     return group_ids
@@ -314,6 +223,7 @@ def _role_duplicate(group, role):
             if info['role'] == role:
                 return True
         return False
+'''
 
 
 class GroupMemberService(BaseService):
@@ -322,7 +232,7 @@ class GroupMemberService(BaseService):
     serializer = GroupMemberSerializer
     
     def create(self, group, user_id, character, role):
-        member = self.get(member_id=user_id)
+        member = self.get(member_id=user_id, group_id=group.id)
         if not member:
             if character.endswith('s'):
                 character = character[:-1]  # change members to member, admins to admin
@@ -343,6 +253,10 @@ class GroupMemberService(BaseService):
 
         return member
 
+    def delete(self, group_id, member_id):
+        record = self.get(group_id=group_id, member_id=member_id)
+        super(GroupMemberService, self).delete(record)
+
     def get_group_member(self, group_id):
         pass
 
@@ -355,15 +269,13 @@ class GroupMemberService(BaseService):
 
     def check_member_exist(self, group_id, user_id):
         pass
-
-    def add_group_member(self, group_id, user_id):
-        pass
     
 
 class InvitationService(BaseService):
 
     model = Invitation
     serializer = InvitationSerializer
+
 
     def create(self, inviter_id, invitee_phone, group_id, role, append_msg):
         msg = {
@@ -381,8 +293,33 @@ class InvitationService(BaseService):
 
         return invitation
 
-    def receive(self, invitation_id):
-        pass
+    @transaction.atomic
+    def accept(self, invitation_id):
+
+        # add person to each other's group.
+        invitation = self.get(id=invitation_id)
+        invitee = UserService().get(phone=invitation.invitee)
+
+        inviter_id = invitation.inviter
+        invitee_id = invitee.id
+
+        inviter_home = GroupService().get_home(invitation.inviter_id)
+        GroupService().add_group_member(inviter_home, invitee_id, role=invitation.role)
+
+        invitee_home = GroupService().get_home(invitee_id)
+        reverse_role = 'r-' + invitation.role
+        GroupService().add_group_member(invitee_home, inviter_id, role=reverse_role)
+        
+        # update invitation.
+        self.update(invitation, accepted=True, accept_time=datetime.now())
+
+        # create friendship.
+        FriendshipService().create(str(inviter_id), str(invitee_id))
+
+        # publish redis message.
+        redis_tools.accept_invitation(invitation, invitee_id)
+
+        return invitation
 
     def reject(self, invitation_id):
         pass

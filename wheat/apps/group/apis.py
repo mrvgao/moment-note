@@ -7,182 +7,18 @@ from customs.permissions import AllowPostPermission
 from customs.response import SimpleResponse
 from customs.viewsets import ListModelMixin
 from apps.user.permissions import admin_required, login_required
-from .services import GroupService
+from .services import group_service
+from .services import invitation_service
 from apps.user.services import UserService
 from .validators import check_request
 from errors import codes
 from . import services
 from rest_framework.decorators import detail_route
 from customs import class_tools
+from customs import request_tools
 
 
-@class_tools.default_view_set
-class GroupViewSet(ListModelMixin,
-                   viewsets.GenericViewSet):
-
-    """
-    麦粒群组系统相关API.
-    ### Resource Description
-    """
-    # @admin_required
-    @login_required
-    def list(self, request):
-        '''
-        获得群组的列表，若owner-id和type为空 则列出全部群组的id
-        在邀请好友时候，系统需要一个group_id，该group承载该用户的所有好友
-        要获得该group_id，需要将type设置为all_home_member
-
-        List all groups by pages. Admin Required.
-
-        page -- page
-        owner-id -- group所有者的id
-        type -- 该group的类型， 邀请好友请设置为all_home_member
-        ---
-        omit_serializer: true
-        '''
-
-        OWNER_ID = 'owner-id'
-        TYPE = 'type'
-        owner_id = request.query_params.get(OWNER_ID, None)
-        group_type = request.query_params.get(TYPE, None)
-
-        ALL_FRIENDS = 'all_home_member'
-
-        if owner_id:
-            if group_type == ALL_FRIENDS:
-                result = GroupService.get_group_if_without_create(
-                    owner_id,
-                    ALL_FRIENDS
-                )
-            elif group_type is None:
-                result = GroupService.filter_group(creator_id=owner_id)
-            else:
-                result = GroupService.filter_group(creator_id=owner_id, group_type=group_type)
-
-            result = GroupViewSet._get_group_member_info(result)
-            result = GroupService.serialize_list(result)
-            return SimpleResponse(result)
-        else:
-            response = super(GroupViewSet, self).list(request)
-            return SimpleResponse(response.data)
-
-    @staticmethod
-    def _get_group_member_info(result):
-        result = services.get_group_member_avatar(result)
-
-        result = services.get_group_member_activity(result)
-
-        return result
-
-    def _get_specific_group(owner_id, group_type):
-        '''
-        Gets specific group's information by owner_id and group_type.
-        Returns:
-            this group list.
-
-        '''
-        pass
-
-    @login_required
-    def create(self, request):
-        '''
-        Create Group.
-        ### Request Example
-
-            {
-                "group_type": "common/family",
-                "name": "group name",
-                "role": "f-grandfather/f-grandmother/m-grandfather/m-grandmother/father/mother/child"
-            }
-        ---
-        omit_serializer: true
-        omit_parameters:
-            - form
-        parameters:
-            - name: body
-              paramType: body
-        '''
-        group_type = request.data.get('group_type')
-        name = request.data.get('name')
-        role = request.data.get('role')
-        if not group_type or not name or not role:
-            return SimpleResponse(status=status.HTTP_400_BAD_REQUEST)
-        group = GroupService.create_group(request.user, group_type, name, role)
-        if group:
-            return SimpleResponse(GroupService.serialize(group))
-        return SimpleResponse(status=status.HTTP_400_BAD_REQUEST)
-
-    def retrieve(self, request, id):
-        '''
-        Retrieve Group info.
-        ---
-        omit_serializer: true
-        '''
-        group = GroupService.get_group(id=id)
-        if not group:
-            return SimpleResponse(status=status.HTTP_404_NOT_FOUND)
-        return SimpleResponse(GroupService.serialize(group))
-
-    def update(self, request, id):
-        '''
-        Update group.
-        ### Example Request
-
-            {
-                "name": "new group name"
-            }
-        ---
-        omit_serializer: true
-        omit_parameters:
-            - form
-        parameters:
-            - name: body
-              paramType: body
-        '''
-        group = GroupService.get_group(id=id)
-        if not group:
-            return SimpleResponse(status=status.HTTP_404_NOT_FOUND)
-
-        NAME = 'name'
-        name = request.data.get(NAME)
-        if name:
-            group.update(name=name)
-            return SimpleResponse(GroupService.serialize(group))
-        return SimpleResponse(status=status.HTTP_400_BAD_REQUEST)
-
-    
-class FriendViewSet(ListModelMixin, viewsets.GenericViewSet):
-    """
-    Friend View
-    ### Resource Description
-    """
-    model = GroupService._get_model()
-    queryset = model.get_queryset()
-    serializer_class = GroupService.get_serializer()
-    lookup_field = 'id'
-    permission_classes = [
-        Or(permissions.IsAuthenticatedOrReadOnly, AllowPostPermission,)]
-
-   
-    @login_required
-    def destroy(self, request, id):
-        '''
-        Delete person which uid is *id* from requset.user's home group.
-        ---
-        omit_serializer: true
-        '''
-        try:
-            GroupService.delete_person_from_each_group(
-                host_id=request.user.id, member_id=id)
-            return SimpleResponse(success=True)
-        except Exception as e:
-            return SimpleResponse(
-                status=status.HTTP_403_FORBIDDEN,
-                errors=e.message
-            )
-
-        
-@class_tools.default_view_set
+@class_tools.set_service(invitation_service)
 class InvitationViewSet(viewsets.GenericViewSet):
 
     """
@@ -192,10 +28,12 @@ class InvitationViewSet(viewsets.GenericViewSet):
     INVITATION = 'Invitation'
 
     @login_required
+    @request_tools.post_data_check(['group_id', 'invitee', 'role', 'message'])
     def create(self, request):
         '''
         Invite user into group.
-        该接口所需的group_id 请在/api/0.1/groups/ 将type设置为all_home_member进行获取
+        该接口所需的group_id 请在/api/0.1/users/{id}/home 进行获取
+
         !注意: 测试该接口前 请先登录
 
         ### 目前支持的关系：
@@ -241,16 +79,14 @@ class InvitationViewSet(viewsets.GenericViewSet):
 
         GROUP_ID, INVITEE = 'group_id', 'invitee'
         ROLE, MESSAGE = 'role', 'message'
+
         group_id = request.data.get(GROUP_ID)
         invitee = request.data.get(INVITEE)
         role = request.data.get(ROLE)
         message = request.data.get(MESSAGE)
-        if not group_id or not invitee or not role or not message:
-            return SimpleResponse(
-                status=status.HTTP_400_BAD_REQUEST,
-                errors='role should be valid and invitee and message cannot be null')
 
-        group = GroupService.get_group(id=group_id)
+        group = invitation_service.get(id=group_id)
+
         if not group:
             return SimpleResponse(status=status.HTTP_400_BAD_REQUEST, errors="this group not found")
         elif str(invitee) == str(request.user.phone):

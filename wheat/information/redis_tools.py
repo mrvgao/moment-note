@@ -41,6 +41,28 @@ def publish_invitation(invitation, inviter, group, invitee, msg):
     publish_invite_message('invitation', 'sub_inv', invitation.id, invitee.id, message)
  
     
+def accept_invitation(invitation, invitee_id):
+    message = {
+        'event': 'invitation',
+        'sub_event': 'acc_inv_ntf',  # accept_invitation_notify
+        'invitation_id': invitation.id,
+        'receiver_id': invitation.inviter,
+        'invitee': str(invitee_id)
+    }
+
+    publish_redis_message(message)
+
+
+def publish_delete_friend(receiver_id, friend_id):
+    message = {
+        'event': 'delete',
+        'sub_event': 'friend',
+        'receiver_id': receiver_id,
+        'friend_id': friend_id
+    }
+    publish_redis_message(message)
+
+    
 def publish_invite_message(event, sub_event, invitation_id, receiver_id, message):
     message = {
         'event': event,

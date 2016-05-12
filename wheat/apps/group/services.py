@@ -12,6 +12,7 @@ from customs.services import role_map
 from apps.moment.services import MomentService
 from customs.api_tools import api
 from information import redis_tools
+from customs.delegates import delegate
 
 
 class GroupService(BaseService):
@@ -333,3 +334,6 @@ class InvitationService(BaseService):
 
         return invitation
 
+
+group_service = delegate(GroupService(), GroupService().serialize)
+invitation_service = delegate(InvitationService(), InvitationService().serialize)

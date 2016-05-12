@@ -34,13 +34,13 @@ class GroupServiceTest(TestCase):
 
     def test_creator_valid_role(self):
         valid_role = 'father'
-        self.assertTrue(group_service.valid_role(valid_role))
+        self.assertTrue(group_service.valid_role_name(valid_role))
         
         valid_role = 'n-father'
-        self.assertFalse(group_service.valid_role(valid_role))
+        self.assertFalse(group_service.valid_role_name(valid_role))
 
         valid_role = 'r-father'
-        self.assertTrue(group_service.valid_role(valid_role))
+        self.assertTrue(group_service.valid_role_name(valid_role))
 
     def test_create_group_member(self):
         user = self.users[0]
@@ -120,10 +120,10 @@ class GroupServiceTest(TestCase):
         group = group_service.create_default_home(user.id)
         self.assertIsNone(group.members.get(user2.id, None))
         
-        consist = group_service.consist_member(group.id, user2.id)
+        consist = group_service.consist_member(group.id, id=user2.id)
         self.assertFalse(consist)
         group_service.add_group_member(group, user2.id)
-        consist = group_service.consist_member(group.id, user2.id)
+        consist = group_service.consist_member(group.id, id=user2.id)
         self.assertTrue(consist)
 
     def test_delete_member(self):
@@ -131,10 +131,10 @@ class GroupServiceTest(TestCase):
         user2 = self.users[1]
         group = group_service.create_default_home(user.id)
         group_service.add_group_member(group, user2.id)
-        consist = group_service.consist_member(group.id, user2.id)
+        consist = group_service.consist_member(group.id, id=user2.id)
         self.assertTrue(consist)
         group_service.delete_member(group, user2.id)
-        consist = group_service.consist_member(group.id, user2.id)
+        consist = group_service.consist_member(group.id, id=user2.id)
         self.assertFalse(consist)
 
     def test_get_user_home_member(self):
@@ -173,16 +173,16 @@ class GroupServiceTest(TestCase):
         result = group_service.delete_person_relation(user.id, user2.id)
         self.assertIsNotNone(result)
 
-        consist = group_service.consist_member(group.id, user2.id)
+        consist = group_service.consist_member(group.id, id=user2.id)
         self.assertFalse(consist)
 
         new_group = group_service.create_default_home(user2.id)
         group_service.add_group_member(group, user2.id)
         group_service.add_group_member(new_group, user.id)
         result = group_service.delete_person_relation(user.id, user2.id)
-        consist = group_service.consist_member(group.id, user2.id)
+        consist = group_service.consist_member(group.id, id=user2.id)
         self.assertFalse(consist)
-        consist = group_service.consist_member(new_group.id, user.id)
+        consist = group_service.consist_member(new_group.id, id=user.id)
         self.assertFalse(consist)
 
 inv_service = InvitationService()
@@ -242,12 +242,12 @@ class InvitationServiceTest(TestCase):
 
         # inviter's home contains new_user
         inviter_home = group_service.get_home(inviter.id)
-        consist = group_service.consist_member(inviter_home.id, new_user_id)
+        consist = group_service.consist_member(inviter_home.id, id=new_user_id)
         self.assertTrue(consist)
                                    
         # new_user's home contains inviter
         new_user_home = group_service.get_home(new_user_id)
-        consist = group_service.consist_member(new_user_home.id, inviter.id)
+        consist = group_service.consist_member(new_user_home.id, id=inviter.id)
         self.assertTrue(consist)
 
         # new_user is friend.
@@ -268,12 +268,12 @@ class InvitationServiceTest(TestCase):
         new_user_id = self.users[-1].id
         # inviter's home contains new_user
         inviter_home = group_service.get_home(inviter.id)
-        consist = group_service.consist_member(inviter_home.id, new_user_id)
+        consist = group_service.consist_member(inviter_home.id, id=new_user_id)
         self.assertTrue(consist)
                                    
         # new_user's home contains inviter
         new_user_home = group_service.get_home(new_user_id)
-        consist = group_service.consist_member(new_user_home.id, inviter.id)
+        consist = group_service.consist_member(new_user_home.id, id=inviter.id)
         self.assertTrue(consist)
 
         # new_user is friend.

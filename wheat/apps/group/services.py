@@ -54,10 +54,17 @@ class GroupService(BaseService):
     def create_default_home(self, user_id):
         return self.create(user_id, GroupService.ALL_HOME)
 
-    def valid_role(self, r):
+    def valid_role_name(self, r):
         if r.startswith('r-'):
             return r[2:] in role_map
         return r in role_map
+
+    def role_is_valid(self, group, role):
+        # test if role name is valid;
+        valid_name = self.valid_role_name(role)
+        # test if role is single, test if group already has this role.
+        role_acceptable = True
+        return valid_name and role_acceptable
 
     def group_type_valid(self, group_type):
         return Group.valid_group_type(group_type)
@@ -66,7 +73,8 @@ class GroupService(BaseService):
     def get_home(self, owner_id):
         return self.get(creator_id=owner_id, group_type=GroupService.ALL_HOME)
         
-    def consist_member(self, group_id, user_id):
+    def consist_member(self, group_id, **kwargs):
+        user_id = UserService().get(**kwargs).id
         group = super(GroupService, self).get(id=group_id)
         member_record = GroupMemberService().get(group_id=group_id, member_id=user_id)
 
@@ -319,6 +327,7 @@ class InvitationService(BaseService):
         return invitation
 
     @transaction.atomic
+    @api
     def invite_person(self, inviter, group, invitee_phone, role, append_msg):
         invitation = self.create(inviter.id, invitee_phone, group.id, role, append_msg)
         invitee = UserService().get(phone=invitee_phone)

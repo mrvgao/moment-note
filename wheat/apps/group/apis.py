@@ -16,6 +16,7 @@ from . import services
 from rest_framework.decorators import detail_route
 from customs import class_tools
 from customs import request_tools
+from customs.response import APIResponse
 
 
 @class_tools.set_service(invitation_service)
@@ -25,7 +26,6 @@ class InvitationViewSet(viewsets.GenericViewSet):
     麦粒邀请相关API.
     ### Resource Description
     """
-    INVITATION = 'Invitation'
 
     @login_required
     @request_tools.post_data_check(['group_id', 'invitee', 'role', 'message'])
@@ -76,63 +76,33 @@ class InvitationViewSet(viewsets.GenericViewSet):
             - name: body
               paramType: body
         '''
+        
+        group = invitation_service.get(request.data.get('group_id', None))
+        invitee_phone = request.data('invitee', None)
+        role = request.data.get('role', None)
+        message = request.data.get('message', None)
+        
+        error, status_code = None, status.HTTP_200_OK
 
-        GROUP_ID, INVITEE = 'group_id', 'invitee'
-        ROLE, MESSAGE = 'role', 'message'
+        if not group_service.consist_member(group.id, id=self.user.id):
+            error, status_code = codes.GROUP_NOT_EXIST, status.HTTP_403_FORBIDDEN
+        elif group_service.consist_member(group.id, phone=invitee_phone):
+            error, status_code = codes.USER_ALRAEDY_EXIST, status.HTTP_409_CONFLICT
+        elif not group_service.role_is_valid(role):
+            error, status_code = codes.ROLE_INVALID, status.HTTP_406_NOT_ACCEPTABLE
 
-        group_id = request.data.get(GROUP_ID)
-        invitee = request.data.get(INVITEE)
-        role = request.data.get(ROLE)
-        message = request.data.get(MESSAGE)
+        invitation = None
+        
+        if not error:
+            invitation = group_service.invite_person(request.user, group, invitee_phone, role, message)
 
-        group = invitation_service.get(id=group_id)
+        result = error or invitation  # if error is not none, return error
 
-        if not group:
-            return SimpleResponse(status=status.HTTP_400_BAD_REQUEST, errors="this group not found")
-        elif str(invitee) == str(request.user.phone):
-            return SimpleResponse(status=403, errors='cannot invitee your self')
-
-        invitation_dict = {
-            INVITEE: invitee,
-            ROLE: role,
-            MESSAGE: message
-        }
-
-        user_id = request.user.id
-
-        try:
-            return self._create_invitation_by_group_and_user_id(user_id, group, invitation_dict)
-        except SyntaxError as e:
-            return SimpleResponse(status=status.HTTP_400_BAD_REQUEST, errors=e.message)
-        except ReferenceError as e:
-            return SimpleResponse(status=status.HTTP_400_BAD_REQUEST, errors=e.message)
-
-    def _create_invitation_by_group_and_user_id(self, user_id, group, invitation_dict):
-        '''
-        Creates invitation message by group and user_id
-
-        Raises:
-            SyntaxError: if invitation initial informaiton is error, e.g, wrong user, wrong group, wrong dict, will raise this error
-            ReferenceError: if give wrong user_id, raise this error
-
-        Returns:
-            SimpleResponse: Invitation Response
-
-        Author: Minchiuan 2016-2-23
-        '''
-
-        user = UserService.get_user(id=user_id)
-        if user:
-            invitation = GroupService.create_group_invitation(group, user, invitation_dict)
-            if invitation:
-                return SimpleResponse(GroupService.serialize(invitation))
-            else:
-                raise SyntaxError('role should be valid and invitee and message cannot be null')
-        else:
-            raise ReferenceError('user id is error, no this user') # not login
+        return APIResponse(result, status=status_code)
 
     @login_required
     @check_request('invitation')
+    @request_tools.post_data_check(['accepted'])
     def update(self, request, id):
         '''
         Update invitation: accept invitation
@@ -149,10 +119,6 @@ class InvitationViewSet(viewsets.GenericViewSet):
 
         ### Response:
 
-        + 403 : this role is duplicate in target person's group.
-        + 406 : role is unacceptable
-        + 409 : this person is alreay in target person's group
-        + 413 : group member overflowed.
         + {success: true}
 
         ---
@@ -163,47 +129,14 @@ class InvitationViewSet(viewsets.GenericViewSet):
             - name: body
               paramType: body
         '''
-        ACCEPTED = 'accepted'
-        accepted = request.data.get(ACCEPTED, False)
 
-        user_id = request.user.id
+        accept = request.data.get('accept', False)
 
-        if user_id:
-            invitee = UserService.get_user(id=user_id)
+        invitation_id = id
 
-        success = True
-        if accepted is False:
-            success = GroupService.delete_invitation(
-                invitee,
-                request.invitation
-            )
+        if accept:
+            invitation = invitation_service.accept(invitation_id)
         else:
-            try:
-                GroupService.accept_group_invitation(invitee, request.invitation)
-            except NameError as e:
-                return SimpleResponse(
-                    status=406,
-                    errors='role ' + e.message + ' unacceptable'
-                )
-            except ReferenceError as e:
-                return SimpleResponse(
-                    status=409,
-                    errors=e.message + ' already in target person group'
-                )
-            except IndexError:
-                return SimpleResponse(
-                    status=413,
-                    errors='group member number overflow'
-                )
-            except KeyError as e:
-                return SimpleResponse(
-                    status=403,
-                    errors=e.message + ' already in target person group'
-                )
-            except Exception as e:
-                return SimpleResponse(
-                    status=status.HTTP_400_BAD_REQUEST,
-                    errors=e.message
-                )
+            invitation = invitation_service.reject(invitation_id)
 
-        return SimpleResponse(success=success)
+        return SimpleResponse(invitation)

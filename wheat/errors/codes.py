@@ -127,6 +127,21 @@ OPERATION_FORBIDDEN = 41030
 UNKNOWN_GROUP = 42001
 UNKNOWN_GROUP_MSG = "群不存在"
 
+
+# Invitation Related
+
+GROUP_NOT_EXIST = 43001
+GROUP_NOT_EXIST_MSG = 'This group not exist'
+
+INVITER_NOT_IN_THIS_GROUP = 43002
+INVITER_NOT_IN_THIS_GROUP_MSG = 'inviter not belongs to this group'
+
+MEMBER_ALREADY_EXIST = 43003
+MEMBER_ALREADY_EXIST_MSG = 'member already exist in this group'
+
+ROLE_INVALID = 43004
+ROLE_INVALID = 'role is unacceptable, for name error or already exists'
+
 messages = {}
 for name in dir():
     if not name.startswith('__') and name != 'messages' and not name.endswith('_MSG'):

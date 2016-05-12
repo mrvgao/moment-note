@@ -36,6 +36,9 @@ UNKNOWN_ACTION_MSG = "未知操作"
 NOT_EXIST = 40008
 NOT_EXIST_MSG = "不存在请求的资源"
 
+LACK_REQUIRED_PARAM = 40009
+LACK_REQUIRED_PARAM_MSG = 'Lacks required param when post or put'
+
 
 ########################################################
 # 账户相关

@@ -254,7 +254,6 @@ class GroupMemberService(BaseService):
                     group_id=group.id,
                     authority=character,
                     group_remark_name=group.group_type,
-                    avatar=user.avatar,
                     nickname=user.nickname,
                     role=role
             )

@@ -56,3 +56,5 @@ media
 */static/admin/
 */static/rest_framework_swagger/
 */static/rest_framework/
+
+*/htmlcov/*

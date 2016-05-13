@@ -140,7 +140,7 @@ MEMBER_ALREADY_EXIST = 43003
 MEMBER_ALREADY_EXIST_MSG = 'member already exist in this group'
 
 ROLE_INVALID = 43004
-ROLE_INVALID = 'role is unacceptable, for name error or already exists'
+ROLE_INVALID_MSG = 'role is unacceptable, for name error or already exists'
 
 messages = {}
 for name in dir():

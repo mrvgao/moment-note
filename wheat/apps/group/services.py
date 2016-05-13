@@ -290,6 +290,7 @@ class InvitationService(BaseService):
         return invitation
 
     @transaction.atomic
+    @api
     def accept(self, invitation_id):
 
         # add person to each other's group.
@@ -320,6 +321,7 @@ class InvitationService(BaseService):
 
         return invitation
 
+    @api
     def reject(self, invitation_id):
         invitation = self.get(id=invitation_id)
         self.delete(invitation)

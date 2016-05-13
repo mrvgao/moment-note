@@ -77,24 +77,24 @@ class InvitationViewSet(viewsets.GenericViewSet):
               paramType: body
         '''
         
-        group = invitation_service.get(id=request.data.get('group_id', None))
-        invitee_phone = request.data('invitee', None)
+        group = group_service.get(id=request.data.get('group_id', None))
+        invitee_phone = request.data.get('invitee', None)
         role = request.data.get('role', None)
         message = request.data.get('message', None)
         
         error, status_code = None, status.HTTP_200_OK
 
-        if not group_service.consist_member(group.id, id=self.user.id):
-            error, status_code = codes.GROUP_NOT_EXIST, status.HTTP_403_FORBIDDEN
+        if not group or not group_service.consist_member(group.id, id=request.user.id):
+            error, status_code = codes.INVITER_NOT_IN_THIS_GROUP, status.HTTP_403_FORBIDDEN
         elif group_service.consist_member(group.id, phone=invitee_phone):
-            error, status_code = codes.USER_ALRAEDY_EXIST, status.HTTP_409_CONFLICT
-        elif not group_service.role_is_valid(role):
+            error, status_code = codes.MEMBER_ALREADY_EXIST, status.HTTP_409_CONFLICT
+        elif not group_service.role_is_valid(group, role):
             error, status_code = codes.ROLE_INVALID, status.HTTP_406_NOT_ACCEPTABLE
 
         invitation = None
         
         if not error:
-            invitation = group_service.invite_person(request.user, group, invitee_phone, role, message)
+            invitation = invitation_service.invite_person(request.user, group, invitee_phone, role, message)
 
         result = error or invitation  # if error is not none, return error
 
@@ -102,7 +102,6 @@ class InvitationViewSet(viewsets.GenericViewSet):
 
     @login_required
     @check_request('invitation')
-    @request_tools.post_data_check(['accepted'])
     def update(self, request, id):
         '''
         Update invitation: accept invitation
@@ -139,4 +138,4 @@ class InvitationViewSet(viewsets.GenericViewSet):
         else:
             invitation = invitation_service.reject(invitation_id)
 
-        return SimpleResponse(invitation)
+        return APIResponse(invitation)

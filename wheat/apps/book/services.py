@@ -6,9 +6,8 @@ from settings import REDIS_PUBSUB_DB
 
 from customs.services import BaseService
 from apps.user.services import UserService
-from .models import Author, Book, Order
-from .serializers import AuthorSerializer, BookSerializer, OrderSerializer
-from customs.services import MessageService
+from .models import Author, Book
+from .serializers import AuthorSerializer, BookSerializer
 import ast
 from functools import partial
 from customs import funcs
@@ -162,31 +161,6 @@ update_book_field = partial(_update_valid_fileds_by_dic, BOOK_FIELDS)
 
 ORDER_FIELDS = ('price', 'status', 'info')
 update_order_field = partial(_update_valid_fileds_by_dic, ORDER_FIELDS)
-
-
-class OrderService:
-
-    @staticmethod
-    def get_serializer():
-        return OrderSerializer
-
-    @staticmethod
-    def get_model():
-        return Order
-
-    @staticmethod
-    def get_order(**kwargs):
-        return Order.objects.get_or_none(**kwargs)
-
-    @staticmethod
-    def create_order(**kwargs):
-        BOOK_ID = 'book_id'
-        if BOOK_ID not in kwargs:
-            raise KeyError
-        else:
-            order = Order.objects.create(**kwargs)
-            order.save()
-            return order
 
 
 def send_create_book_request_to_wxbook(book_id, group_id, creator_id):

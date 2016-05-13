@@ -2,7 +2,7 @@
 
 from customs.serializers import XModelSerializer
 from customs.fields import XImageField, DictStrField
-from .models import Author, Book, Order
+from .models import Author, Book
 from rest_framework import serializers
 
 
@@ -40,9 +40,3 @@ class BookSerializer(XModelSerializer):
                   'author', 'page_format', 'preview_url',
                   'created_at', 'page_num', 'from_date', 'to_date', 'status', 'deleted')
 
-
-class OrderSerializer(XModelSerializer):
-
-    class Meta:
-        model = Order
-        fields = ('id', 'book_id', 'price', 'status', 'created_at', 'update_at')

@@ -7,7 +7,7 @@ from customs.permissions import AllowPostPermission
 from customs.response import SimpleResponse
 from customs.viewsets import ListModelMixin
 from apps.user.permissions import admin_required, login_required
-from .services import AuthorService, BookService, OrderService
+from .services import AuthorService, BookService
 from .services import update_book_field
 from apps.user.services import UserService
 import services
@@ -276,87 +276,3 @@ class BookViewSet(ListModelMixin, viewsets.GenericViewSet):
             return SimpleResponse(success=False, errors='this book not exist')
 
 
-class OrderViewSet(ListModelMixin, viewsets.GenericViewSet):
-    model = OrderService.get_model()
-    queryset = model.get_queryset()
-    serializer_class = OrderService.get_serializer()
-    lookup_field = 'id'
-    permission_classes = [
-        Or(permissions.IsAuthenticatedOrReadOnly, AllowPostPermission,)]
-
-    def list(self, request):
-        '''
-        Get order information by order id
-
-        id -- order's id
-        ---
-        omit_serializer: true
-        omit_parameters:
-            - form
-        '''
-        ID = 'id'
-        order_id = request.query_params.get(ID, None)
-        order = OrderService.get_order(id=order_id)
-        if order:
-            order_data = OrderViewSet.serializer_class(order).data
-            return SimpleResponse(order_data)
-        else:
-            return SimpleResponse(success=False, errors='this order not exist')
-
-    def create(self, request):
-        '''
-        Create Order Information
-
-        ### Example Request:
-
-            {
-                "book_id": String, (required)
-                "price": Float,
-                "status": String,
-                "info": String,
-            }
-        ---
-        omit_serializer: true
-        omit_parameters:
-            - form
-        parameters:
-            - name: body
-              paramType: body
-        '''
-
-        try:
-            order = OrderService.create_order(**request.data)
-            data = OrderViewSet.serializer_class(order).data
-            return SimpleResponse(data)
-        except KeyError:
-            return SimpleResponse(success=False, errors="Lack of requied keys")
-
-    def update(self, request, id):
-        '''
-        根据书本的id，更新订单信息
-        Update Order Information.
-
-        ### Example Request:
-
-            {
-                "price": Float,
-                "status": String,
-                "info": JSON
-            }
-
-        ---
-        omit_serializer: true
-        omit_parameters:
-            - form
-        parameters:
-            - name: body
-              paramType: body
-        '''
-
-        order = OrderService.get_order(book_id=id)
-        if order:
-            new_order = services.update_order_field(order, request.data)
-            new_order_data = OrderViewSet.serializer_class(new_order).data
-            return SimpleResponse(new_order_data)
-        else:
-            return SimpleResponse(success=False, errors='this order not exist')

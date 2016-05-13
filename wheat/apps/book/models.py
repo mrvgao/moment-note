@@ -60,19 +60,3 @@ class Book(CommonUpdateAble, models.Model, EnhancedModel):
 
     class Meta:
         db_table = "book"
-
-
-
-class Order(CommonUpdateAble, models.Model, EnhancedModel):
-    id = UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    book_id = UUIDField(db_index=True)  # 创建者
-    price = models.FloatField()
-    status = models.CharField(max_length=512)
-    created_at = models.DateTimeField(auto_now_add=True)
-    update_at = models.DateTimeField(auto_now=True)
-    info = JSONCharField(max_length=512, default={})
-
-    objects = CacheableManager()
-
-    class Meta:
-        db_table = 'order'

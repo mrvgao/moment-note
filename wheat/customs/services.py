@@ -5,6 +5,7 @@ from datetime import datetime
 import hashlib
 import requests
 from django.db import transaction
+import sys
 
 role_map = {
     'm-grandfather': u'外公',
@@ -182,8 +183,11 @@ class MessageService(object):
 
         SUCCEED_MARK = '000000'
 
-        response = requests.post(HOST, data=post_message, verify=False)
-        status = response.json()['resp']['respCode']
+        if 'customs' in sys.argv:  # send message only when test customs.
+            response = requests.post(HOST, data=post_message, verify=False)
+            status = response.json()['resp']['respCode']
+        else:
+            status = SUCCEED_MARK
 
         if status == SUCCEED_MARK:  # if status is 000000, send is succeed
             return True

@@ -4,7 +4,6 @@ Test api functions.
 '''
 
 from rest_framework.test import APITestCase
-from settings import API_VERSION
 from rest_framework.test import APIClient
 from apps.user.services import user_service
 from errors import codes, exceptions
@@ -13,9 +12,7 @@ from apps.user.models import User, AuthToken
 from apps.user.permissions import encode_maili
 from customs.test_tools import login_client
 from customs.test_tools import refresh_token
-
-
-URL_PREFIX = '/api/%s/' % API_VERSION
+from customs.test_tools import URL_PREFIX
 
 
 class UserAPITest(APITestCase):

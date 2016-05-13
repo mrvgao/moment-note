@@ -5,6 +5,7 @@ Utils for test.
 '''
 
 from settings import API_VERSION
+
 URL_PREFIX = '/api/%s/' % API_VERSION
 
 

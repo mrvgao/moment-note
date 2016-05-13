@@ -77,7 +77,7 @@ class InvitationViewSet(viewsets.GenericViewSet):
               paramType: body
         '''
         
-        group = invitation_service.get(request.data.get('group_id', None))
+        group = invitation_service.get(id=request.data.get('group_id', None))
         invitee_phone = request.data('invitee', None)
         role = request.data.get('role', None)
         message = request.data.get('message', None)

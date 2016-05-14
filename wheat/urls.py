@@ -28,6 +28,7 @@ try:
         url(r'^', include('apps.moment.urls')),  # Don't set namespace
         url(r'^', include('apps.image.urls')),  # Don't set namespace
         url(r'^', include('apps.book.urls')),  # Don't set namespace
+        url(r'^', include('apps.order.urls')),  # Don't set namespace
     ]
 except Exception as e:
     print e

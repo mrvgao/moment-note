@@ -90,6 +90,7 @@ class Common(Configuration):
         'apps.image',
         'apps.pubsub',
         'apps.book',
+        'apps.order',
     )
     # END LOCAL APPS
 

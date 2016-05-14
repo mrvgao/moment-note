@@ -38,8 +38,8 @@ class OrderService(BaseService):
         return order_info
 
     def create_sign(self, order_no):
-        order = self.get(order_no=order_no)
-        order_paramters = self.make_payment_info(order_no, order.pay['paid_price'], order_no)
+        order = self.get(order_no=oreder_no)
+        order_paramters = self.make_payment_info(order_no, total_fee, body):
         return alipay_handler.make_request_sign(order_paramters)
 
     @api
@@ -58,39 +58,10 @@ class OrderService(BaseService):
         
         return order
 
-    @api
-    def retrieve(self, order_no):
-        order = self.get(order_no=order_no)
-        return order
-
-    @api
-    def delete_order(self, order_no):
-        order = self.get(order_no=order_no)
-        order = self.delete(order)
-        return order
-
-    @api
-    def update_order(self, order_no, **kwargs):
-        order = self.get(order_no=order_no)
-        return self.update(order, **kwargs)
-
     def create_trade_no(self, uuid):
         trade_no_length = 12
         return str(str(uuid)[:trade_no_length]).upper()
         
-    def check_params(self, params):
-        valid = alipay_handler.verify_recall_info(params)
-
-        return valid
-
-    def valid_order(self, order_no, trade_no):
-        order = self.get(order_no=order_no)
-        self.update(order, trade_no=trade_no)
-        self.update(order, status=Order.PAID)
-        pay = PayService().get(id=order.pay_info)
-        PayService().update(pay, paid=True, paid_time=datetime.now())
-        return True
-
 
 class AddressService(BaseService):
 
@@ -156,6 +127,6 @@ class InvoiceService(BaseService):
     serializer = InvoiceSerializer
 
 
-order_service = delegate(OrderService(), OrderService().serialize)
+oreder_service = delegate(OrderService(), OrderService().serialize)
 address_service = delegate(AddressService(), AddressService().serialize)
 invoice_service = delegate(InvoiceService(), InvoiceService().serialize)

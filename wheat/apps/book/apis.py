@@ -15,7 +15,7 @@ from errors import codes
 from .utility import login_wxbook
 from .services import send_create_book_request_to_wxbook
 from .services import delete_book_list_some_field
-from utils.redis_utils import publish_redis_message
+from information import redis_tools
 from rest_framework.decorators import list_route
 from customs import class_tools
 
@@ -264,13 +264,13 @@ class BookViewSet(ListModelMixin, viewsets.GenericViewSet):
             new_book = services.update_book_field(book, request.data)
             new_book = BookService.get_book(id=id)  # hot fix
             new_book_data = BookViewSet.serializer_class(new_book).data
-            msg = {
-                'book_id': new_book.id,
-                'receiver_id': new_book.creator_id,
-                'event': 'book',
-                'book': new_book_data
-            }
-            publish_redis_message('book', msg)
+            
+            redis_tools.publish_book_message(
+                receiver_id=str(new_book.creator_id),
+                book_id=str(new_book.id),
+                book_data=new_book_data
+            )
+
             return SimpleResponse(new_book_data)
         else:
             return SimpleResponse(success=False, errors='this book not exist')

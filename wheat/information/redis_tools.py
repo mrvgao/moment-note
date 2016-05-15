@@ -73,6 +73,17 @@ def publish_invite_message(event, sub_event, invitation_id, receiver_id, message
     }
     publish_redis_message(message)
 
+
+def publish_book_message(receiver_id, book_id, book_data):
+    message = {
+        'book_id': book_id,
+        'receiver_id': receiver_id,
+        'event': 'book',
+        'book': book_data
+    }
+
+    publish_redis_message(message)
+
     
 def publish_redis_message(message, create_mid=True):
     code = get_ramdon_code(message)

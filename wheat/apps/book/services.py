@@ -2,7 +2,6 @@
 
 from datetime import datetime
 from django.db import transaction
-from settings import REDIS_PUBSUB_DB
 
 from customs.services import BaseService
 from apps.user.services import UserService

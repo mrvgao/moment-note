@@ -185,6 +185,16 @@ class GroupServiceTest(TestCase):
         consist = group_service.consist_member(new_group.id, id=user.id)
         self.assertFalse(consist)
 
+    def test_role_acceptable(self):
+        user = self.users[0]
+        group = group_service.create_default_home(user.id)
+        accptable = group_service.role_acceptable(group, 'self')
+        self.assertFalse(accptable)
+
+        accptable = group_service.role_acceptable(group, 'father')
+        self.assertTrue(accptable)
+
+
 inv_service = InvitationService()
 
 

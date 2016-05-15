@@ -13,6 +13,7 @@ from apps.moment.services import MomentService
 from customs.api_tools import api
 from information import redis_tools
 from customs.delegates import delegate
+from . import roles
 
 
 class GroupService(BaseService):
@@ -63,8 +64,15 @@ class GroupService(BaseService):
         # test if role name is valid;
         valid_name = self.valid_role_name(role)
         # test if role is single, test if group already has this role.
-        role_acceptable = True
+        role_acceptable = self.role_acceptable(group, role)
         return valid_name and role_acceptable
+
+    def role_acceptable(self, group, role):
+        role_mutiple = roles.is_mutiple(role)
+        if not role_mutiple and self.consist_role(group.id, role):
+            return False
+        else:
+            return True
 
     def group_type_valid(self, group_type):
         return Group.valid_group_type(group_type)
@@ -72,6 +80,16 @@ class GroupService(BaseService):
     @api
     def get_home(self, owner_id):
         return self.get(creator_id=owner_id, group_type=GroupService.ALL_HOME)
+        
+    def consist_role(self, group_id, role):
+        group = super(GroupService, self).get(id=group_id)
+
+        have = False
+        for _, user in group.members.iteritems():
+            if user['role'] == role:
+                have = True
+
+        return have
         
     def consist_member(self, group_id, **kwargs):
         user_id = UserService().get(**kwargs).id
@@ -307,7 +325,7 @@ class InvitationService(BaseService):
         GroupService().add_group_member(inviter_home, invitee_id, role=invitation.role)
 
         invitee_home = GroupService().get_home(invitee_id)
-        reverse_role = 'r-' + invitation.role
+        reverse_role = roles.get_reverse_role(invitation.role, invitee.gender)
 
         GroupService().add_group_member(invitee_home, inviter_id, role=reverse_role)
         

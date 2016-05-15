@@ -108,7 +108,7 @@ class UserAPITest(APITestCase):
         url = URL_PREFIX + 'users/'
         response = self.client.post(url, post_data)
 
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 406)
         self.assertTrue('errors' in response.data)
         self.assertEqual(response.data['errors']['code'], codes.INVALID_REG_INFO)
 

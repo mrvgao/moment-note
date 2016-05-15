@@ -44,9 +44,9 @@ class UserViewSet(ListModelMixin,
 
         registed = user_service.check_if_registed(phone)
 
-        status_code = 200
+        status_code = status.HTTP_200_OK
         if registed:
-            status_code = 409
+            status_code = status.HTTP_409_CONFLICT
 
         data = {
             'phone': phone,
@@ -81,7 +81,7 @@ class UserViewSet(ListModelMixin,
 
         user = user_service.set_password_by_phone_and_password(phone, password)
 
-        status_code = 406 if not user else None
+        status_code = status.HTTP_406_NOT_ACCEPTABLE if not user else None
 
         result = user or codes.PHONE_NUMBER_NOT_EXIST
 
@@ -113,14 +113,14 @@ class UserViewSet(ListModelMixin,
 
         valid, registed_again = user_service.check_register_info(phone, password)
 
-        status_code = 200
+        status_code = status.HTTP_200_OK
 
         if not valid:
             error_code = codes.INVALID_REG_INFO
-            status_code = 400
+            status_code = status.HTTP_406_NOT_ACCEPTABLE
         elif registed_again:
             error_code = codes.PHONE_ALREAD_EXIST
-            status_code = 409
+            status_code = status.HTTP_409_CONFLICT
         else:
             user = user_service.register(phone, password)
             login(request, authenticate(username=phone, password=password))
@@ -166,7 +166,7 @@ class UserViewSet(ListModelMixin,
             return APIResponse(user)
         else:
             error_code = codes.INCORRECT_CREDENTIAL
-            return APIResponse(error_code, status=401)
+            return APIResponse(error_code, status=status.HTTP_401_UNAUTHORIZED)
 
     @login_required
     @user_is_same_as_logined_user
@@ -205,7 +205,7 @@ class UserViewSet(ListModelMixin,
         if home:
             return APIResponse(home)
         else:
-            return APIResponse(codes.USER_NOT_EXIST, status=404)
+            return APIResponse(codes.USER_NOT_EXIST, status=status.HTTP_404_NOT_FOUND)
 
     @login_required
     @list_route(methods=['get'])
@@ -221,7 +221,7 @@ class UserViewSet(ListModelMixin,
                 'homes': joined_group,
             })
         else:
-            return APIResponse(codes.USER_NOT_EXIST, status=404)
+            return APIResponse(codes.USER_NOT_EXIST, status=status.HTTP_404_NOT_FOUND)
 
 
 @class_tools.set_service(captcha_service)
@@ -257,7 +257,7 @@ class CaptchaViewSet(viewsets.ViewSet):
 
             return APIResponse(response)
         else:
-            return APIResponse(status_code=400)
+            return APIResponse(status_code=status.HTTP_400_BAD_REQUEST)
 
     @detail_route(methods=['get'])
     def send(self, request, phone):
@@ -298,7 +298,7 @@ class CaptchaViewSet(viewsets.ViewSet):
         if send_succeed:
             return APIResponse(response)
         else:
-            return APIResponse(codes.CAPTCHA_SEND_FAILED, status=408)
+            return APIResponse(codes.CAPTCHA_SEND_FAILED, status=status.HTTP_408_REQUEST_TIMEOUT)
 
 
 @class_tools.set_service(auth_service)

@@ -7,8 +7,9 @@ from json import JSONDecoder, JSONEncoder
 from django.core.management.base import BaseCommand
 from django.db import connection
 from settings import REDIS_PUBSUB_DB, REDIS_PUBSUB_TAG
-from utils import redis_utils
+from information import redis_tools
 
+from apps.user.services import AuthService
 from apps.user.services import UserService
 
 logger = logging.getLogger('pubsub')
@@ -29,13 +30,13 @@ def listen_on_redis_pubsub():
                 'login': True,
                 'receiver_id': user_id,
         }
-        if UserService.check_auth_token(user_id, token):
-            user = UserService.get_user(id=user_id)
-            data['user'] = UserService.serialize(user)
+        if AuthService().check_auth_token(user_id, token):
+            user = UserService().get(id=user_id)
+            data['user'] = UserService().serialize(user)
         else:
             data['login'] = False
 
-        redis_utils.publish_redis_message('', data)
+        redis_tools.publish_redis_message(data)
         connection.close()
 
 

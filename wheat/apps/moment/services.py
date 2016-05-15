@@ -16,6 +16,7 @@ from .models import Comment
 from .models import Mark
 import abc
 import functools
+from information import redis_tools
 
 
 class MomentService(BaseService):
@@ -121,21 +122,6 @@ class MomentService(BaseService):
             return None, None
 
 
-def _send_msg(sender_id, moment_id):
-    def send_redis(receiver_id):
-        message = {
-            'sender': sender_id,
-            'moment_id': moment_id,
-            'receiver_id': receiver_id,
-            'event': 'moment'
-        }
-
-        publish_redis_message('moment', message)
-        print('send msg to ' + receiver_id)
-
-    return send_redis
-
-
 def _notify_moment_to_firends(visible, user_id, moment_id):
     from apps.group.services import get_friend_from_group_id
     from apps.group.services import get_all_home_member_list
@@ -147,6 +133,7 @@ def _notify_moment_to_firends(visible, user_id, moment_id):
         friend_list = get_friend_from_group_id(visible, user_id)
     print 'friend list:', friend_list
 
+    _send_msg = functools.partial(redis_tools.publish_moment_message, moment_id, user_id)
     map(_send_msg(user_id, moment_id), friend_list)
 
 

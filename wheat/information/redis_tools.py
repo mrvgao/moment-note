@@ -84,6 +84,17 @@ def publish_book_message(receiver_id, book_id, book_data):
 
     publish_redis_message(message)
 
+
+def publish_moment_message(moment_id, sender_id, receiver_id):
+    message = {
+        'sender': sender_id,
+        'moment_id': moment_id,
+        'receiver_id': receiver_id,
+        'event': 'moment'
+    }
+
+    publish_redis_message(message)
+
     
 def publish_redis_message(message, create_mid=True):
     code = get_ramdon_code(message)

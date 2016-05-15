@@ -340,3 +340,4 @@ class FriendshipService(BaseService):
 user_service = delegate(UserService(), serialize_func=UserService().serialize)
 captcha_service = delegate(CaptchaService(), serialize_func=CaptchaService().serialize)
 auth_service = delegate(AuthService(), serialize_func=AuthService().serialize)
+friend_service = delegate(FriendshipService(), serialize_func=FriendshipService().serialize)

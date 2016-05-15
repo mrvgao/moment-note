@@ -142,6 +142,9 @@ MEMBER_ALREADY_EXIST_MSG = 'member already exist in this group'
 ROLE_INVALID = 43004
 ROLE_INVALID_MSG = 'role is unacceptable, for name error or already exists'
 
+CANNOT_DELETE_SELF = 43005
+CANNOT_DELETE_SELF_MSG = 'cannot delete friend relation of self.'
+
 messages = {}
 for name in dir():
     if not name.startswith('__') and name != 'messages' and not name.endswith('_MSG'):

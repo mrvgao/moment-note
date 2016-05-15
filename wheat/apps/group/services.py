@@ -96,6 +96,7 @@ class GroupService(BaseService):
         getattr(group, character)[str(user_id)] = member_info
 
         GroupMemberService().create(group, user_id, character, member_info['role'])
+        FriendshipService().create(str(group.creator_id), str(user_id))
         
         # set group member by character. 
         group.save()

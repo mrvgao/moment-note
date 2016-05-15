@@ -14,6 +14,7 @@ from customs import class_tools
 from apps.user.services import user_service
 from apps.user.services import captcha_service
 from apps.user.services import auth_service
+from apps.user.services import friend_service
 from django.contrib.auth import login, authenticate
 from apps.group.services import group_service
 
@@ -222,6 +223,26 @@ class UserViewSet(ListModelMixin,
             })
         else:
             return APIResponse(codes.USER_NOT_EXIST, status=status.HTTP_404_NOT_FOUND)
+
+
+@class_tools.set_service(group_service)
+class FriendViewSet(viewsets.ViewSet):
+    lookup_url_kwarg = 'user_id'
+
+    @login_required
+    def destroy(self, request, user_id):
+        '''
+        删除当前登陆用户ID为user_id的好友
+        '''
+
+        friend_id = user_id
+        self_id = request.user.id
+
+        if str(request.user.id) == str(id):
+            return APIResponse(codes.CANNOT_DELETE_SELF, status=status.HTTP_403_FORBIDDEN)
+        else:
+            group_service.delete_person_relation(self_id, friend_id)
+            return APIResponse({'host_id': self_id, 'delete_id': friend_id})
 
 
 @class_tools.set_service(captcha_service)

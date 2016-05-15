@@ -6,10 +6,12 @@ Test api functions.
 from rest_framework.test import APITestCase
 from rest_framework.test import APIClient
 from apps.user.services import user_service
+from apps.user.services import FriendshipService
 from errors import codes, exceptions
 from django.contrib.auth import authenticate
 from apps.user.models import User, AuthToken
 from apps.user.permissions import encode_maili
+from apps.group.services import GroupService
 from customs.test_tools import login_client
 from customs.test_tools import refresh_token
 from customs.test_tools import URL_PREFIX
@@ -20,9 +22,15 @@ class UserAPITest(APITestCase):
         self.phone = '18857453090'
         self.password = '12345678'
         self.user = user_service.create(self.phone, self.password)
+
         self.client = APIClient()
         self.client.credentials(enforce_csrf_checks=False)
-    
+
+        PRE = '1881234000'
+        TOTAL = 10
+        self.phone_numbers = [PRE + str(i) for i in range(TOTAL)]
+        self.users = [User.objects.create(phone=p, password=p) for p in self.phone_numbers]
+
     def test_account_if_registed(self):
         '''
         Test a phone number if has been registered.
@@ -219,6 +227,26 @@ class UserAPITest(APITestCase):
         self.assertEqual(response.status_code, 200)
         print(response.data)
         self.assertTrue('homes' in response.data['data'])
+        
+    def test_delete_friend(self):
+        refresh_token(self.client, self.phone, self.password)
+
+        group = GroupService().get_home(self.user.id)
+
+        deleted_id = self.users[2].id
+        
+        GroupService().add_group_member(group, deleted_id)
+
+        self.assertTrue(FriendshipService().is_friend(self.user.id, deleted_id))
+
+        print(self.user.id, deleted_id)
+
+        url = URL_PREFIX + 'friend/{0}/'.format(deleted_id)
+        print(url)
+
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(FriendshipService().is_friend(self.user.id, deleted_id))
         
 
 class TestTokenViewSet(APITestCase):

@@ -8,13 +8,12 @@ from .models import Group, GroupMember, Invitation
 class GroupSerializer(XModelSerializer):
     admins = DictStrField(required=False, allow_blank=True)
     members = DictStrField(required=False, allow_blank=True)
-    settings = DictStrField(required=False, allow_blank=True)
+    #settings = DictStrField(required=False, allow_blank=True)
 
     class Meta:
         model = Group
         fields = ('id', 'group_type', 'name', 'creator_id',
-                  'admins', 'members', 'max_members',
-                  'settings', 'created_at', 'updated_at')
+                  'admins', 'members')
 
 
 class GroupMemberSerializer(XModelSerializer):

@@ -15,6 +15,7 @@ from apps.user.services import user_service
 from apps.user.services import captcha_service
 from apps.user.services import auth_service
 from django.contrib.auth import login, authenticate
+from apps.group.services import group_service
 
 
 @class_tools.set_filter(['phone'])
@@ -104,8 +105,8 @@ class UserViewSet(ListModelMixin,
             - name: body
               paramType: body
         '''
-        phone = request.data.pop('phone', None)[0]
-        password = request.data.pop('password', None)[0]
+        phone = request.data.get('phone', None)
+        password = request.data.get('password', None)
 
         user = None
         error_code = None
@@ -191,6 +192,36 @@ class UserViewSet(ListModelMixin,
         avatar = request.data.get('avatar', None)
         user = user_service.update_by_id(request.user.id, avatar=avatar)
         return APIResponse(user)
+
+    @login_required
+    @list_route(methods=['get'])
+    def home(self, request):
+        '''
+        Gets one's default home.
+        '''
+
+        home = group_service.get_home(request.user.id)
+
+        if home:
+            return APIResponse(home)
+        else:
+            return APIResponse(codes.USER_NOT_EXIST, status=404)
+
+    @login_required
+    @list_route(methods=['get'])
+    def homes(self, request):
+        '''
+        Gets one's all joined home.
+        '''
+
+        joined_group = group_service.get_user_groups(request.user.id)
+
+        if joined_group:
+            return APIResponse({
+                'homes': joined_group,
+            })
+        else:
+            return APIResponse(codes.USER_NOT_EXIST, status=404)
 
 
 @class_tools.set_service(captcha_service)

@@ -124,7 +124,7 @@ class GroupService(BaseService):
     def get_user_groups(self, user_id):
         member_records = GroupMemberService().get(member_id=user_id, deleted=False, many=True)
 
-        groups = [record.group_id for record in member_records]
+        groups = [str(record.group_id) for record in member_records]
 
         return groups
 

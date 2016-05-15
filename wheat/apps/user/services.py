@@ -113,6 +113,9 @@ class UserService(BaseService):
     @api
     def login_user(self, phone, password):
         user = authenticate(username=phone, password=password)
+
+        if user:
+            AuthService().refresh_user_token(user.id)
         return user
 
 

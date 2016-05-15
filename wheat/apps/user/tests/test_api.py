@@ -202,6 +202,24 @@ class UserAPITest(APITestCase):
         response = self.client.put(set_avatar_url, post_data)
         self.assertNotEqual(response.data['data']['avatar'], old_avatar)
 
+    def test_get_defalut_home(self):
+        refresh_token(self.client, self.phone, self.password)
+
+        url = URL_PREFIX + 'users/home/'
+        response = self.client.get(url)
+
+        print(response.data)
+        self.assertEqual(response.status_code, 200)
+
+    def test_get_joined_home(self):
+        refresh_token(self.client, self.phone, self.password)
+        url = URL_PREFIX + 'users/homes/'
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, 200)
+        print(response.data)
+        self.assertTrue('homes' in response.data['data'])
+        
 
 class TestTokenViewSet(APITestCase):
     def setUp(self):

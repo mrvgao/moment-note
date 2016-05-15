@@ -133,7 +133,7 @@ class User(AbstractBaseUser, EnhancedModel, CommonUpdateAble):
 
     @property
     def token(self):
-        tk, created = AuthToken.objects.get_or_create(user_id=self.id)
+        tk = AuthToken.objects.get(user_id=self.id)
         return tk.token
 
     @property

@@ -256,6 +256,9 @@ class TestCaptchaService(TestCase):
         code = self.captcha.code
         new_code = captcha_service.get_captch(self.phone)
         self.assertEqual(code, new_code)
+        
+        new_code = captcha_service.get_captch(self.phone)
+        self.assertEqual(code, new_code)
 
         code = self.old_captcha.code
         new_code = captcha_service.get_captch(self.old_phone)

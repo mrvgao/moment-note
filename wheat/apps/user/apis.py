@@ -198,10 +198,9 @@ class CaptchaViewSet(viewsets.ViewSet):
 
     lookup_url_kwarg = 'phone'
 
-    @check_token
     def retrieve(self, request, phone):
         '''
-        获得某个手机号的验证码
+        获得某个手机号的验证码 用于测试，只获得验证码而发送短信。
 
         ### Example Request
 
@@ -215,16 +214,20 @@ class CaptchaViewSet(viewsets.ViewSet):
         }
 
         '''
-        code = captcha_service.get_captch(phone)
+        phone_valid = user_service.check_phone_valid(phone)
 
-        response = {
-            'phone': phone,
-            'captcha': code,
-        }
+        if phone_valid:
+            code = captcha_service.get_captch(phone)
 
-        return APIResponse(response)
+            response = {
+                'phone': phone,
+                'captcha': code,
+            }
 
-    @check_token
+            return APIResponse(response)
+        else:
+            return APIResponse(status_code=400)
+
     @detail_route(methods=['get'])
     def send(self, request, phone):
         '''
@@ -232,6 +235,8 @@ class CaptchaViewSet(viewsets.ViewSet):
         captcha/{phone}/send/
 
         发送验证码
+
+        # Requset Example
 
         {
             'phone': phone,

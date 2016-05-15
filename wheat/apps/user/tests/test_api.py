@@ -269,7 +269,7 @@ class TestCaptchaViewSet(APITestCase):
         self.assertEqual(len(response.data['data']['captcha']), 6)
 
         response = self.client.get(url, **{'KEY': 'arbitary-code'})
-        self.assertNotEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
 
         response = self.client.get(url, **{'KEY': code})
         self.assertEqual(response.status_code, 200)

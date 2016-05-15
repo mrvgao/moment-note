@@ -174,7 +174,7 @@ class CaptchaService(BaseService):
 
         if self._expired(captcha_obj):
             captcha_code = self.get_new_captch(captcha_obj.phone)
-            self.update(captcha_obj, code=captcha_code)
+            self.update(captcha_obj, code=captcha_code, created_at=datetime.now())
 
         return captcha_code
 

@@ -16,40 +16,51 @@ from apps.user.permissions import login_required
 class OrderViewSet(viewsets.GenericViewSet):
 
     @login_required
+    @request_tools.post_data_check(['book_id', 'buyer_id', 'paid_type'])
     def create(self, request):
         '''
         Creates Order
 
         Request:
 
-        {
-            "book_id": {String},
-            "binding": <"literary", "econimic", "handcover">,
-            "count": {Int},
-            "buyer_id": {String},
-            "address": {String},
-            "consignee": {String},
-            "phone": {String},
-            "invoice": {String},
-            "note": {String},
-            "paid_type": <"alipay", "wechat">,
-            "transcation_id": [{String}], // could be null, for wechat.
-            "promotion_info": {String},
-        }
+            {
+                "book_id": {String},
+                "binding": <"literary", "econimic", "handcover">,
+                "count": {Int},
+                "buyer_id": {String},
+                "address": {String},
+                "consignee": {String},
+                "phone": {String},
+                "invoice": {String},
+                "note": {String},
+                "paid_type": <"alipay", "wechat">,
+                "transcation_id": [{String}], // could be null, for wechat.
+                "promotion_info": {String},
+            }
+
+        ---
+        omit_serializer: true
+        omit_parameters:
+            - form
+        parameters:
+            - name: body
+              paramType: body
+
         '''
 
         # oreder = create_oreder
 
         kwargs = request.data
-        order = order_service.create_payment(**kwargs)
+        paid_type = kwargs.pop('paid_type')
+
+        order = order_service.create_payment(paid_type, **kwargs)
 
         result = {
             'order': order,
         }
 
-        if kwargs['paid_type'] == 'alipay':
-            sign = order_service.create_sign(order['order_no'])
-            result['sign'] = sign
+        sign = order_service.create_sign(paid_type, order['order_no'])
+        result['sign'] = sign
             
         return APIResponse(result)
 

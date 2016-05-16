@@ -22,8 +22,6 @@ class RedisUtilsTest(TestCase):
         message = {'code': '1101'}
 
         RedisPubsub.pub(message)
-        info = RedisPubsub.get()
-        self.assertIsNotNone(info)  # subscribe success
 
         info = RedisPubsub.get()
         self.assertIsNotNone(info)   # get data

@@ -37,17 +37,17 @@ class OrderService(BaseService):
 
         return order_info
 
-    def create_sign(self, order_no):
+    def create_sign(self, paid_type, order_no):
         order = self.get(order_no=order_no)
-        order_paramters = self.make_payment_info(order_no, order.pay['paid_price'], order_no)
-        return alipay_handler.make_request_sign(order_paramters)
+        if paid_type == Pay.ALIPAY:
+            order_paramters = self.make_payment_info(order_no, order.pay['paid_price'], order_no)
+            return alipay_handler.make_request_sign(order_paramters)
 
     @api
-    def create_payment(self, **kwargs):
+    def create_payment(self, paid_type, **kwargs):
         book_id = kwargs['book_id']
-        binding = kwargs['binding']
-        count = kwargs['count']
-        paid_type = kwargs.pop('paid_type')
+        binding = kwargs.get('binding', Order.LITERARY)
+        count = kwargs.get('count', 1)
 
         pay = PayService().create(book_id, binding, count, paid_type)
         kwargs['pay_info'] = pay.id

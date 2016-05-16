@@ -63,9 +63,10 @@ def get_class_that_defined_method(meth):
 
 def change_func_return_value(func, serialize_func=None):
     @functools.wraps(func)
-    def change_value(arg, *args, **kwargs):
+    def change_value(*args, **kwargs):
+        value = func(*args, **kwargs)
+
         try:
-            value = func(arg, *args, **kwargs)
             value = serialize_func(value)
         except Exception as e:
             print e

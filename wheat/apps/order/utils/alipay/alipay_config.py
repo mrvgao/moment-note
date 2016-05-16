@@ -38,7 +38,7 @@ MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCnxj/9qwVfgoUh/y2W89L6BkRAFljhNhgPdyPuBV64
 
 
 alipay_account = 'admin@mailicn.com'
-recall_host = 'http://api.mailicn.com/{0}/order/notify/'.format(URL_PREFIX)
+recall_host = 'http://api.mailicn.com{0}order/notify/'.format(URL_PREFIX)
 
 sign_type = 'SHA-1'
 

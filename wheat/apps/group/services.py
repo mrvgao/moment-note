@@ -290,7 +290,8 @@ class GroupMemberService(BaseService):
 
     def delete(self, group_id, member_id):
         record = self.get(group_id=group_id, member_id=member_id)
-        super(GroupMemberService, self).delete(record)
+        if record:
+            super(GroupMemberService, self).delete(record)
 
 
 class InvitationService(BaseService):

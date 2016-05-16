@@ -38,7 +38,6 @@ class OrderViewSet(viewsets.GenericViewSet):
                 "transcation_id": [{String}], // could be null, for wechat.
                 "promotion_info": {String},
             }
-
         ---
         omit_serializer: true
         omit_parameters:
@@ -46,7 +45,6 @@ class OrderViewSet(viewsets.GenericViewSet):
         parameters:
             - name: body
               paramType: body
-
         '''
 
         # oreder = create_oreder
@@ -68,6 +66,8 @@ class OrderViewSet(viewsets.GenericViewSet):
 
     @list_route(methods=['post'])
     def notify(self, request):
+        print('--*-- notify data')
+        print(request.data)
         valid = order_service.check_params(request.data)
         if valid:
             order_service.valid_order(

@@ -13,14 +13,17 @@ import urllib
 import requests
 
 
-def params_to_query(params):
+def params_to_query(params, quote=True):
     '''
     Change dict to &+& query paramter.
     '''
     query = ""
     for key in sorted(params.keys(), reverse=False):
         value = params[key]
-        query += '{0}="{1}"&'.format(str(key), str(value))
+        if quote:
+            query += '{0}="{1}"&'.format(str(key), str(value))
+        else:
+            query += '{0}={1}&'.format(str(key), str(value))
 
     query = query[:-1]  # delete the last '&'
 
@@ -89,12 +92,12 @@ def verify_from_alipay(partner_id, notify_id):
 
 
 def verify_recall_info(recall_paramters):
-    check_sign = params_to_query(recall_paramters)
+    check_sign = params_to_query(recall_paramters, quote=False)
     params = query_to_dict(check_sign)
     # alipay need sorted param. this two step is for sort.
     del params['sign_type']
     sign = params.pop('sign')
-    message = params_to_query(params)
+    message = params_to_query(params, quote=False)
 
     valid = check_ali_sign(message, sign)
     from_alipay = verify_from_alipay(alipay_config.partner_id, recall_paramters['notify_id'])

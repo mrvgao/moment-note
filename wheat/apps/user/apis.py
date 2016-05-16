@@ -57,7 +57,6 @@ class UserViewSet(ListModelMixin,
         return APIResponse(data, status=status_code)
 
     @list_route(methods=['post'])
-    @login_required
     def password(self, request):
         '''
         修改用户的密码，用于重置密码
@@ -252,7 +251,7 @@ class CaptchaViewSet(viewsets.ViewSet):
 
     def retrieve(self, request, phone):
         '''
-        获得某个手机号的验证码 用于测试，只获得验证码而发送短信。
+        获得某个手机号的验证码 用于测试，只获得验证码而不发送短信。
 
         ### Example Request
 
@@ -283,25 +282,13 @@ class CaptchaViewSet(viewsets.ViewSet):
     @detail_route(methods=['get'])
     def send(self, request, phone):
         '''
+        发送验证码
         Does actions for captcha.
         captcha/{phone}/send/
 
-        发送验证码
-
-        # Requset Example
-
-        {
-            'phone': phone,
-            'captcha': code,
-        }
-
+        phone -- phone number, must be 11 bits.
         ---
         omit_serializer: true
-        omit_parameters:
-            - form
-        parameters:
-            - name: phone
-              paramType: body
         '''
 
         phone_valid = user_service.check_phone_valid(phone)

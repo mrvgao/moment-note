@@ -25,7 +25,7 @@ class OrderViewSet(viewsets.GenericViewSet):
         '''
         Creates Order
 
-        Request:
+        ### Request Example
 
             {
                 "book_id": {String},
@@ -49,8 +49,6 @@ class OrderViewSet(viewsets.GenericViewSet):
             - name: body
               paramType: body
         '''
-
-        # oreder = create_oreder
 
         kwargs = request.data
         paid_type = kwargs.pop('paid_type')

@@ -60,6 +60,11 @@ class OrderService(BaseService):
         return order
 
     @api
+    def get_user_order(self, user_id):
+        orders = self.get(buyer_id=user_id, deleted=False, many=True)
+        return orders
+
+    @api
     def retrieve(self, order_no):
         order = self.get(order_no=order_no)
         return order

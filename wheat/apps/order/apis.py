@@ -10,6 +10,7 @@ from .services import invoice_service
 from .services import pay_service
 from rest_framework import viewsets, status
 from rest_framework.decorators import list_route, detail_route
+from customs.viewsets import ListModelMixin
 
 from apps.user.permissions import login_required
 
@@ -17,7 +18,7 @@ logger = logging.getLogger('order')
 
 
 @class_tools.set_service(order_service)
-class OrderViewSet(viewsets.GenericViewSet):
+class OrderViewSet(viewsets.ViewSet):
 
     @login_required
     @request_tools.post_data_check(['book_id', 'buyer_id', 'paid_type'])
@@ -87,6 +88,19 @@ class OrderViewSet(viewsets.GenericViewSet):
 
         return APIResponse({})
 
+    @login_required
+    def list(self, request):
+        '''
+        Get Current User's All order list.
+        *Notice*
+        Return value is a list.
+        ---
+        omit_serializer: true
+        '''
+        user_id = request.user.id
+        orders = order_service.get_user_order(user_id)
+        return APIResponse({'orders': orders})
+
     def retrieve(self, reqeust, id):
         '''
         Get order info by order No.
@@ -109,13 +123,7 @@ class OrderViewSet(viewsets.GenericViewSet):
         else:
             return APIResponse(status_code=404)
 
-    def alipay(self, request, id):
-        '''
-        Check one notification if is from Alipay.
-        '''
-        pass
-
-    def delete(self, request, id):
+    def destroy(self, request, id):
         order = order_service.delete_order(order_no=id, **request.data)
 
         if order:

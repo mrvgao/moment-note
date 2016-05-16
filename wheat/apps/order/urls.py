@@ -5,4 +5,5 @@ urlpatterns = get_urlpattern({
     'invoice': apis.InvoiceViewSet,
     'order': apis.OrderViewSet,
     'address': apis.AddressViewSet,
+    'price': apis.PriceViewSet,
 }, api_name='relation-api')

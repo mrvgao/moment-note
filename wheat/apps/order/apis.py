@@ -6,6 +6,7 @@ from customs.response import APIResponse
 from .services import order_service
 from .services import address_service
 from .services import invoice_service
+from .services import pay_service
 from rest_framework import viewsets, status
 from rest_framework.decorators import list_route, detail_route
 
@@ -63,6 +64,7 @@ class OrderViewSet(viewsets.GenericViewSet):
         result['sign'] = sign
             
         return APIResponse(result)
+
 
     @list_route(methods=['post'])
     def notify(self, request):
@@ -131,3 +133,27 @@ class InvoiceViewSet(viewsets.GenericViewSet):
     def delete(self, request, id):
         pass
         
+
+@class_tools.set_service(pay_service)
+class PriceViewSet(viewsets.GenericViewSet):
+    @list_route(methods=['get'])
+    def count(self, request):
+        '''
+        Get books totoal price.
+
+        book_id -- book_id
+        count -- count
+        binding -- binding literary | economic | hardcover
+        promotion_info -- if is 'mailitest', will * 0.01
+        ---
+        omit_serializer: true
+        '''
+
+        price = pay_service.get_price(
+            request.query_params.get('book_id'),
+            request.query_params.get('binding'),
+            request.query_params.get('count'),
+            request.query_params.get('promotion_info', None),
+        )
+
+        return APIResponse(price)

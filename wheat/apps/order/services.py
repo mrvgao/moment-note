@@ -117,7 +117,8 @@ class PayService(BaseService):
 
         return pay
 
-    def get_price(self, book_id, binding, count, promotion_info):
+    def get_price(self, book_id, binding, count, promotion_info=None):
+        count = int(count)
         binding_price = {
             Order.LITERARY: 1.0,
             Order.ECONOMIC: 1.1,
@@ -126,11 +127,17 @@ class PayService(BaseService):
 
         assert binding in binding_price, 'binding type unacceptable'
         book = BookService.get_book(id=book_id)
-        page_num = book.page_num
-        assert page_num > 0, 'page cannot less than 1'
-        price = page_num * binding_price[binding]
-        total_price = price * count
-        paid_price = self.promotion(total_price, promotion_info)
+
+        if book:
+            page_num = book.page_num
+            assert page_num > 0, 'page cannot less than 1'
+            price = page_num * binding_price[binding]
+            total_price = price * count
+            paid_price = self.promotion(total_price, promotion_info)
+        else:
+            price = -1
+            total_price = -1
+            paid_price = -1
 
         return {
             'price': price,
@@ -138,7 +145,7 @@ class PayService(BaseService):
             'paid_price': paid_price,
         }
 
-    def promotion(self, total_price, promotion):
+    def promotion(self, total_price, promotion=None):
         if promotion == 'mailitest':
             return total_price * 0.01
         return total_price
@@ -157,5 +164,6 @@ class InvoiceService(BaseService):
 
 
 order_service = delegate(OrderService(), OrderService().serialize)
+pay_service = delegate(PayService(), PayService().serialize)
 address_service = delegate(AddressService(), AddressService().serialize)
 invoice_service = delegate(InvoiceService(), InvoiceService().serialize)

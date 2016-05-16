@@ -333,6 +333,13 @@ class Common(Configuration):
                 'maxBytes': '16777216',  # 16megabytes
                 'formatter': 'verbose'
             },
+            'order': {
+                'level': 'DEBUG',
+                'class': 'logging.handlers.RotatingFileHandler',
+                'filename': os.path.join(BASE_DIR, 'logs/order.log'),
+                'maxBytes': '16777216',  # 16megabytes
+                'formatter': 'verbose'
+            },
         },
         'loggers': {
             'django.request': {
@@ -347,6 +354,11 @@ class Common(Configuration):
             },
             'pubsub': {
                 'handlers': ['pubsub'],
+                'level': 'DEBUG',
+                'propagate': True,
+            },
+            'order': {
+                'handlers': ['order'],
                 'level': 'DEBUG',
                 'propagate': True,
             },

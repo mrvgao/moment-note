@@ -40,7 +40,7 @@ class OrderViewSet(viewsets.GenericViewSet):
 
         # oreder = create_oreder
 
-        kwargs = request.post.data
+        kwargs = request.data
         order = order_service.create_payment(**kwargs)
 
         result = {

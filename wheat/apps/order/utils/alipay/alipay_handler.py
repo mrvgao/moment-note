@@ -20,7 +20,7 @@ def params_to_query(params):
     query = ""
     for key in sorted(params.keys(), reverse=False):
         value = params[key]
-        query += '{0}={1}&'.format(str(key), str(value))
+        query += '{0}="{1}"&'.format(str(key), str(value))
 
     query = query[:-1]  # delete the last '&'
 
@@ -74,7 +74,7 @@ def check_ali_sign(message, sign):
 
 def verify_from_alipay(partner_id, notify_id):
     alipay_gateway_url = 'https://mapi.alipay.com/gateway.do'
-    
+
     verify_info = {
         'service': 'notify_verify',
         'partner': partner_id,

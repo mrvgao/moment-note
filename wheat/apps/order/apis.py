@@ -1,4 +1,5 @@
 # -*- coding:utf-8 -*-
+import logging
 from customs import class_tools
 from customs import request_tools
 from errors import codes
@@ -11,6 +12,8 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import list_route, detail_route
 
 from apps.user.permissions import login_required
+
+logger = logging.getLogger('order')
 
 
 @class_tools.set_service(order_service)
@@ -60,15 +63,16 @@ class OrderViewSet(viewsets.GenericViewSet):
 
         sign = order_service.create_sign(paid_type, order['order_no'])
         result['sign'] = sign
-            
+
         return APIResponse(result)
 
 
     @list_route(methods=['post'])
     def notify(self, request):
         print('--*-- notify data')
-        print(request.data)
+        logger.info(request.data)
         valid = order_service.check_params(request.data)
+        logger.info(valid)
         if valid:
             order_service.valid_order(
                 order_no=request.data['out_trade_no'],  # order number self defined
@@ -98,7 +102,7 @@ class OrderViewSet(viewsets.GenericViewSet):
             return APIResponse(order)
         else:
             return APIResponse(status_code=404)
-        
+
     def alipay(self, request, id):
         '''
         Check one notification if is from Alipay.
@@ -132,7 +136,7 @@ class InvoiceViewSet(viewsets.GenericViewSet):
 
     def delete(self, request, id):
         pass
-        
+
 
 @class_tools.set_service(pay_service)
 class PriceViewSet(viewsets.GenericViewSet):

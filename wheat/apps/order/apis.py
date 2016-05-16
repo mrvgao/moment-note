@@ -63,16 +63,23 @@ class OrderViewSet(viewsets.GenericViewSet):
             
         return APIResponse(result)
 
-
     @list_route(methods=['post'])
     def notify(self, request):
-        print('--*-- notify data')
-        print(request.data)
-        valid = order_service.check_params(request.data)
+        '''
+        ---
+        omit_serializer: true
+        omit_parameters:
+            - form
+        parameters:
+            - name: body
+              paramType: body
+        '''
+        request_data = request_tools.change_unicode_to_str(request.data)
+        valid = order_service.check_params(request_data)
         if valid:
             order_service.valid_order(
-                order_no=request.data['out_trade_no'],  # order number self defined
-                trade_no=request.data['trade_no'],  # trade no alipay given.
+                order_no=request_data['out_trade_no'],  # order number self defined
+                trade_no=request_data['trade_no'],  # trade no alipay given.
             )
 
         return APIResponse({})

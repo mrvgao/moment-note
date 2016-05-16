@@ -49,13 +49,13 @@ class AuthorViewSet(ListModelMixin, viewsets.GenericViewSet):
 
         if query_type == GROUP:
             data = AuthorService.get_author_group_info(
-                group_id=query_id, user_service=UserService
+                group_id=query_id, user_service=UserService()
             )
 
             return SimpleResponse(data)
         elif query_type == PERSON:
-            user = UserService.get_user(id=query_id)
-            data = UserService.serialize(user)
+            user = UserService().get(id=query_id)
+            data = UserService().serialize(user)
             return SimpleResponse(data)
         else:
             return SimpleResponse(success=False, errors="Params Unvlid")

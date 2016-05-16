@@ -69,7 +69,7 @@ def user_is_same_as_logined_user(func):
             )
         if str(request.data[USER_ID]) != str(request.user.id):
             raise exceptions.APIError(
-                code=codes.UNVALID_USER_ID_MSG,
+                code=codes.INVALID_USER_ID_MSG,
                 status=status.HTTP_401_UNAUTHORIZED)
         else:
             return func(self, request, *args, **kwargs)

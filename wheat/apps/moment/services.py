@@ -4,14 +4,13 @@ from datetime import datetime
 from django.db import transaction
 from django.db.models import Q
 
-from customs.services import BaseService
-from apps.user.services import UserService
+from customs.services import OldBaseService
+from apps.user.services import FriendshipService
 from .models import Moment
 from .serializers import MomentSerializer
 from django.db.models import Min
 from apps.book.services import AuthorService
 from itertools import chain
-from utils.redis_utils import publish_redis_message
 from .models import Comment
 from .models import Mark
 import abc
@@ -19,7 +18,7 @@ import functools
 from information import redis_tools
 
 
-class MomentService(BaseService):
+class MomentService(OldBaseService):
 
     @classmethod
     def _get_model(cls, name='Moment'):
@@ -91,12 +90,9 @@ class MomentService(BaseService):
     @classmethod
     def get_user_moments(cls, user_id):
         from apps.group.services import GroupService
-        # friend_ids = UserService.get_user_friend_ids(user_id)
-        group_ids = GroupService.get_user_group_ids(user_id)
-        home_members = GroupService.get_home_member(user_id)
+        home_members = GroupService().get_user_home_member(user_id)
 
         condition = Q(Q(user_id__in=home_members) & Q(visible__in=['public', 'friends']))
-      #  condition = Q(user_id__in=home_members)
         moment = Moment.objects.filter(condition).filter(deleted=False).order_by('post_date')
 
         return moment
@@ -123,18 +119,17 @@ class MomentService(BaseService):
 
 
 def _notify_moment_to_firends(visible, user_id, moment_id):
-    from apps.group.services import get_friend_from_group_id
-    from apps.group.services import get_all_home_member_list
+    from apps.group.services import GroupService
 
     PUBLIC, FRIENDS = 'public', 'friends'
     if visible == PUBLIC or visible == FRIENDS:
-        friend_list = get_all_home_member_list(user_id)
-    else:
-        friend_list = get_friend_from_group_id(visible, user_id)
+        friend_list = GroupService().get_user_home_member(user_id)
+    #else:
+    #    friend_list = get_friend_from_group_id(visible, user_id)
     print 'friend list:', friend_list
 
     _send_msg = functools.partial(redis_tools.publish_moment_message, moment_id, user_id)
-    map(_send_msg(user_id, moment_id), friend_list)
+    map(_send_msg, friend_list)
 
 
 def get_moment_from_author_list(receiver, group_id):
@@ -386,7 +381,7 @@ class MarkService(BaseCommentService):
 
     @classmethod
     def friends_visible_func(cls, user_id):  # m is a moment
-        return lambda m: UserService.all_is_friend([user_id, m.sender_id])
+        return lambda m: FriendshipService().all_is_friend([user_id, m.sender_id])
 
     @classmethod
     def produce_content(cls, target_models):
@@ -431,7 +426,7 @@ class CommentService(BaseCommentService):
 
     @classmethod
     def friends_visible_func(cls, user_id):
-        return lambda m: UserService.all_is_friend([
+        return lambda m: FriendshipService().all_is_friend([
             user_id,
             m.sender_id,
             m.specific_person

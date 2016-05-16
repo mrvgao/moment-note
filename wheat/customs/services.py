@@ -32,6 +32,19 @@ role_map = {
 }
 
 
+class OldBaseService(object):
+    @classmethod
+    def serialize_objs(cls, obj_list, request=None):
+        data = []
+        for obj in obj_list:
+            if request is None:
+                data.append(OrderedDict(cls.serialize(obj)))
+            else:
+                data.append(OrderedDict(cls.serialize(obj, context={'request': request})))
+
+        return data
+
+
 class BaseService(object):
     '''
     Base class of every service.

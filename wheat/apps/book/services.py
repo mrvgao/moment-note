@@ -3,8 +3,8 @@
 from datetime import datetime
 from django.db import transaction
 
-from customs.services import BaseService
-from apps.user.services import UserService
+from customs.services import OldBaseService
+from apps.user.services import AuthService
 from .models import Author, Book
 from .serializers import AuthorSerializer, BookSerializer
 import ast
@@ -40,7 +40,7 @@ class AuthorService:
 
             for user_id in group.members["user"]:
                 member_id = user_id
-                user = user_service.get_user(id=str(member_id))
+                user = user_service.get(id=str(member_id))
                 user_data = user_service.serialize(user)
                 user_info_list.append(user_data)
 
@@ -74,7 +74,7 @@ class AuthorService:
         return author_list
 
 
-class BookService(BaseService):
+class BookService(OldBaseService):
 
     @staticmethod
     def get_serializer():
@@ -163,7 +163,7 @@ update_order_field = partial(_update_valid_fileds_by_dic, ORDER_FIELDS)
 
 
 def send_create_book_request_to_wxbook(book_id, group_id, creator_id):
-    creator_token = UserService.get_auth_token(user_id=creator_id).key
+    creator_token = AuthService().get_token(user_id=creator_id).key
  #   URL = 'http://192.168.0.126:8009/maili/book/{0}/typeset?group_id={1}'.format(book_id, group_id)
     URL = 'http://open.weixinshu.com/maili/book/{0}/typeset?group_id={1}'.format(book_id, group_id)
     response = requests.get(

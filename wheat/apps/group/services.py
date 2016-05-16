@@ -79,7 +79,10 @@ class GroupService(BaseService):
 
     @api
     def get_home(self, owner_id):
-        return self.get(creator_id=owner_id, group_type=GroupService.ALL_HOME)
+        home = self.get(creator_id=owner_id, group_type=GroupService.ALL_HOME)
+        if not home:
+            home = self.create_default_home(owner_id)
+        return home
         
     def consist_role(self, group_id, role):
         group = super(GroupService, self).get(id=group_id)
@@ -137,7 +140,10 @@ class GroupService(BaseService):
 
     def get_user_home_member(self, user_id):
         home = self.get_home(user_id)
-        members = [uid for uid in home.members]
+        if not home:
+            home = self.create_default_home(user_id)
+            
+        members = [str(uid) for uid in home.members]
         return members
 
     def get_user_groups(self, user_id):

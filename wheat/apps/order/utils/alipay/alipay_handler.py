@@ -54,7 +54,7 @@ def query_to_dict(query):
         value = sp_item[1]
         res[key] = value
 
-        return res
+    return res
 
 
 def check_ali_sign(message, sign):

@@ -86,10 +86,13 @@ class OrderService(BaseService):
 
     def valid_order(self, order_no, trade_no):
         order = self.get(order_no=order_no)
-        self.update(order, trade_no=trade_no)
-        self.update(order, status=Order.PAID)
-        pay = PayService().get(id=order.pay_info)
-        PayService().update(pay, paid=True, paid_time=datetime.now())
+        if order:
+            self.update(order, trade_no=trade_no)
+            self.update(order, status=Order.PAID)
+            pay = PayService().get(id=order.pay_info)
+            PayService().update(pay, paid=True, paid_time=datetime.now())
+        else:
+            print('order no not found')
         return True
 
 

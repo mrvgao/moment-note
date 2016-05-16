@@ -77,7 +77,7 @@ class OrderViewSet(viewsets.GenericViewSet):
             - name: body
               paramType: body
         '''
-        logger.info(request.data)
+        logger.info('notification: ' + str(request.data))
         request_data = request_tools.change_unicode_to_str(request.data)
         valid = order_service.check_params(request_data)
         logger.info(valid)

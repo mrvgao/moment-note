@@ -91,13 +91,19 @@ class TestOrderService(TestCase):
 
     def test_create_sign(self):
         payment = order_service.create_payment(**self.request_data)
-        sign = order_service.create_sign(payment.order_no)
+        sign = order_service.create_sign('alipay', payment.order_no)
         self.assertIsNotNone(sign)
         self.assertTrue('query' in sign)
         self.assertTrue('sign' in sign)
         
+    def test_get_user_order(self):
+        payment = order_service.create_payment(**self.request_data)
 
-        
+        self.request_data['count'] = 10
+        payment_2 = order_service.create_payment(**self.request_data)
 
+        orders = order_service.get_user_order(self.request_data['buyer_id'])
+
+        self.assertEqual(len(orders), 2)
         
 

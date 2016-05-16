@@ -48,8 +48,9 @@ class OrderService(BaseService):
         book_id = kwargs['book_id']
         binding = kwargs.get('binding', Order.LITERARY)
         count = kwargs.get('count', 1)
+        promotion = kwargs.get('promotion_info', None)
 
-        pay = PayService().create(book_id, binding, count, paid_type)
+        pay = PayService().create(book_id, binding, count, paid_type, promotion)
         kwargs['pay_info'] = pay.id
 
         order = self.create(**kwargs)

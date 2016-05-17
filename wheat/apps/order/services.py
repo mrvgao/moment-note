@@ -58,7 +58,7 @@ class OrderService(BaseService):
         delivery = DeliveryService().create(delivery=delivery, price=delivery_price)
         kwargs['delivery_info'] = delivery.id
 
-        address = kwargs.pop('address')
+        address = kwargs.get('address')
         buyer_id = kwargs.get('buyer_id')
         address = kwargs.get('address')
         consignee = kwargs.get('consignee')
@@ -67,9 +67,9 @@ class OrderService(BaseService):
         if not AddressService().get(user_id=buyer_id, address=address, consignee=consignee):
             AddressService().create(
                 user_id=buyer_id,
-                address=address,
                 consignee=consignee,
                 phone=phone,
+                address=address,
             )
 
         order = self.create(**kwargs)
@@ -125,17 +125,22 @@ class AddressService(BaseService):
     model = Address
     serializer = AddressSerializer
 
+    @api
     def create(self, **kwargs):
-        pass
+        return super(AddressService, self).create(**kwargs)
 
-    def update(self, id, **kwargs):
-        pass
+    @api
+    def update_by_id(self, id, **kwargs):
+        return super(AddressService, self).update_by_id(id, **kwargs)
 
+    @api
     def list(self, user_id):
-        pass
+        addresses = self.get(user_id=user_id, many=True)
+        return addresses
 
+    @api
     def delete(self, id):
-        pass
+        return super(AddressService, self).delete(id)
 
 
 class PayService(BaseService):

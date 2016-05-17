@@ -138,16 +138,43 @@ class OrderViewSet(viewsets.ViewSet):
 class AddressViewSet(viewsets.GenericViewSet):
 
     def create(self, request):
-        pass
+        '''
+        ### Example Request:
+
+            {
+                "user_id": {String},  //required
+                "consignee": {String},  //required, 收货人名字
+                "phone": {String},  //required
+                "zip_code": {String},
+                "address": {String},  //required
+                "is_default": {String},  // 非必需，将该地址设置为默认地址
+            }
+        ---
+        omit_serializer: true
+        omit_parameters:
+            - form
+        parameters:
+            - name: body
+              paramType: body
+        '''
+
+        address = address_service.create(**request.data)
+        return APIResponse(address)
 
     def update(self, request, id):
-        pass
+        address = address_service.update_by_id(id)
+        return APIResponse(address)
 
     def list(self, request):
-        pass
+        '''
+        Get all adresses of current request user.
+        '''
+        addresses = address_service.list(request.user.id)
+        return APIResponse(addresses)
 
-    def delete(self, request, id):
-        pass
+    def destroy(self, request, id):
+        address = address_service.delete(id)
+        return APIResponse(address)
 
 
 @class_tools.set_service(invoice_service)
@@ -157,6 +184,12 @@ class InvoiceViewSet(viewsets.GenericViewSet):
         pass
 
     def list(self, request):
+        pass
+
+    def update(self, request, id):
+        pass
+
+    def retrieve(self, request, id):
         pass
 
     def delete(self, request, id):

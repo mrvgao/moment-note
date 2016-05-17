@@ -13,7 +13,7 @@ class ActivatedUserManager(models.Manager):
         return super(ActivatedUserManager, self).get_queryset().filter(activated=True)
 
 
-class UserManager(BaseUserManager):
+class UserManager(BaseUserManager, CacheableManager):
 
     def create_user(self, phone, password, **kwargs):
         user = self.model(

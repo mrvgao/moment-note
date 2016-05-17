@@ -1,5 +1,4 @@
-# -*- coding:utf-8 -*-
-import logging
+# -*- coding:utf-8 -*- import logging
 from customs import class_tools
 from customs import request_tools
 from errors import codes
@@ -14,6 +13,7 @@ from customs.viewsets import ListModelMixin
 
 from apps.user.permissions import login_required
 
+import logging
 logger = logging.getLogger('order')
 
 
@@ -25,7 +25,6 @@ class OrderViewSet(viewsets.ViewSet):
     def create(self, request):
         '''
         Creates Order
-
         ### Request Example
 
             {
@@ -92,7 +91,6 @@ class OrderViewSet(viewsets.ViewSet):
     def list(self, request):
         '''
         Get Current User's All order list.
-        *Notice*
         Return value is a list.
         ---
         omit_serializer: true

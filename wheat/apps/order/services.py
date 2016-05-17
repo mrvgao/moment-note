@@ -4,8 +4,10 @@ from datetime import datetime
 from django.db import transaction
 from customs.services import BaseService
 from .models import Order, Address, Pay, Delivery, Invoice
+from .models import DeliveryCarrier
 from .serializers import OrderSerializer, AddressSerializer
 from .serializers import PaySerializer, DeliverySerializer, InvoiceSerializer
+from .serializers import DeliveryCarrierSerializer
 from customs.api_tools import api
 from customs.delegates import delegate
 from .utils.alipay import alipay_config
@@ -197,6 +199,20 @@ class PayService(BaseService):
         return total_price
 
 
+class DeliveryCarrierService(BaseService):
+
+    model = DeliveryCarrier
+    serializer = DeliveryCarrierSerializer
+
+    @api
+    def get_all(self):
+        return self.get(deleted=False, many=True)
+
+    @api
+    def create(self, **kwargs):
+        return super(DeliveryCarrierService, self).create(**kwargs)
+    
+
 class DeliveryService(BaseService):
 
     model = Delivery
@@ -213,3 +229,5 @@ order_service = delegate(OrderService(), OrderService().serialize)
 pay_service = delegate(PayService(), PayService().serialize)
 address_service = delegate(AddressService(), AddressService().serialize)
 invoice_service = delegate(InvoiceService(), InvoiceService().serialize)
+delivery_carrier_service = delegate(DeliveryCarrierService(), DeliveryCarrierService().serialize)
+delivery_service = delegate(DeliveryService(), DeliveryService().serialize)

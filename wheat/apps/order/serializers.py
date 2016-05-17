@@ -3,6 +3,7 @@
 from customs.serializers import XModelSerializer
 
 from .models import Order, Address, Pay, Delivery, Invoice
+from .models import DeliveryCarrier
 
 
 class OrderSerializer(XModelSerializer):
@@ -24,6 +25,13 @@ class PaySerializer(XModelSerializer):
     class Meta:
         model = Pay
         exclude = ('id', )
+
+
+class DeliveryCarrierSerializer(XModelSerializer):
+
+    class Meta:
+        model = DeliveryCarrier
+        fields = ('name', 'price', 'deleted')
 
 
 class DeliverySerializer(XModelSerializer):

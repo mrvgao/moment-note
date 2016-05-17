@@ -7,6 +7,8 @@ from .services import order_service
 from .services import address_service
 from .services import invoice_service
 from .services import pay_service
+from .services import delivery_carrier_service
+from .services import delivery_service
 from rest_framework import viewsets, status
 from rest_framework.decorators import list_route, detail_route
 from customs.viewsets import ListModelMixin
@@ -189,6 +191,60 @@ class AddressViewSet(viewsets.GenericViewSet):
     def destroy(self, request, id):
         address = address_service.delete_by_id(id)
         return APIResponse(address)
+
+
+@class_tools.set_service(delivery_service)
+class DeliveryViewSet(viewsets.GenericViewSet):
+
+    @login_required
+    @list_route(methods=['get', 'post'])
+    def carriers(self, request):
+        '''
+        获得所有快递商的信息/ 新建一个快递商的信息
+
+        ### Request When POST
+
+            {
+                "name": {String},
+                "price": {String}
+            }
+
+
+        ### Response When GET
+
+            {
+                "data": [
+                    {
+                    "id": "9866fef61f4545e38be1d868462ae680",
+                    "name": "其他",
+                    "price": 0,
+                    "deleted": false
+                    },
+                    {
+                    "id": "cb007c4f60bd4157a8daa915b2f1f70a",
+                    "name": "顺丰",
+                    "price": 12,
+                    "deleted": false
+                    }
+                ],
+                "errors": null,
+                "request": "success"
+            }
+
+        ---
+        omit_serializer: true
+        omit_parameters:
+            - form
+        parameters:
+            - name: body
+              paramType: body
+        '''
+        if request.method.upper() == 'GET':
+            carriers = delivery_carrier_service.get_all()
+        elif request.method.upper() == 'POST':
+            carriers = delivery_carrier_service.create(**request.data)
+
+        return APIResponse(carriers)
 
 
 @class_tools.set_service(invoice_service)

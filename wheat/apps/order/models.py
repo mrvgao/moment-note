@@ -105,6 +105,13 @@ class Pay(CommonUpdateAble, models.Model, EnhancedModel):
         db_table = "order_pay"
 
 
+class DeliveryCarrier(CommonUpdateAble, models.Model, EnhancedModel):
+    id = UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField(max_length=20)  # 物流公司
+    price = models.IntegerField(default=0)
+    deleted = models.BooleanField(default=False)
+    
+
 class Delivery(CommonUpdateAble, models.Model, EnhancedModel):
     UNSENT = ('unsend', '未发货')
     SENT = ('send', '已发货')

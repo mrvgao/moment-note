@@ -40,6 +40,8 @@ class OrderViewSet(viewsets.ViewSet):
                 "paid_type": <"alipay", "wechat">,
                 "transcation_id": [{String}], // could be null, for wechat.
                 "promotion_info": {String},
+                "delivery": <"顺丰", "其他">, // required
+                "delivery_price": {int}, //required
             }
         ---
         omit_serializer: true
@@ -97,7 +99,7 @@ class OrderViewSet(viewsets.ViewSet):
         '''
         user_id = request.user.id
         orders = order_service.get_user_order(user_id)
-        return APIResponse({'orders': orders})
+        return APIResponse(orders)
 
     def retrieve(self, reqeust, id):
         '''
@@ -134,6 +136,15 @@ class OrderViewSet(viewsets.ViewSet):
 class AddressViewSet(viewsets.GenericViewSet):
 
     def create(self, request):
+        pass
+
+    def update(self, request, id):
+        pass
+
+    def list(self, request):
+        pass
+
+    def delete(self, request, id):
         pass
 
 

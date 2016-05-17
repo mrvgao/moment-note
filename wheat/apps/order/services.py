@@ -53,9 +53,28 @@ class OrderService(BaseService):
         pay = PayService().create(book_id, binding, count, paid_type, promotion)
         kwargs['pay_info'] = pay.id
 
+        delivery = kwargs.pop('delivery')
+        delivery_price = kwargs.pop('delivery_price', 0)
+        delivery = DeliveryService().create(delivery=delivery, price=delivery_price)
+        kwargs['delivery_info'] = delivery.id
+
+        address = kwargs.pop('address')
+        buyer_id = kwargs.get('buyer_id')
+        address = kwargs.get('address')
+        consignee = kwargs.get('consignee')
+        phone = kwargs.get('phone')
+
+        if not AddressService().get(user_id=buyer_id, address=address, consignee=consignee):
+            AddressService().create(
+                user_id=buyer_id,
+                address=address,
+                consignee=consignee,
+                phone=phone,
+            )
+
         order = self.create(**kwargs)
-        order.order_no = self.create_trade_no(order.id)
-        self.update(order, oreder_no=self.create_trade_no)
+        trade_no = self.create_trade_no(order.id)
+        self.update(order, order_no=trade_no)
         
         return order
 
@@ -105,6 +124,18 @@ class AddressService(BaseService):
 
     model = Address
     serializer = AddressSerializer
+
+    def create(self, **kwargs):
+        pass
+
+    def update(self, id, **kwargs):
+        pass
+
+    def list(self, user_id):
+        pass
+
+    def delete(self, id):
+        pass
 
 
 class PayService(BaseService):

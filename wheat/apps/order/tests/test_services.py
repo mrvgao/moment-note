@@ -67,6 +67,8 @@ class TestOrderService(TestCase):
             "note": 'no',
             "paid_type": "alipay",
             "promotion_info": "no",
+            "delivery": "sf",
+            "delivery_price": 12,
         }
 
     def test_create_trade_no(self):
@@ -78,7 +80,12 @@ class TestOrderService(TestCase):
 
         payment = order_service.create_payment(**self.request_data)
 
+        address = AddressService().get(user_id=payment.buyer_id)
+        self.assertIsNotNone(address)
         self.assertEqual(len(payment.order_no), 12)
+        self.assertTrue(hasattr(payment, 'pay'))
+
+        self.assertTrue(hasattr(payment, 'delivery'))
         self.assertEqual(payment.pay['total_price'], 2 * 100 * 1.0)
 
     def test_create_make_payment_info(self):

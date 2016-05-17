@@ -237,7 +237,7 @@ class FriendViewSet(viewsets.ViewSet):
         friend_id = user_id
         self_id = request.user.id
 
-        if str(request.user.id) == str(id):
+        if str(self_id) == str(friend_id):
             return APIResponse(codes.CANNOT_DELETE_SELF, status=status.HTTP_403_FORBIDDEN)
         else:
             group_service.delete_person_relation(self_id, friend_id)

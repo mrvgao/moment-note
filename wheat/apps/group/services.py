@@ -80,8 +80,6 @@ class GroupService(BaseService):
     @api
     def get_home(self, owner_id):
         home = self.get(creator_id=owner_id, group_type=GroupService.ALL_HOME)
-        if not home:
-            home = self.create_default_home(owner_id)
         return home
         
     def consist_role(self, group_id, role):

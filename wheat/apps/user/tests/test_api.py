@@ -104,8 +104,8 @@ class UserAPITest(APITestCase):
         login_client(self.client, self.phone, self.password)
         response = self.client.post(url, post_data)
 
-        self.assertEqual(response.status_code, 401)
-        self.assertEqual(response.data['errors']['code'], codes.LOGIN_REQUIRED)
+        self.assertEqual(response.status_code, 406)
+        self.assertEqual(response.data['errors']['code'], codes.PHONE_NUMBER_NOT_EXIST)
 
     def test_invalid_registed(self):
         post_data = {

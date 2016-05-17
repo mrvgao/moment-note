@@ -43,7 +43,7 @@ class Order(CommonUpdateAble, models.Model, EnhancedModel):
     created_at = models.DateTimeField(auto_now_add=True)
     expired_at = models.DateTimeField(auto_now_add=True)
     trade_no = models.CharField(max_length=50, default="")  # for alipay and wechat
-    transacition_id = models.CharField(max_length=50, default="")
+    transcation_id = models.CharField(max_length=50, default="")
     promotion_info = models.CharField(max_length=50, null=True)
     status = models.CharField(max_length=50, choices=ORDER_STATUS, default='unpaid')
     print_info = models.CharField(max_length=200, default="")  # appending info.

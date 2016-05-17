@@ -98,10 +98,17 @@ class UserService(BaseService):
         return len(password) >= PWD_LENGTH
 
     def check_if_credential(self, phone, password):
-        user = authenticate(username=phone, password=password)
+        user = None
+        try:
+            user = authenticate(username=phone, password=password)
+        except AttributeError as e:
+            print e
+            return False
+
         if user:
             return True
-        return False
+        else:
+            return False
 
     def check_if_activated(self, phone):
         user = self.get(phone=phone)

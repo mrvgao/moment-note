@@ -73,8 +73,8 @@ class Order(CommonUpdateAble, models.Model, EnhancedModel):
 
         return {
             'delivery': delivery.delivery,
-            'delivery': delivery.delivery_no,
-            'delivery': delivery.delivery_time,
+            'delivery_no': delivery.delivery_no,
+            'delivery_time': delivery.delivery_time,
             'update_time': delivery.update_time,
             'status': delivery.status,
         }
@@ -106,12 +106,23 @@ class Pay(CommonUpdateAble, models.Model, EnhancedModel):
 
 
 class Delivery(CommonUpdateAble, models.Model, EnhancedModel):
+    UNSENT = ('unsend', '未发货')
+    SENT = ('send', '已发货')
+    ON_THE_WAY = ('on-the-way', '在途中')
+    
+    STATUS = (
+        UNSENT,
+        SENT,
+        ON_THE_WAY,
+    )
+
     id = UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     delivery = models.CharField(max_length=20)  # 物流公司
-    delivery_no = models.CharField(max_length=50)   # 物流单号
+    price = models.IntegerField(default=0)
+    delivery_no = models.CharField(max_length=50, null=True)   # 物流单号
     delivery_time = models.DateTimeField(auto_now=True)
     update_time = models.DateTimeField(auto_now_add=True)  # 最后一次信息更新时间, 用于跟踪货物
-    status = models.CharField(max_length=100)  # 物流状态, eg. 正在西湖区派件中心 etc.
+    status = models.CharField(max_length=100, choices=STATUS, default=UNSENT[1])  # 物流状态, eg. 正在西湖区派件中心 etc.
 
     class Meta:
         db_table = "order_delivery"
@@ -122,7 +133,7 @@ class Address(CommonUpdateAble, models.Model, EnhancedModel):
     user_id = UUIDField(db_index=True)
     consignee = models.CharField(max_length=50, default="")
     phone = models.CharField(max_length=20)
-    zip_code = models.CharField(max_length=10)
+    zip_code = models.CharField(max_length=10, null=True)
     address = models.CharField(max_length=100)
     is_default = models.BooleanField(default=False)
     update_time = models.DateTimeField(auto_now_add=True)

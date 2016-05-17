@@ -8,7 +8,7 @@ from apps.message.services import MessageService
 from information.utils import RedisPubsub
 
 
-def get_ramdon_code(message):
+def get_random_code(message):
     message_len = len(str(message))
     t = datetime.datetime.now()
     seconds_str = "{:.9f}".format((t - datetime.datetime(1970, 1, 1)).total_seconds())
@@ -97,7 +97,7 @@ def publish_moment_message(moment_id, sender_id, receiver_id):
 
     
 def publish_redis_message(message, create_mid=True):
-    code = get_ramdon_code(message)
+    code = get_random_code(message)
     if not create_mid:
         RedisPubsub.pub(message)
     else:

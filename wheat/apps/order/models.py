@@ -33,7 +33,7 @@ class Order(CommonUpdateAble, models.Model, EnhancedModel):
     order_no = models.CharField(max_length=30, unique=True, db_index=True, default="")
     buyer_id = UUIDField(db_index=True)
     book_id = UUIDField(db_index=True)
-    binding = models.CharField(max_length=10, choices=BINGDING)
+    binding = models.CharField(max_length=10, choices=BINDING)
     count = models.IntegerField(default=1)
     address = models.CharField(max_length=50)
     consignee = models.CharField(max_length=50)

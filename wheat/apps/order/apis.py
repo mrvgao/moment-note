@@ -138,6 +138,15 @@ class AddressViewSet(viewsets.GenericViewSet):
     def create(self, request):
         pass
 
+    def update(self, request, id):
+        pass
+
+    def list(self, request):
+        pass
+
+    def delete(self, request, id):
+        pass
+
 
 @class_tools.set_service(invoice_service)
 class InvoiceViewSet(viewsets.GenericViewSet):

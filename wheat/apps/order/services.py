@@ -106,6 +106,18 @@ class AddressService(BaseService):
     model = Address
     serializer = AddressSerializer
 
+    def create(self, **kwargs):
+        pass
+
+    def update(self, id, **kwargs):
+        pass
+
+    def list(self, user_id):
+        pass
+
+    def delete(self, id):
+        pass
+
 
 class PayService(BaseService):
 

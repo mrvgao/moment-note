@@ -74,10 +74,14 @@ class OrderService(BaseService):
                 phone=phone,
                 address=address,
             )
-
+            
         order = self.create(**kwargs)
         trade_no = self.create_trade_no(order.id)
         self.update(order, order_no=trade_no)
+
+        invoice = kwargs.get('invoice', None)
+        if invoice:
+            InvoiceService().add(user_id=buyer_id, order_id=trade_no, invoice=invoice)
         
         return order
 
@@ -240,6 +244,31 @@ class InvoiceService(BaseService):
 
     model = Invoice
     serializer = InvoiceSerializer
+
+    @api
+    def create(self, **kwargs):
+        return super(InvoiceService, self).create(**kwargs)
+
+    @api
+    def list(self, user_id, order_no):
+        kwargs = {'user_id': user_id}
+
+        if order_no:
+            kwargs['order_id'] = order_no
+
+        return self.get(many=True, deleted=False, **kwargs)
+
+    @api
+    def update_by_id(self, id, **kwargs):
+        return super(InvoiceService, self).update_by_id(id, **kwargs)
+
+    @api
+    def get_by_id(self, id):
+        return self.get(id=id)
+
+    @api
+    def delete_by_id(self, id):
+        return super(InvoiceService, self).delete_by_id(id)
 
 
 order_service = delegate(OrderService(), OrderService().serialize)

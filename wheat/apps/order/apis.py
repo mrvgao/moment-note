@@ -103,6 +103,7 @@ class OrderViewSet(viewsets.ViewSet):
         orders = order_service.get_user_order(user_id)
         return APIResponse(orders)
 
+    @login_required
     def retrieve(self, reqeust, id):
         '''
         Get order info by order No.
@@ -114,6 +115,7 @@ class OrderViewSet(viewsets.ViewSet):
         else:
             return APIResponse(status_code=404)
 
+    @login_required
     def update(self, request, id):
         '''
         Update order info by order No.
@@ -132,6 +134,7 @@ class OrderViewSet(viewsets.ViewSet):
         else:
             return APIResponse(status_code=404)
 
+    @login_required
     def destroy(self, request, id):
         order = order_service.delete_order(order_no=id, **request.data)
 
@@ -144,6 +147,7 @@ class OrderViewSet(viewsets.ViewSet):
 @class_tools.set_service(address_service)
 class AddressViewSet(viewsets.GenericViewSet):
 
+    @login_required
     def create(self, request):
         '''
         ### Example Request:
@@ -168,6 +172,7 @@ class AddressViewSet(viewsets.GenericViewSet):
         address = address_service.create(**request.data)
         return APIResponse(address)
 
+    @login_required
     def update(self, request, id):
         '''
         ---
@@ -181,6 +186,7 @@ class AddressViewSet(viewsets.GenericViewSet):
         address = address_service.update_by_id(id, **request.data)
         return APIResponse(address)
 
+    @login_required
     def list(self, request):
         '''
         Get all adresses of current request user.
@@ -188,6 +194,7 @@ class AddressViewSet(viewsets.GenericViewSet):
         addresses = address_service.list(request.user.id)
         return APIResponse(addresses)
 
+    @login_required
     def destroy(self, request, id):
         address = address_service.delete_by_id(id)
         return APIResponse(address)
@@ -250,20 +257,88 @@ class DeliveryViewSet(viewsets.GenericViewSet):
 @class_tools.set_service(invoice_service)
 class InvoiceViewSet(viewsets.GenericViewSet):
 
+    @login_required
     def create(self, request):
-        pass
+        '''
+        Create Invoice
 
+        ### Example Request:
+
+            {
+                "user_id": {String},
+                "order_id": {String},
+                "invoice": {String},
+            }
+        
+        ---
+        omit_serializer: true
+        omit_parameters:
+            - form
+        parameters:
+            - name: body
+              paramType: body
+        '''
+
+        invoice = invoice_service.create(**request.data)
+        return APIResponse(invoice)
+
+    @login_required
     def list(self, request):
-        pass
+        '''
+        获得某人的全部发票信息
 
+        order_no -- order_no, if is null, will return this user's all invoice.
+        ---
+        omit_serializer: true
+        '''
+
+        order_no = request.query_params.get('order_no', None)
+        user_id = request.user.id
+
+        invoices = invoice_service.list(user_id=user_id, order_no=order_no)
+
+        return APIResponse(invoices)
+        
+    @login_required
     def update(self, request, id):
-        pass
+        '''
+        Update Invoice by inovice id.
+
+        ### Example Request:
+
+            {
+                "user_id": {String},
+                "order_id": {String},
+                "invoice": {String},
+            }
+        
+        ---
+        omit_serializer: true
+        omit_parameters:
+            - form
+        parameters:
+            - name: body
+              paramType: body
+        '''
+        invoice = invoice_service.update_by_id(id, **request.data)
+        return APIResponse(invoice)
 
     def retrieve(self, request, id):
-        pass
+        '''
+        ---
+        omit_serializer: true
+        '''
+
+        invoice = invoice_service.get_by_id(id)
+        return APIResponse(invoice)
 
     def delete(self, request, id):
-        pass
+        '''
+        ---
+        omit_serializer: true
+        '''
+        invoice = invoice_service.delete_by_id(id)
+        return APIResponse(invoice)
 
 
 @class_tools.set_service(pay_service)

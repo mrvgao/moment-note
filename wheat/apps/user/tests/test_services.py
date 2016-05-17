@@ -27,6 +27,7 @@ class UserServiceTestCase(TestCase):
     def setUp(self):
         phone = '1800000000'
         self.user = User.objects.create(phone=phone)
+        print "In method", self._testMethodName
 
     def test_registe_info_check(self):
         phone = '18857453090'

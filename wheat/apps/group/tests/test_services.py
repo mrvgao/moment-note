@@ -179,7 +179,9 @@ class GroupServiceTest(TestCase):
         new_group = group_service.create_default_home(user2.id)
         group_service.add_group_member(group, user2.id)
         group_service.add_group_member(new_group, user.id)
+
         result = group_service.delete_person_relation(user.id, user2.id)
+
         consist = group_service.consist_member(group.id, id=user2.id)
         self.assertFalse(consist)
         consist = group_service.consist_member(new_group.id, id=user.id)

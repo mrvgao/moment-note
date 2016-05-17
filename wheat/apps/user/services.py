@@ -239,13 +239,16 @@ class FriendshipService(BaseService):
 
     def create(self, user_a_id, user_b_id):
         user_a_id, user_b_id = self._sort_user(user_a_id, user_b_id)
-        friendship = self.get(user_a_id, user_b_id)
-        if not friendship:
-            super(FriendshipService, self).create(user_a=user_a_id, user_b=user_b_id)
-        elif friendship.deleted:
-            super(FriendshipService, self).update(friendship, deleted=False)
-        return user_a_id, user_b_id
-
+        if str(user_a_id) != str(user_b_id):
+            friendship = self.get(user_a_id, user_b_id)
+            if not friendship:
+                friendship = super(FriendshipService, self).create(user_a=user_a_id, user_b=user_b_id)
+            elif friendship.deleted:
+                friendship = super(FriendshipService, self).update(friendship, deleted=False)
+            return friendship
+        else:
+            return None
+                
     def delete(self, user_a_id, user_b_id):
         '''
         Deletes friendship between user_a and user_b

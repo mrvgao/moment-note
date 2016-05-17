@@ -155,9 +155,10 @@ class CacheableManager(models.Manager):
         queryset = self.get_queryset()
         objs = queryset.filter(*args, **kwargs)
         if not objs:
-            logger.error('%s: %s' % ("%s matching query does not exist." %
-                                     queryset.model._meta.object_name, query2str(*args, **kwargs)))
-            raise queryset.model.DoesNotExist("%s matching query does not exist." % queryset.model._meta.object_name)
+            pass
+            # logger.error('%s: %s' % ("%s matching query does not exist." %
+            #                          queryset.model._meta.object_name, query2str(*args, **kwargs)))
+            # raise queryset.model.DoesNotExist("%s matching query does not exist." % queryset.model._meta.object_name)
         elif len(objs) > 1:
             logger.error('%s: %s' % ("this() returned more than one %s -- it returned %s!" %
                                      (queryset.model._meta.object_name, objs.count()), query2str(*args, **kwargs)))

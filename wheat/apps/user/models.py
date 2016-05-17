@@ -14,7 +14,7 @@ from imagekit.models import ProcessedImageField
 from imagekit.processors import ResizeToFit, Transpose
 from django.db.models.signals import post_save
 
-from customs.models import EnhancedModel, CommonUpdateAble
+from customs.models import EnhancedModel, CommonUpdateAble, CacheableManager
 from .managers import UserManager, AuthTokenManager
 
 

@@ -12,7 +12,7 @@ class Order(CommonUpdateAble, models.Model, EnhancedModel):
     ECONOMIC = 'economic'
     HARDCOVER = 'hardcover'
 
-    BINGDING = (
+    BINDING = (
         (LITERARY, LITERARY),
         (ECONOMIC, ECONOMIC),
         (HARDCOVER, HARDCOVER),

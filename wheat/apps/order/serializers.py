@@ -9,8 +9,7 @@ class OrderSerializer(XModelSerializer):
 
     class Meta:
         model = Order
-        fields = '__all__'
-        exclude = ('id', 'deleted', 'pay_info')
+        exclude = ('id', 'pay_info')
 
 
 class AddressSerializer(XModelSerializer):

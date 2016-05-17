@@ -17,7 +17,7 @@ urlpatterns = patterns(
 ) + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 # add api urls here
-try: 
+try:
     urlpatterns += [
         url(r'^api/%s/auth/' % settings.API_VERSION,
             include('rest_framework.urls', namespace='rest_framework')),

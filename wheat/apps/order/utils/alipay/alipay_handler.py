@@ -11,6 +11,8 @@ import base64
 from . import alipay_config
 import urllib
 import requests
+import logging
+logger = logging.getLogger('order')
 
 
 def params_to_query(params, quote=True):
@@ -69,7 +71,6 @@ def check_ali_sign(message, sign):
     try:
         correct = rsa.verify(message, sign, pubkey)
     except Exception as e:
-        print e
         correct = False
 
     return correct

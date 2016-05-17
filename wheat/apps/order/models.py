@@ -19,7 +19,7 @@ class Order(CommonUpdateAble, models.Model, EnhancedModel):
     )
 
     PAID = 'paid'
-    
+
     ORDER_STATUS = (
         ('待支付', 'unpaid'),
         ('已支付', PAID),
@@ -43,14 +43,14 @@ class Order(CommonUpdateAble, models.Model, EnhancedModel):
     created_at = models.DateTimeField(auto_now_add=True)
     expired_at = models.DateTimeField(auto_now_add=True)
     trade_no = models.CharField(max_length=50, default="")  # for alipay and wechat
-    transcation_id = models.CharField(max_length=50, default="")
+    transaction_id = models.CharField(max_length=50, default="")
     promotion_info = models.CharField(max_length=50, null=True)
     status = models.CharField(max_length=50, choices=ORDER_STATUS, default='unpaid')
     print_info = models.CharField(max_length=200, default="")  # appending info.
     pay_info = UUIDField(db_index=True)
     update_time = models.DateTimeField(auto_now_add=True)
     delivery_info = UUIDField(db_index=True, null=True, default=None)
-    exipred = models.BooleanField(default=False)
+    expired = models.BooleanField(default=False)
     deleted = models.BooleanField(default=False)
 
     @property
@@ -84,7 +84,7 @@ class Order(CommonUpdateAble, models.Model, EnhancedModel):
 
 
 class Pay(CommonUpdateAble, models.Model, EnhancedModel):
-    
+
     ALIPAY = 'alipay'
     WECHAT = 'wechat'
 
@@ -109,7 +109,7 @@ class Delivery(CommonUpdateAble, models.Model, EnhancedModel):
     UNSENT = ('unsend', '未发货')
     SENT = ('send', '已发货')
     ON_THE_WAY = ('on-the-way', '在途中')
-    
+
     STATUS = (
         UNSENT,
         SENT,

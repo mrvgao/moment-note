@@ -340,6 +340,13 @@ class Common(Configuration):
                 'maxBytes': '16777216',  # 16megabytes
                 'formatter': 'verbose'
             },
+            'auth': {
+                'level': 'DEBUG',
+                'class': 'logging.handlers.RotatingFileHandler',
+                'filename': os.path.join(BASE_DIR, 'logs/auth.log'),
+                'maxBytes': '16777216',  # 16megabytes
+                'formatter': 'verbose'
+            },
         },
         'loggers': {
             'django.request': {
@@ -348,7 +355,12 @@ class Common(Configuration):
                 'propagate': True,
             },
             'django': {
-                'handlers': ['error', 'query'],
+                'handlers': ['error'],
+                'level': 'ERROR',
+                'propagate': True,
+            },
+            'query': {
+                'handlers': ['query'],
                 'level': 'ERROR',
                 'propagate': True,
             },
@@ -359,6 +371,11 @@ class Common(Configuration):
             },
             'order': {
                 'handlers': ['order'],
+                'level': 'DEBUG',
+                'propagate': True,
+            },
+            'auth': {
+                'handlers': ['auth'],
                 'level': 'DEBUG',
                 'propagate': True,
             },

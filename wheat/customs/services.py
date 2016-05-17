@@ -63,6 +63,17 @@ class BaseService(object):
     def exist(self, *arg, **kwargs):
         return self.model.objects.filter(*arg, **kwargs).exists()
 
+    def add(self, **kwargs):
+        '''
+        Create if without.
+        '''
+        obj = self.get(**kwargs)
+        
+        if not obj:
+            obj = self.create(**kwargs)
+
+        return obj
+
     @transaction.atomic
     def create(self, **kwargs):
         fields = self.filter_read_only_field(**kwargs)

@@ -114,7 +114,6 @@ class BaseService(object):
 
         return instance
 
-    @transaction.atomic
     def update_by_id(self, id, **kwargs):
         obj = self.get(id=id)
         if obj:
@@ -122,7 +121,6 @@ class BaseService(object):
         else:
             return None
 
-    @transaction.atomic
     def delete_by_id(self, id):
         obj = self.get(id=id)
         if obj:

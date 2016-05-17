@@ -131,11 +131,12 @@ class AddressService(BaseService):
 
     @api
     def update_by_id(self, id, **kwargs):
-        return super(AddressService, self).update_by_id(id, **kwargs)
+        address = super(AddressService, self).update_by_id(id, **kwargs)
+        return address
 
     @api
     def list(self, user_id):
-        addresses = self.get(user_id=user_id, many=True)
+        addresses = self.get(user_id=user_id, deleted=False, many=True)
         return addresses
 
     @api

@@ -136,7 +136,7 @@ class Address(CommonUpdateAble, models.Model, EnhancedModel):
     zip_code = models.CharField(max_length=10, null=True)
     address = models.CharField(max_length=100)
     is_default = models.BooleanField(default=False)
-    update_time = models.DateTimeField(auto_now_add=True)
+    update_time = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'user_address'

@@ -115,6 +115,13 @@ class OrderViewSet(viewsets.ViewSet):
     def update(self, request, id):
         '''
         Update order info by order No.
+        ---
+        omit_serializer: true
+        omit_parameters:
+            - form
+        parameters:
+            - name: body
+              paramType: body
         '''
         order = order_service.update_order(order_no=id, **request.data)
 
@@ -160,7 +167,16 @@ class AddressViewSet(viewsets.GenericViewSet):
         return APIResponse(address)
 
     def update(self, request, id):
-        address = address_service.update_by_id(id)
+        '''
+        ---
+        omit_serializer: true
+        omit_parameters:
+            - form
+        parameters:
+            - name: body
+              paramType: body
+        '''
+        address = address_service.update_by_id(id, **request.data)
         return APIResponse(address)
 
     def list(self, request):

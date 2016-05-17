@@ -55,9 +55,10 @@ class OrderService(BaseService):
         pay = PayService().create(book_id, binding, count, paid_type, promotion)
         kwargs['pay_info'] = pay.id
 
-        delivery = kwargs.pop('delivery')
+        delivery_carrier_id = kwargs.pop('delivery_id')
+        delivery_name = DeliveryCarrierService().get(id=delivery_carrier_id).name
         delivery_price = kwargs.pop('delivery_price', 0)
-        delivery = DeliveryService().create(delivery=delivery, price=delivery_price)
+        delivery = DeliveryService().create(delivery=delivery_name, price=delivery_price)
         kwargs['delivery_info'] = delivery.id
 
         address = kwargs.get('address')
@@ -203,6 +204,22 @@ class DeliveryCarrierService(BaseService):
 
     model = DeliveryCarrier
     serializer = DeliveryCarrierSerializer
+
+    def create_default(self):
+        default = {'name': '其他', 'price': 0}
+        return DeliveryCarrier.objects.create(**default)
+        
+    def get(self, **kwargs):
+        carrier = super(DeliveryCarrierService, self).get(**kwargs)
+
+        if not carrier:
+            return self.create_default()
+        else:
+            return carrier
+
+    def get_by_id(self, id):
+        carrier = self.get(id=id)
+        return carrier
 
     @api
     def get_all(self):

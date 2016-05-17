@@ -11,6 +11,7 @@ from apps.order.services import PayService
 from apps.order.services import OrderService
 from apps.order.services import AddressService
 from apps.order.services import InvoiceService
+from apps.order.services import DeliveryCarrierService
 
 
 pay_service = PayService()
@@ -55,6 +56,10 @@ class TestOrderService(TestCase):
             author='minchiuan',
             page_num=100,
         )
+
+        order_carrier = DeliveryCarrierService()
+        carrier_id = order_carrier.get(price=0).id
+        
         self.request_data = {
             "book_id": str(self.book.id),
             "binding": "literary",
@@ -67,7 +72,7 @@ class TestOrderService(TestCase):
             "note": 'no',
             "paid_type": "alipay",
             "promotion_info": "no",
-            "delivery": "sf",
+            "delivery_id": str(carrier_id),
             "delivery_price": 12,
         }
 

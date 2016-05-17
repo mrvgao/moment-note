@@ -42,7 +42,7 @@ class OrderViewSet(viewsets.ViewSet):
                 "paid_type": <"alipay", "wechat">,
                 "transcation_id": [{String}], // could be null, for wechat.
                 "promotion_info": {String},
-                "delivery": <"顺丰", "其他">, // required
+                "delivery_id": {String}, // required, 从/delivery/carriers 进行获得
                 "delivery_price": {int}, //required
             }
         ---

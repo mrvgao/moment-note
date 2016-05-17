@@ -31,7 +31,7 @@ class DeliveryCarrierSerializer(XModelSerializer):
 
     class Meta:
         model = DeliveryCarrier
-        fields = ('name', 'price', 'deleted')
+        fields = '__all__'
 
 
 class DeliverySerializer(XModelSerializer):

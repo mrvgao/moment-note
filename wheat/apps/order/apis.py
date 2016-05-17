@@ -187,7 +187,7 @@ class AddressViewSet(viewsets.GenericViewSet):
         return APIResponse(addresses)
 
     def destroy(self, request, id):
-        address = address_service.delete(id)
+        address = address_service.delete_by_id(id)
         return APIResponse(address)
 
 

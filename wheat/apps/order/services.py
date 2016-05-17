@@ -140,8 +140,8 @@ class AddressService(BaseService):
         return addresses
 
     @api
-    def delete(self, id):
-        return super(AddressService, self).delete(id)
+    def delete_by_id(self, id):
+        return super(AddressService, self).delete_by_id(id)
 
 
 class PayService(BaseService):

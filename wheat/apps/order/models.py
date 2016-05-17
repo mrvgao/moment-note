@@ -137,6 +137,7 @@ class Address(CommonUpdateAble, models.Model, EnhancedModel):
     address = models.CharField(max_length=100)
     is_default = models.BooleanField(default=False)
     update_time = models.DateTimeField(auto_now=True)
+    deleted = models.BooleanField(default=False)
 
     class Meta:
         db_table = 'user_address'

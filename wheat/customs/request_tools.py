@@ -5,6 +5,7 @@ Some utils from request.
 from errors import codes, exceptions
 from rest_framework import status
 import unicodedata
+import functools
 
 
 def change_unicode_to_str(unicode_dict):

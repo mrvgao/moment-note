@@ -71,10 +71,6 @@ class BaseService(object):
         return new_obj
 
     @transaction.atomic
-    def update_by_id(self, id, **kwargs):
-        return self.update(self.get(id=id), **kwargs)
-
-    @transaction.atomic
     def update(self, instance, **kwargs):
         update_fields = self.filter_read_only_field(**kwargs)
         new_obj = instance.update(**update_fields)
@@ -118,6 +114,22 @@ class BaseService(object):
 
         return instance
 
+    @transaction.atomic
+    def update_by_id(self, id, **kwargs):
+        obj = self.get(id=id)
+        if obj:
+            return self.update(obj, **kwargs)
+        else:
+            return None
+
+    @transaction.atomic
+    def delete_by_id(self, id):
+        obj = self.get(id=id)
+        if obj:
+            return self.delete(obj)
+        else:
+            return None
+    
     @classmethod
     def filter_read_only_field(cls, **kwargs):
         '''

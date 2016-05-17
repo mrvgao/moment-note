@@ -40,9 +40,13 @@ class APIResponse(Response):
 
         r = R()
 
-        if isinstance(result,  int):
+        if not result:
+            r.data = ""
+        elif isinstance(result,  int):
             r.error = result
         elif isinstance(result, dict):
+            r.data = result
+        elif isinstance(result, list):
             r.data = result
         else:
             raise TypeError('{0} unsupport type, return type must be json'.format(result))

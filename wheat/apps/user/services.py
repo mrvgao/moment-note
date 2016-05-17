@@ -119,11 +119,12 @@ class UserService(BaseService):
 
     @api
     def login_user(self, phone, password):
-        user = authenticate(username=phone, password=password)
-
-        if user:
+        if self.check_if_credential(phone, password):
+            user = authenticate(username=phone, password=password)
             AuthService().refresh_user_token(user.id)
-        return user
+            return user
+        else:
+            return None
 
 
 class AuthService(BaseService):

@@ -136,7 +136,7 @@ class MomentService(OldBaseService):
             maili_video['url'] = data_item['video_url']
 
         maili_tags = ['__wechat']
-        moment_data = data_item['post_date']
+        moment_date = data_item['post_date']
 
         user_id = WechatMoment.objects.get(id=import_id).user_id
 
@@ -144,7 +144,7 @@ class MomentService(OldBaseService):
             'user_id': user_id,
             'content_type': maili_type,
             'content': maili_content,
-            'moment_data': moment_data,
+            'moment_date': moment_date,
             'visible': 'friends',
             'tags': maili_tags,
         }

@@ -56,23 +56,28 @@ class Order(CommonUpdateAble, models.Model, EnhancedModel):
     @property
     def pay(self):
 
-        pay = Pay.objects.get(id=self.pay_info)
-
-        return {
-            'price': pay.price,
-            'total_price': pay.total_price,
-            'paid_price': pay.paid_price,
-            'paid_type': pay.paid_type,
-            'paid_time': pay.paid_time,
-            'paid_finish': pay.paid,
-        }
+        try:
+            pay = Pay.objects.get(id=self.pay_info)
+        except Exception:
+            return {}
+        else:
+            return {
+                'price': pay.price,
+                'total_price': pay.total_price,
+                'paid_price': pay.paid_price,
+                'paid_type': pay.paid_type,
+                'paid_time': pay.paid_time,
+                'paid_finish': pay.paid,
+            }
 
     @property
     def delivery(self):
 
-        delivery = Delivery.objects.get(id=self.delivery_info)
-
-        if delivery:
+        try:
+            delivery = Delivery.objects.get(id=self.delivery_info)
+        except Exception:
+            return {}
+        else:
             return {
                 'delivery': delivery.delivery,
                 'delivery_no': delivery.delivery_no,
@@ -80,8 +85,6 @@ class Order(CommonUpdateAble, models.Model, EnhancedModel):
                 'update_time': delivery.update_time,
                 'status': delivery.status,
             }
-        else:
-            return {}
 
     class Meta:
         db_table = "order"

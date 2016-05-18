@@ -126,10 +126,10 @@ def _notify_moment_to_firends(visible, user_id, moment_id):
         friend_list = GroupService().get_user_home_member(user_id)
     #else:
     #    friend_list = get_friend_from_group_id(visible, user_id)
-    print 'friend list:', friend_list
+        print 'friend list:', friend_list
 
-    _send_msg = functools.partial(redis_tools.publish_moment_message, moment_id, user_id)
-    map(_send_msg, friend_list)
+        _send_msg = functools.partial(redis_tools.publish_moment_message, moment_id, user_id)
+        map(_send_msg, friend_list)
 
 
 def get_moment_from_author_list(receiver, group_id):

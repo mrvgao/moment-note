@@ -132,19 +132,30 @@ class AddressService(BaseService):
     model = Address
     serializer = AddressSerializer
 
+    def set_default(self, user_id, address_id, args):
+        if args.get('is_default', None):
+            self.list(user_id).exclude(id=address_id).update(is_default=False)
+
     @api
     def create(self, **kwargs):
-        return super(AddressService, self).create(**kwargs)
+        address = super(AddressService, self).create(**kwargs)
+        id = address.id
+        user_id = address.user_id
+        self.set_default(user_id, id, kwargs)
+        return address
 
     @api
     def update_by_id(self, id, **kwargs):
         address = super(AddressService, self).update_by_id(id, **kwargs)
+
+        self.set_default(address.user_id, id, kwargs)
+
         return address
 
     @api
     def list(self, user_id):
         addresses = self.get(user_id=user_id, deleted=False, many=True)
-        return addresses
+        return addresses.order_by('-is_default')
 
     @api
     def delete_by_id(self, id):

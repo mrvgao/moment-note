@@ -28,6 +28,9 @@ class UserViewSet(ListModelMixin,
     麦粒用户系统相关API.
     ### Resource Description
     """
+    def retrieve(self, request, id):
+        user = user_service.serialize(user_service.get(id=id))
+        return APIResponse(user)
 
     @list_route(methods=['get'])
     def register(self, request):
@@ -86,7 +89,7 @@ class UserViewSet(ListModelMixin,
         result = user or codes.PHONE_NUMBER_NOT_EXIST
 
         return APIResponse(result, status=status_code)
-        
+
     def create(self, request):
         '''
         Registration.

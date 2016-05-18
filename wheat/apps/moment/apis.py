@@ -481,8 +481,31 @@ class MomentViewSet(ListModelMixin,
         info[MARK] = mark_activities
         return info
 
+    @list_route(methods=['post'])
+    def wechat(self, request):
+        '''
+        Receives the wechat post moment
+        ---
+        omit_serializer: true
+        omit_parameters:
+            - form
+        parameters:
+            - name: body
+              paramType: body
+        '''
 
-    def weichat(self, request):
-        '''
-        Receiver the wechat post moment
-        '''
+        data = request.data
+
+        import_moments = None
+
+        try:
+            import_moments = MomentService.import_wechat(data)
+            MomentService.create_wechat_moments(import_moments)
+        except Exception as e:
+            print e
+
+        success = import_moments is not None
+        return SimpleResponse(success=success)
+            
+                
+        

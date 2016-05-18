@@ -7,6 +7,7 @@ from django.db.models import Q
 from customs.services import OldBaseService
 from apps.user.services import FriendshipService
 from .models import Moment
+from .models import WechatMoment
 from .serializers import MomentSerializer
 from django.db.models import Min
 from apps.book.services import AuthorService
@@ -59,8 +60,8 @@ class MomentService(OldBaseService):
         content_type = kwargs.get('content_type')
         content = kwargs.get('content')
         moment_date = kwargs.get('moment_date', datetime.now())
-        visible = kwargs.get('visible')
-        tags = kwargs.get('tags')
+        visible = kwargs.get('visible', 'friends')
+        tags = kwargs.get('tags', [])
 
         if user_id and Moment.valid_content_type(content_type, content) \
                 and Moment.valid_visible_field(visible):
@@ -79,6 +80,82 @@ class MomentService(OldBaseService):
 
         return None
 
+    @classmethod
+    def import_wechat(cls, data):
+
+        data = data['data']
+        user_id = data.pop('cuid', None)
+
+        xinshu_import_ids = []
+        for item in data['items']:
+            origin_id = item.pop('origin_id', None)
+            if not WechatMoment.objects.filter(origin_id=origin_id).exists():
+                wechat = WechatMoment.objects.create(item=item, user_id=user_id, origin_id=origin_id)
+                wechat.save()
+                xinshu_import_ids.append(wechat.id)
+
+        return xinshu_import_ids
+
+    @classmethod
+    def decode_wechat(cls, import_id):
+
+        data_item = WechatMoment.objects.get(id=import_id).item
+
+        wechat_maili_type_map = {
+            'text': 'text',
+            'image': 'pics-text',
+            'share': 'link',
+            'link': 'link',
+            'video': 'video',
+        }
+
+        maili_content = {'text': "", 'pics': [], 'links': []}
+
+        maili_content['text'] = data_item['content']
+        maili_content['pics'] = data_item['pic_list']
+
+        links = data_item['link_list']
+
+        if links[0] != "":
+            maili_content['links'] = {}
+            maili_link = maili_content['links']
+            maili_link['abstract'] = links[0]
+            maili_link['title'] = links[1]
+            maili_link['url'] = links[2]
+            maili_link['pic'] = links[3]
+        
+        wechat_type = data_item.pop('type')
+
+        default = 'pics-text'
+        maili_type = wechat_maili_type_map.get(wechat_type, default)
+
+        if maili_type == 'video':
+            maili_content['video'] = {}
+            maili_video = maili_content['video']
+            maili_video['cover'] = data_item['video_cover']
+            maili_video['url'] = data_item['video_url']
+
+        maili_tags = ['__wechat']
+        moment_data = data_item['post_date']
+
+        user_id = WechatMoment.objects.get(id=import_id).user_id
+
+        create_data = {
+            'user_id': user_id,
+            'content_type': maili_type,
+            'content': maili_content,
+            'moment_data': moment_data,
+            'visible': 'friends',
+            'tags': maili_tags,
+        }
+
+        MomentService.create_moment(**create_data)
+
+    @classmethod
+    def create_wechat_moments(cls, ids):
+        for mid in ids:
+            MomentService.decode_wechat(mid)
+        
     @classmethod
     @transaction.atomic
     def delete_moment(cls, moment):

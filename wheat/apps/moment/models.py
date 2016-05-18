@@ -10,6 +10,13 @@ from datetime import datetime
 import json
 
 
+class WechatMoment(CommonUpdateAble, models.Model, EnhancedModel):
+    id = UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    item = JSONField(default={})
+    user_id = models.CharField(max_length=50)
+    origin_id = models.CharField(max_length=50)
+
+
 class Moment(CommonUpdateAble, models.Model, EnhancedModel):
     TYPES = (
         ('text', u'文字'),

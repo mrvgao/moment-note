@@ -30,6 +30,7 @@ class UserAPITest(APITestCase):
         TOTAL = 10
         self.phone_numbers = [PRE + str(i) for i in range(TOTAL)]
         self.users = [User.objects.create(phone=p, password=p) for p in self.phone_numbers]
+        print "In method", self._testMethodName
 
     def test_account_if_registed(self):
         '''
@@ -245,6 +246,8 @@ class UserAPITest(APITestCase):
         print(url)
 
         response = self.client.delete(url)
+        import time
+        time.sleep(2)
         self.assertEqual(response.status_code, 200)
         self.assertFalse(FriendshipService().is_friend(self.user.id, deleted_id))
         

@@ -11,7 +11,7 @@ class OrderSerializer(XModelSerializer):
     class Meta:
         model = Order
         fields = (
-            'order_no', 'buyer_id', 'pay', 'book_id', 'binding',
+            'order_no', 'buyer_id', 'pay', 'trade_no', 'book_id', 'binding',
             'count', 'address', 'consignee', 'phone', 'invoice',
             'note', 'created_at', 'transaction_id',
             'promotion_info', 'status', 'print_info', 'update_time',

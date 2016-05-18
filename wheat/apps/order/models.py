@@ -160,7 +160,7 @@ class Address(CommonUpdateAble, models.Model, EnhancedModel):
 class Invoice(CommonUpdateAble, models.Model, EnhancedModel):
     id = UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user_id = UUIDField(db_index=True)
-    order_id = models.CharField(max_length=50, db_index=True)
+    order_id = models.CharField(max_length=50, db_index=True, null=True, default="")
     invoice = models.CharField(max_length=100, default="")
     deleted = models.BooleanField(default=False)
 

@@ -57,5 +57,6 @@ media
 */static/rest_framework_swagger/
 */static/rest_framework/
 
-*/htmlcov/**/.DS_Store
+*/htmlcov/*
+*/.DS_Store
 .DS_Store

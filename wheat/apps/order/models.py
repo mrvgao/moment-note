@@ -64,6 +64,7 @@ class Order(CommonUpdateAble, models.Model, EnhancedModel):
             'paid_price': pay.paid_price,
             'paid_type': pay.paid_type,
             'paid_time': pay.paid_time,
+            'paid_finish': pay.paid,
         }
 
     @property
@@ -71,13 +72,16 @@ class Order(CommonUpdateAble, models.Model, EnhancedModel):
 
         delivery = Delivery.objects.get(id=self.delivery_info)
 
-        return {
-            'delivery': delivery.delivery,
-            'delivery_no': delivery.delivery_no,
-            'delivery_time': delivery.delivery_time,
-            'update_time': delivery.update_time,
-            'status': delivery.status,
-        }
+        if delivery:
+            return {
+                'delivery': delivery.delivery,
+                'delivery_no': delivery.delivery_no,
+                'delivery_time': delivery.delivery_time,
+                'update_time': delivery.update_time,
+                'status': delivery.status,
+            }
+        else:
+            return {}
 
     class Meta:
         db_table = "order"

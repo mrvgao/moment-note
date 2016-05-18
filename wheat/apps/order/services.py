@@ -256,7 +256,7 @@ class InvoiceService(BaseService):
         if order_no:
             kwargs['order_id'] = order_no
 
-        return self.get(many=True, deleted=False, **kwargs)
+        return self.get(many=True, deleted=False, **kwargs).values('invoice').distinct()
 
     @api
     def update_by_id(self, id, **kwargs):

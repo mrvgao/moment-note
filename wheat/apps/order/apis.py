@@ -27,6 +27,7 @@ class OrderViewSet(viewsets.ViewSet):
     def create(self, request):
         '''
         Creates Order
+        !注意，当支付方式为微信时， 返回的是prepay_id而不是sign, 如果返回的prepay_id 是null，则说明订单创建失败.
         ### Request Example
 
             {
@@ -63,8 +64,12 @@ class OrderViewSet(viewsets.ViewSet):
             'order': order,
         }
 
-        sign = order_service.create_sign(paid_type, order['order_no'])
-        result['sign'] = sign
+        sign = order_service.create_sign(paid_type, order['order_no'], request.META.get('REMOTE_ADDR'))
+
+        if paid_type == 'alipay':
+            result['sign'] = sign
+        elif paid_type == 'wechat':
+            result['prepay_id'] = sign
 
         return APIResponse(result)
 
@@ -88,6 +93,25 @@ class OrderViewSet(viewsets.ViewSet):
                 order_no=request_data['out_trade_no'],  # order number self defined
                 trade_no=request_data['trade_no'],  # trade no alipay given.
             )
+
+        return APIResponse({})
+
+    @list_route(methods=['post'])
+    def wxnotify(self, request):
+        '''
+        Wechat Payment notify.
+        ---
+        omit_serializer: true
+        omit_parameters:
+            - form
+        parameters:
+            - name: body
+              paramType: body
+        '''
+
+        xml_doc = request.body
+
+        valid = order_service.check_xml(xml_doc)
 
         return APIResponse({})
 
@@ -158,7 +182,7 @@ class AddressViewSet(viewsets.GenericViewSet):
                 "phone": {String},  //required
                 "zip_code": {String},
                 "address": {String},  //required
-                "is_default": {String},  // 非必需，将该地址设置为默认地址
+                "is_default": {Boolean},  // 非必需，将该地址设置为默认地址
             }
         ---
         omit_serializer: true

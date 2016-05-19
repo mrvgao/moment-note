@@ -287,15 +287,13 @@ class InvoiceViewSet(viewsets.GenericViewSet):
         '''
         获得某人的全部发票信息
 
-        order_no -- order_no, if is null, will return this user's all invoice.
         ---
         omit_serializer: true
         '''
 
-        order_no = request.query_params.get('order_no', None)
         user_id = request.user.id
 
-        invoices = invoice_service.list(user_id=user_id, order_no=order_no)
+        invoices = invoice_service.list(user_id=user_id)
 
         return APIResponse(invoices)
         

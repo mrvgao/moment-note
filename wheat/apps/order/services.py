@@ -82,7 +82,7 @@ class OrderService(BaseService):
 
         invoice = kwargs.get('invoice', None)
         if invoice:
-            InvoiceService().add(user_id=buyer_id, order_id=trade_no, invoice=invoice)
+            InvoiceService().add(user_id=buyer_id, invoice=invoice)
         
         return order
 
@@ -262,17 +262,8 @@ class InvoiceService(BaseService):
         return super(InvoiceService, self).create(**kwargs)
 
     @api
-    def list(self, user_id, order_no):
-        kwargs = {'user_id': user_id}
-
-        if order_no:
-            kwargs['order_id'] = order_no
-
-        orders = self.get(many=True, deleted=False, **kwargs)
-
-        if orders is not None:
-            orders = orders.values('invoice').distinct()
-
+    def list(self, user_id):
+        orders = self.get(many=True, deleted=False, user_id=user_id)
         return orders
 
     @api

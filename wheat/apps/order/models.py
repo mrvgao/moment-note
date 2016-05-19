@@ -84,6 +84,7 @@ class Order(CommonUpdateAble, models.Model, EnhancedModel):
                 'delivery_time': delivery.delivery_time,
                 'update_time': delivery.update_time,
                 'status': delivery.status,
+                'delivery_price': delivery.price,
             }
 
     class Meta:

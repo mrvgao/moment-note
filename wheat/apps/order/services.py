@@ -12,6 +12,7 @@ from customs.api_tools import api
 from customs.delegates import delegate
 from .utils.alipay import alipay_config
 from .utils.alipay import alipay_handler
+from .utils.wechat import wechat_handler
 from apps.book.services import BookService
 
 
@@ -39,11 +40,17 @@ class OrderService(BaseService):
 
         return order_info
 
-    def create_sign(self, paid_type, order_no):
+    def create_sign(self, paid_type, order_no, user_ip=None):
         order = self.get(order_no=order_no)
         if paid_type == Pay.ALIPAY:
             order_paramters = self.make_payment_info(order_no, order.pay['paid_price'], order_no)
             return alipay_handler.make_request_sign(order_paramters)
+        elif paid_type == Pay.WECHAT:
+            order_paramters = wechat_handler.create_paramter(
+                order_no, order_no, order.pay['paid_price'], user_ip
+            )
+            prepay_id = wechat_handler.create_prepay(order_paramters).get('prepay_id', None)
+            return prepay_id
 
     @api
     def create_payment(self, paid_type, **kwargs):
@@ -127,6 +134,15 @@ class OrderService(BaseService):
             print('order no not found')
         return True
 
+    def check_xml(self, xml_doc):
+        '''
+        valid wechat recall xml if is valid.
+        '''
+
+        valid = wechat_handler.verify_recall_info(xml_doc)
+
+        return valid
+
 
 class AddressService(BaseService):
 
@@ -156,7 +172,11 @@ class AddressService(BaseService):
     @api
     def list(self, user_id):
         addresses = self.get(user_id=user_id, deleted=False, many=True)
-        return addresses.order_by('-is_default')
+
+        if addresses:
+            return addresses.order_by('-is_default')
+        else:
+            return None
 
     @api
     def delete_by_id(self, id):

@@ -56,8 +56,9 @@ class OrderService(BaseService):
         kwargs['pay_info'] = pay.id
 
         delivery_carrier_id = kwargs.pop('delivery_id')
+        kwargs.pop('delivery_price', None)
         delivery_name = DeliveryCarrierService().get(id=delivery_carrier_id).name
-        delivery_price = kwargs.pop('delivery_price', 0)
+        delivery_price = DeliveryCarrierService().get(id=delivery_carrier_id).price
         delivery = DeliveryService().create(delivery=delivery_name, price=delivery_price)
         kwargs['delivery_info'] = delivery.id
 

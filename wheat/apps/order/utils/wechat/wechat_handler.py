@@ -37,7 +37,7 @@ def create_prepay(paramter):
     WECHAT_URL = 'https://api.mch.weixin.qq.com/pay/unifiedorder'
 
     xml_doc = dict_to_xml('xml', paramter)
-    response = requests.post(WECHAT_URL, tostring(xml_doc))
+    response = requests.post(WECHAT_URL, xml_doc)
 
     response = xml_to_dict(response.content)
 
@@ -62,7 +62,7 @@ def get_sign(paramter):
     keys.sort()
 
     joined_string = '&'.join(['%s=%s' % (key.lower(), paramter[key]) for key in keys])
-    #joined_string += '&key=' + wechat_config.KEY
+    joined_string += '&key=' + wechat_config.KEY
 
     m = md5.new()
     m.update(joined_string)
@@ -78,7 +78,7 @@ def dict_to_xml(tag, d):
         child.text = str(val)
         elem.append(child)
 
-    return elem
+    return tostring(elem)
     
 
 def xml_to_dict(raw_str):
@@ -93,9 +93,7 @@ def xml_to_dict(raw_str):
         return None
 
 
-def verify_recall_info(xml_doc):
-    import pdb; pdb.set_trace()
-    paramter = xml_to_dict(xml_doc)
+def verify_wechat_recall_info(paramter):
     recall_sign = paramter.pop('sign', None)
     sign = get_sign(paramter)
     if sign == recall_sign and paramter['return_code'] == 'SUCCESS':

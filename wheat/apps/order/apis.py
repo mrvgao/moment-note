@@ -3,6 +3,7 @@ from customs import class_tools
 from customs import request_tools
 from errors import codes
 from customs.response import APIResponse
+from django.http import HttpResponse
 from .services import order_service
 from .services import address_service
 from .services import invoice_service
@@ -111,9 +112,9 @@ class OrderViewSet(viewsets.ViewSet):
 
         xml_doc = request.body
 
-        valid = order_service.check_xml(xml_doc)
+        echo = order_service.check_wechat_recall(xml_doc)
 
-        return APIResponse({})
+        return HttpResponse(echo)
 
     @login_required
     def list(self, request):

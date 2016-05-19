@@ -134,14 +134,40 @@ class OrderService(BaseService):
             print('order no not found')
         return True
 
-    def check_xml(self, xml_doc):
+    def check_wechat_recall(self, xml_doc):
         '''
         valid wechat recall xml if is valid.
         '''
 
-        valid = wechat_handler.verify_recall_info(xml_doc)
+        paramter = wechat_handler.xml_to_dict(xml_doc)
+        valid = wechat_handler.verify_wechat_recall_info(paramter)
 
-        return valid
+        if valid:
+            out_trade_no = paramter['out_trade_no']
+            transaction_id = paramter['transaction_id']
+            self.valid_wechat_pay(out_trade_no, transaction_id)
+
+        echo = {'return_code': None}
+
+        if valid:
+            echo['return_code'] = 'SUCCESS'
+        else:
+            echo['return_code'] = 'FAIL'
+
+        return wechat_handler.dict_to_xml('xml', echo)
+
+    def unpaid(self, order):
+        unpaid_staus = ['unpaid']
+        return order.status in unpaid_staus
+
+    def valid_wechat_pay(self, order_no, transcation_id):
+        order = self.get(order_no=order_no)
+        if self.unpaid(order):
+            self.update(order, transaction_id=transcation_id)
+            self.update(order, status=Order.PAID)
+            pay = PayService().get(id=order.pay_info)
+            PayService().update(pay, paid=True, paid_time=datetime.now())
+        return True
 
 
 class AddressService(BaseService):

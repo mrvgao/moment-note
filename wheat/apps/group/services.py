@@ -80,6 +80,15 @@ class GroupService(BaseService):
     @api
     def get_home(self, owner_id):
         home = self.get(creator_id=owner_id, group_type=GroupService.ALL_HOME)
+        home = self.add_home_member_info(home)
+        return home
+
+    def add_home_member_info(self, home):
+        for user_id, user_info in home.members.iteritems():
+            avatar = UserService().get(id=user_id).avatar
+            nickname = UserService().get(id=user_id).nickname
+            user_info['avatar'] = str(avatar)
+            user_info['nickname'] = nickname
         return home
         
     def consist_role(self, group_id, role):
